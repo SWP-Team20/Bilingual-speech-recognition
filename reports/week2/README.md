@@ -2,16 +2,14 @@ Bilingual Family Speech: Russian–Tatar Transcription and Corpus Manager
 Project Description
 This project supports a longitudinal study of bilingual language development in a Russian–Tatar family environment. The goal is to automate transcription, speaker identification, language tagging, and corpus management for researchers working with large collections of family audio recordings.
 The system is designed to reduce manual transcription effort while providing researchers with tools to explore, search, filter, and analyse multilingual speech data collected over an extended period.
-License
-LICENSE
+[License](LICENSE)
 
 
 ⸻
 
 
 Week 2 Deliverables
-User Stories
-User Stories
+[User Stories](reports/week2/user-stories.md)
 The project requirements were refined into stable user stories with MoSCoW prioritisation.
 
 
@@ -52,7 +50,7 @@ Correct mistakes
 
 
 MVP v0
-MVP v0 Report
+[MVP v0 Report](reports/week2/mvp-v0-report.md)
 Current Status
 At the end of Week 2, MVP v0 remains in the planning and architecture phase.
 Completed work includes:
@@ -67,13 +65,11 @@ Planned MVP v0 Foundation
 The MVP foundation will provide:
 Audio upload workflow
 Transcript storage
-Initial corpus management structure
-Investigation of speech-recognition tools
-Investigation of speaker diarisation tools
+
 Run Instructions
-Not applicable at the end of Week 2 because implementation has not yet started.
+
 Deployment
-Not available.
+https://web-liard-ten-15.vercel.app/
 Public Video Demonstration
 Not available.
 
@@ -82,12 +78,8 @@ Not available.
 
 
 Customer Validation
-Customer Meeting Summary
-Customer Meeting Summary
-Customer Meeting Notes
-Customer Meeting Notes
-Customer Meeting Transcript
-Customer Meeting Transcript
+[Customer Meeting Summary][reports/week2/customer-meeting-summary.md]
+[Customer Meeting Transcript](reports/week2/customer-meeting-transcript.md)
 Key Findings
 The customer confirmed:
 Automatic transcription is the primary requirement.
@@ -151,8 +143,7 @@ Reason: Standard filter options were considered sufficient after customer valida
 ⸻
 
 
-Week 2 Analysis
-Week 2 Analysis
+[Week 2 Analysis](reports/week2/analysis.md)
 This report summarises:
 Lessons learned from requirements engineering
 Prototype development findings
@@ -164,19 +155,8 @@ Planned actions for MVP v1
 ⸻
 
 
-AI / LLM Usage
-LLM Usage Report
+[AI / LLM Usage](reports/week2/llm-report.md)
 This report documents all AI-assisted activities used during Week 2.
-
-
-⸻
-
-
-Pull Requests and Reviews
-Pull Request Template
-Add repository link when available.
-Reviewed Pull Requests
-Add reviewed PR links when available.
 
 
 ⸻
@@ -211,24 +191,6 @@ Prototype
 ![Prototype](images/prototype.png)
 MVP v0
 ![MVP v0](images/mvp-v0.png)
-
-
-⸻
-
-
-Repository Structure
-reports/
-└── week2/
-    ├── README.md
-    ├── analysis.md
-    ├── customer-meeting-notes.md
-    ├── customer-meeting-summary.md
-    ├── customer-meeting-transcript.md
-    ├── llm-report.md
-    ├── mvp-v0-report.md
-    └── user-stories.md
-
-
 ⸻
 
 
