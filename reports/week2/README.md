@@ -2,14 +2,14 @@ Bilingual Family Speech: Russian–Tatar Transcription and Corpus Manager
 Project Description
 This project supports a longitudinal study of bilingual language development in a Russian–Tatar family environment. The goal is to automate transcription, speaker identification, language tagging, and corpus management for researchers working with large collections of family audio recordings.
 The system is designed to reduce manual transcription effort while providing researchers with tools to explore, search, filter, and analyse multilingual speech data collected over an extended period.
-[License](LICENSE)
+[License](https://github.com/ProPupok/Bilingual-speech-recognition/blob/ba0fba13f0526c9d7a58846a3b3d4e2501aee197/LICENSE)
 
 
 ⸻
 
 
 Week 2 Deliverables
-[User Stories](reports/week2/user-stories.md)
+[User Stories](user-stories.md)
 The project requirements were refined into stable user stories with MoSCoW prioritisation.
 
 
@@ -50,7 +50,7 @@ Correct mistakes
 
 
 MVP v0
-[MVP v0 Report](reports/week2/mvp-v0-report.md)
+[MVP v0 Report](mvp-v0-report.md)
 Current Status
 At the end of Week 2, MVP v0 remains in the planning and architecture phase.
 Completed work includes:
@@ -78,8 +78,8 @@ Not available.
 
 
 Customer Validation
-[Customer Meeting Summary][reports/week2/customer-meeting-summary.md]
-[Customer Meeting Transcript](reports/week2/customer-meeting-transcript.md)
+[Customer Meeting Summary](customer-meeting-summary.md)
+[Customer Meeting Transcript](customer-meeting-transcript.md)
 Key Findings
 The customer confirmed:
 Automatic transcription is the primary requirement.
@@ -143,7 +143,7 @@ Reason: Standard filter options were considered sufficient after customer valida
 ⸻
 
 
-[Week 2 Analysis](reports/week2/analysis.md)
+[Week 2 Analysis](analysis.md)
 This report summarises:
 Lessons learned from requirements engineering
 Prototype development findings
@@ -155,7 +155,7 @@ Planned actions for MVP v1
 ⸻
 
 
-[AI / LLM Usage](reports/week2/llm-report.md)
+[AI / LLM Usage](llm-report.md)
 This report documents all AI-assisted activities used during Week 2.
 
 
@@ -181,8 +181,6 @@ All excluded links should be manually verified before submission.
 
 
 Screenshots
-Store screenshots in:
-reports/week2/images/
 Protected Default Branch
 ![Protected Branch](images/protected-branch.png)
 Reviewed Pull Request
