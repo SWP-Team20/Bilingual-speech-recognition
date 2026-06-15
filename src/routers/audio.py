@@ -4,9 +4,9 @@ from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from database import get_db
-import models
-import schemas
+from src.database import get_db
+from src import models
+from src import schemas
 
 router = APIRouter(
     prefix="/audio",
@@ -50,3 +50,5 @@ async def get_audio(audio_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Файл отсутствует на сервере")
 
     return FileResponse(path=audio.file_path, media_type=audio.content_type, filename=audio.filename)
+
+#TODO: add PATCH and DELETE routes
