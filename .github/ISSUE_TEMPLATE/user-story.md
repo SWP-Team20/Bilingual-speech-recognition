@@ -1,7 +1,7 @@
 ---
 name: User Story
 about: Life-cycle of user story from creation till removal or completion
-title: US-XXX
+title: US-XXX: 
 labels: ''
 assignees: ''
 
