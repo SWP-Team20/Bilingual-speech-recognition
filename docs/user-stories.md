@@ -16,4 +16,4 @@
 | US-016 | Audio deletion | Must Have | [#20](https://github.com/ProPupok/Bilingual-speech-recognition/issues/20) | Active | To Do | — |
 | US-017 | Light and dark themes | Could Have | [#21](https://github.com/ProPupok/Bilingual-speech-recognition/issues/21) | Active | To Do | — |
 | US-007 | Natural language for filters | — | — | Removed | — | — |
-| US-008 | Corpus manager | — | [#5](https://github.com/ProPupok/Bilingual-speech-recognition/issues/11) | Removed | — | — |
+| US-008 | Corpus manager | — | [#11](https://github.com/ProPupok/Bilingual-speech-recognition/issues/11) | Removed | — | — |
