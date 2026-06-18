@@ -9,8 +9,10 @@ assignees: ''
 
 ### Issue type
 —
+
 ### Description
 —
+
 ### Acceptance criteria
 Given X
 When Y
