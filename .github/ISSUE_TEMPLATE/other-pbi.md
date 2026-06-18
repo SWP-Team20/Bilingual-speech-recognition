@@ -4,6 +4,7 @@ about: Product Backlog Items not related to User Stories
 title: ''
 labels: ''
 assignees: ''
+type: Other PBI
 
 ---
 

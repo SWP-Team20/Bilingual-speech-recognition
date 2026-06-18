@@ -4,6 +4,7 @@ about: Task related to completion of assignments or organizational stuff
 title: ''
 labels: ''
 assignees: ''
+type: Course Task
 
 ---
 
