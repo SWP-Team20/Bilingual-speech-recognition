@@ -40,7 +40,7 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
     # with open(proc_file_path, "wb") as proc_buffer:
     #     proc_buffer.write(content)
 
-    audio_process.quick_trim_silence(orig_file_path, proc_file_path)
+    audio_process.remove_silence_librosa(orig_file_path, proc_file_path)
 
     with open(text_file_path, "w", encoding="utf-8") as text_file:
         text_file.write(f"ID: {audio_id}\n")
