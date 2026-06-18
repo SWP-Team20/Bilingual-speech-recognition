@@ -1,14 +1,17 @@
-import uuid
-from sqlalchemy import Column, String, DateTime
-from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime
-from database import Base
+from uuid import UUID, uuid4
+from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from src.database import Base
+
 
 class AudioFile(Base):
     __tablename__ = "audio_files"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
     filename = Column(String, index=True)
-    file_path = Column(String)
     content_type = Column(String)
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+    uploaded_at = Column(DateTime, default=datetime.now)
+
+    folder_path = Column(String, nullable=False)

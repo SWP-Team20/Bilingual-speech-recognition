@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from database import engine, Base
-from routers import audio
+from src.database import engine, Base
+from src.routers import audio
 
 Base.metadata.create_all(bind=engine)
 
