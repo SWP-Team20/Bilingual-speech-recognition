@@ -1,3 +1,4 @@
+/.idea/
 /storage/
 /backend/src/__pycache__/
 /backend/src/routers/__pycache__/
