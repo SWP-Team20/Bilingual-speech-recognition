@@ -9,15 +9,20 @@ assignees: ''
 
 ### Description
 —
+
 ### Reproduction steps
 1. ...
 2. ...
+
 ### Expected behavior
 —
+
 ### Actual behavior
 —
+
 ### Environment
 —
+
 ### Acceptance criteria for the fix
 Given X
 When Y
