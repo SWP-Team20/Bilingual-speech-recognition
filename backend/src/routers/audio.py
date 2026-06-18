@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Respons
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
-from src import models, schemas
-from src.database import get_db
+from backend.src import models, schemas
+from backend.src.database import get_db
+
+import backend.src.audio_process as audio_process
 
 router = APIRouter()
 
@@ -35,8 +37,10 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
     with open(orig_file_path, "wb") as buffer:
         buffer.write(content)
 
-    with open(proc_file_path, "wb") as proc_buffer:
-        proc_buffer.write(content)
+    # with open(proc_file_path, "wb") as proc_buffer:
+    #     proc_buffer.write(content)
+
+    audio_process.quick_trim_silence(orig_file_path, proc_file_path)
 
     with open(text_file_path, "w", encoding="utf-8") as text_file:
         text_file.write(f"ID: {audio_id}\n")

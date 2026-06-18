@@ -1,8 +1,8 @@
 from datetime import datetime
-from uuid import UUID, uuid4
-from sqlalchemy import Column, String, DateTime, Boolean
+from uuid import uuid4
+from sqlalchemy import Column, String, DateTime
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from src.database import Base
+from backend.src.database import Base
 
 
 class AudioFile(Base):

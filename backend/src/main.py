@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.database import engine, Base
-from src.routers import audio
+from backend.src.database import engine, Base
+from backend.src.routers import audio
 
 Base.metadata.create_all(bind=engine)
 
