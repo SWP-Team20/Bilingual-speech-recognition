@@ -3,7 +3,7 @@ import soundfile as sf
 import numpy as np
 
 
-def remove_silence_librosa(input_path, output_path, top_db=20, min_silence_sec=2.0):
+def remove_silence_librosa(input_path, output_path, top_db=10, min_silence_sec=2.0):
     print("Загрузка файла...")
     y, sr = librosa.load(input_path, sr=None)
 
