@@ -4,6 +4,7 @@ about: Occured bugs submission
 title: "[BUG] "
 labels: ''
 assignees: ''
+type: Bug
 
 ---
 

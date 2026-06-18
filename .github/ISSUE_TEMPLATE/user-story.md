@@ -4,6 +4,7 @@ about: Life-cycle of user story from creation till removal or completion
 title: 'US-XXX: '
 labels: ''
 assignees: ''
+type: User Story
 
 ---
 
