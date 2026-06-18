@@ -1,13 +1,21 @@
-from pydantic import BaseModel
 from datetime import datetime
-from uuid import UUID
+from uuid import UUID  # Тот же самый класс UUID
+from pydantic import BaseModel, ConfigDict
 
 class AudioFileResponse(BaseModel):
     id: UUID
     filename: str
-    file_path: str
-    content_type: str
+    folder_path: str
     uploaded_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+class AudioWithTextResponse(BaseModel):
+    id: UUID
+    filename: str
+    transcription_text: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+class UpdateTranscriptionRequest(BaseModel):
+    transcription_text: str
