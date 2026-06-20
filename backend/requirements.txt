@@ -1,0 +1,15 @@
+# Backend dependencies (US-003: транскрипция + VAD + теги ru/tt)
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+psycopg[binary]
+
+# Обработка звука и ASR.
+# faster-whisper тянет PyAV (декод аудио, ffmpeg-бинарь НЕ нужен),
+# onnxruntime и бандл Silero VAD. torch нужен для совместимости/будущей диаризации.
+faster-whisper
+torch
+
+# Опционально: точное определение русского слова для тегирования (lang_tag).
+# pymorphy3

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from backend.src import models, schemas
 from backend.src.database import get_db
 
-import backend.src.audio_process as audio_process
+import backend.src.pipeline as pipeline
 
 router = APIRouter()
 
@@ -27,24 +27,13 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
     os.makedirs(folder_path, exist_ok=True)
 
     file_ext = os.path.splitext(file.filename)[1] or ".mp3"
-
     orig_file_path = os.path.join(folder_path, f"original{file_ext}")
-    proc_file_path = os.path.join(folder_path, f"processed{file_ext}")
-    text_file_path = os.path.join(folder_path, "transcription.txt")
 
     content = await file.read()
-
     with open(orig_file_path, "wb") as buffer:
         buffer.write(content)
 
-    # with open(proc_file_path, "wb") as proc_buffer:
-    #     proc_buffer.write(content)
-
-    audio_process.remove_silence_librosa(orig_file_path, proc_file_path)
-
-    with open(text_file_path, "w", encoding="utf-8") as text_file:
-        text_file.write(f"ID: {audio_id}\n")
-
+    # запись метаданных до индексации (db_index обновляет метрики этой строки)
     db_audio = models.AudioFile(
         id=audio_id,
         filename=file.filename,
@@ -53,9 +42,31 @@ async def upload_audio(file: UploadFile = File(...), db: Session = Depends(get_d
     )
     db.add(db_audio)
     db.commit()
-    db.refresh(db_audio)
 
+    # полный пайплайн: VAD -> транскрипция оригинала -> теги -> индексация в БД
+    pipeline.process_audio(
+        input_path=orig_file_path,
+        storage_dir=BASE_STORAGE_DIR,
+        audio_id=str(audio_id),
+        original_filename=file.filename,
+        db=db,
+    )
+
+    db.refresh(db_audio)
     return db_audio
+
+
+@router.get("/search/")
+async def search_words(q: str, lang: str = None, db: Session = Depends(get_db)):
+    """Поиск слова по корпусу: где встречается + таймкод оригинала (для перехода)."""
+    query = db.query(models.Word).filter(models.Word.text == q.strip().lower())
+    if lang:
+        query = query.filter(models.Word.language == lang)
+    hits = query.all()
+    return [{
+        "audio_id": str(h.audio_id), "text": h.text, "language": h.language,
+        "start_sec": h.start_sec, "end_sec": h.end_sec, "confidence": h.confidence,
+    } for h in hits]
 
 
 @router.get("/audio/", response_model=List[schemas.AudioFileResponse])
