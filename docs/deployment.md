@@ -8,9 +8,9 @@ This document covers local development setup (without virtual environments) and 
 * **Python** (3.10+)
 * **Node.js & npm** (v18+)
 
-> **Critical Audio Dependency**: The Python `soundfile` library requires `libsndfile`. If running locally without Docker, install it manually:
-> * **macOS**: `brew install libsndfile ffmpeg`
-> * **Ubuntu/Debian**: `sudo apt-get install libsndfile1 ffmpeg`
+> **Audio dependencies**: no system audio libraries are required. Audio decoding and
+> the Silero VAD are bundled with `faster-whisper` (via PyAV/onnxruntime), so a system
+> `ffmpeg`/`libsndfile` install is **not** needed.
 
 ## Deployment
 
@@ -35,7 +35,7 @@ docker run --name pg-container -e POSTGRES_PASSWORD=admin -p 15432:5432 postgres
 
 ```bash
 # Install dependencies
-pip install fastapi pydantic psycopg sqlalchemy librosa soundfile uuid uvicorn
+pip install -r backend/requirements.txt
 
 # Start the API development server
 python -m uvicorn backend.src.main:app --port 8000 --reload

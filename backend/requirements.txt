@@ -1,15 +1,16 @@
-# Backend dependencies (US-003: транскрипция + VAD + теги ru/tt)
+# Backend dependencies
+
 fastapi
 uvicorn
 pydantic
+python-multipart          # обработка multipart/form-data (загрузка аудио)
 sqlalchemy
-psycopg[binary]
+psycopg[binary]           # драйвер PostgreSQL (postgresql+psycopg)
 
-# Обработка звука и ASR.
-# faster-whisper тянет PyAV (декод аудио, ffmpeg-бинарь НЕ нужен),
-# onnxruntime и бандл Silero VAD. torch нужен для совместимости/будущей диаризации.
+# Аудио + ASR. faster-whisper тянет PyAV (декод аудио, системный ffmpeg НЕ нужен),
+# onnxruntime и встроенный Silero VAD. numpy — операции с аудио-массивами.
 faster-whisper
-torch
+numpy
 
-# Опционально: точное определение русского слова для тегирования (lang_tag).
+# Опционально: точнее определять русские слова при тегировании языка (lang_tag).
 # pymorphy3
