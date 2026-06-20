@@ -13,3 +13,4 @@
 - For user stories, the linked supporting PBIs provide the required implementation, review, and verification evidence
 - Required tests or checks pass
 - Verification evidence is preserved in the normal workflow artifacts
+- Updating [CHANGELOG.md](SWP-Team20/Bilingual-speech-recognition/CHANGELOG.md) for every user-visible change, consistent with Product Repository Requirements
