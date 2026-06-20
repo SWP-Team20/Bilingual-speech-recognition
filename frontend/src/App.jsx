@@ -5,6 +5,7 @@ function App() {
   const [audioList, setAudioList] = useState([]);
   const [selectedAudioId, setSelectedAudioId] = useState(null);
   const [selectedTranscription, setSelectedTranscription] = useState('');
+  const [selectedTranscriptionWords, setSelectedTranscriptionWords] = useState([]);
   const fileInputRef = useRef(null);
 
   const BACKEND_URL = 'http://localhost:8000/upload-audio/';
@@ -51,14 +52,17 @@ function App() {
     if (selectedAudioId === audioId) {
       setSelectedAudioId(null);
       setSelectedTranscription('');
+      setSelectedTranscriptionWords([]);
     } else {
       setSelectedAudioId(audioId);
       try {
         const response = await axios.get(`${TRANSCRIPTION_URL}${audioId}`);
         setSelectedTranscription(response.data.transcription_text || 'No transcription found');
+        setSelectedTranscriptionWords(response.data.words || []);
       } catch (error) {
         console.error(error);
         setSelectedTranscription('Error loading transcription');
+        setSelectedTranscriptionWords([]);
       }
     }
   };
@@ -129,8 +133,22 @@ function App() {
             {selectedAudioId && (
               <div style={{ backgroundColor: '#fff', padding: '16px', borderRadius: '4px', border: '1px solid #ddd', height: '100%' }}>
                 <h3 style={{ margin: '0 0 12px 0', fontSize: '16px' }}>Transcription</h3>
-                <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '14px', color: '#333' }}>
-                  {selectedTranscription}
+                <div style={{ marginBottom: '14px', padding: '10px 12px', borderRadius: '8px', backgroundColor: '#e8f5ea', border: '1px solid #c8e6c9', fontSize: '13px', color: '#2b4f36', fontWeight: 500 }}>
+                  Color legend: <span style={{ color: '#333', fontWeight: 700 }}>Russian = black</span>, <span style={{ color: '#009a55', fontWeight: 700 }}>Tatar = green</span>.
+                </div>
+                <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '14px' }}>
+                  {selectedTranscriptionWords.length > 0 ? (
+                    selectedTranscriptionWords.map((word, index) => (
+                      <span
+                        key={index}
+                        style={{ color: word.lang === 'tt' ? '#009a55' : '#333' }}
+                      >
+                        {word.text}{index < selectedTranscriptionWords.length - 1 ? ' ' : ''}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: '#333' }}>{selectedTranscription}</span>
+                  )}
                 </div>
               </div>
             )}

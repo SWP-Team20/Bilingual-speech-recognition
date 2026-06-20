@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 from uuid import UUID, uuid4
@@ -84,15 +85,22 @@ async def get_audio_by_id(audio_id: UUID, type: str = "original", db: Session = 
 
     if type == "original":
         file_path = os.path.join(audio.folder_path, f"original{file_ext}")
+        media_type = audio.content_type
     elif type == "processed":
-        file_path = os.path.join(audio.folder_path, f"processed{file_ext}")
+        wav_path = os.path.join(audio.folder_path, "processed.wav")
+        if os.path.exists(wav_path):
+            file_path = wav_path
+            media_type = "audio/wav"
+        else:
+            file_path = os.path.join(audio.folder_path, f"processed{file_ext}")
+            media_type = audio.content_type
     else:
         raise HTTPException(status_code=400, detail="Используйте type='original' или type='processed'")
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Файл отсутствует на сервере")
 
-    return FileResponse(path=file_path, media_type=audio.content_type, filename=f"{type}_{audio.filename}")
+    return FileResponse(path=file_path, media_type=media_type, filename=f"{type}_{audio.filename}")
 
 
 @router.patch("/audio/{audio_id}/processed", response_model=schemas.AudioFileResponse)
@@ -135,23 +143,24 @@ async def get_all_transcriptions(db: Session = Depends(get_db)):
     return result
 
 
-@router.get("/transcriptions/{audio_id}", response_model=schemas.AudioWithTextResponse)
+@router.get("/transcriptions/{audio_id}")
 async def get_transcription_by_id(audio_id: UUID, db: Session = Depends(get_db)):
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
-    text_file_path = os.path.join(audio.folder_path, "transcription.txt")
-    if not os.path.exists(text_file_path):
+    transcription_json_path = os.path.join(audio.folder_path, "transcription.json")
+    if not os.path.exists(transcription_json_path):
         raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
 
-    with open(text_file_path, "r", encoding="utf-8") as f:
-        text_content = f.read()
+    with open(transcription_json_path, "r", encoding="utf-8") as f:
+        transcription = json.load(f)
 
     return {
         "id": audio.id,
         "filename": audio.filename,
-        "transcription_text": text_content
+        "transcription_text": " ".join(word.get("raw", word.get("text", "")) for word in transcription.get("words", [])),
+        "words": transcription.get("words", []),
     }
 
 
