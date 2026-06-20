@@ -29,17 +29,23 @@ _tatar_words = set(_BUILTIN_TATAR)
 
 
 def load_tatar_wordlist(path: str) -> int:
-    """Догружает татарский словник из файла (по слову на строку)."""
+    """Догружает татарский словник из файла (по слову на строку).
+    Пустые строки и комментарии (#) пропускаются."""
     if not os.path.exists(path):
         return 0
     added = 0
     with open(path, encoding="utf-8") as f:
         for line in f:
             w = line.strip().lower()
-            if w:
+            if w and not w.startswith("#"):
                 _tatar_words.add(w)
                 added += 1
     return added
+
+
+# Автозагрузка словника из data/tatar_wordlist.txt при импорте модуля.
+_DEFAULT_WORDLIST = os.path.join(os.path.dirname(__file__), "data", "tatar_wordlist.txt")
+load_tatar_wordlist(_DEFAULT_WORDLIST)
 
 
 def _clean(word: str) -> str:
