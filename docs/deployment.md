@@ -6,7 +6,7 @@ This document covers local development setup (without virtual environments) and 
 
 * **Docker** (v24.0+)
 * **Python** (3.10+)
-* **Node.js & npm** (v18+)
+* **Node.js & npm** (v20.18+)
 
 > **Audio dependencies**: no system audio libraries are required. Audio decoding and
 > the Silero VAD are bundled with `faster-whisper` (via PyAV/onnxruntime), so a system
@@ -54,7 +54,7 @@ cd frontend
 npm install
 
 # Start the server
-npm run dev
+npm run dev -- --host
 ```
 * **Local Web App**: http://localhost:5173
 
