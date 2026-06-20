@@ -1,17 +1,89 @@
 from datetime import datetime
 from uuid import uuid4
-from sqlalchemy import Column, String, DateTime
+from sqlalchemy import (
+    Column, String, DateTime, Integer, Float, Text, ForeignKey, Index
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import relationship
 from backend.src.database import Base
 
 
 class AudioFile(Base):
+    """Запись аудио. Сами файлы лежат на диске в storage/<id>/:
+    original_16k.wav, processed.wav, transcription.txt/json.
+    В БД — только метаданные и путь к папке."""
     __tablename__ = "audio_files"
 
     id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid4, index=True)
     filename = Column(String, index=True)
     content_type = Column(String)
-
     uploaded_at = Column(DateTime, default=datetime.now)
-
+    recorded_at = Column(DateTime, nullable=True)         # дата записи (US-012)
     folder_path = Column(String, nullable=False)
+
+    primary_language = Column(String, nullable=True)
+    status = Column(String, default="done")              # queued/processing/done/error
+
+    # метрики транскрипции (US-006: статистика)
+    duration_sec = Column(Float, nullable=True)
+    speech_sec = Column(Float, nullable=True)
+    silence_removed_sec = Column(Float, nullable=True)
+    total_words = Column(Integer, nullable=True)
+    unique_words = Column(Integer, nullable=True)
+    words_per_minute = Column(Float, nullable=True)
+    ru_words = Column(Integer, nullable=True)
+    tt_words = Column(Integer, nullable=True)
+    unknown_words = Column(Integer, nullable=True)
+    avg_confidence = Column(Float, nullable=True)
+
+    words = relationship("Word", back_populates="audio", cascade="all, delete-orphan")
+    word_counts = relationship("WordCount", back_populates="audio", cascade="all, delete-orphan")
+    segments = relationship("SpeechSegment", back_populates="audio", cascade="all, delete-orphan")
+
+
+class SpeechSegment(Base):
+    """Карта VAD: соответствие координат оригинала и обрезанного файла."""
+    __tablename__ = "speech_segments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    audio_id = Column(PG_UUID(as_uuid=True), ForeignKey("audio_files.id", ondelete="CASCADE"), index=True)
+    orig_start = Column(Float)
+    orig_end = Column(Float)
+    trim_start = Column(Float)
+    trim_end = Column(Float)
+
+    audio = relationship("AudioFile", back_populates="segments")
+
+
+class Word(Base):
+    """Каждое слово аудио = одна строка. Это «место для всех слов» для поиска.
+    Поиск строится поверх text (в Postgres — добавить tsvector + GIN-индекс)."""
+    __tablename__ = "words"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    audio_id = Column(PG_UUID(as_uuid=True), ForeignKey("audio_files.id", ondelete="CASCADE"), index=True)
+    text = Column(String, index=True)
+    start_sec = Column(Float)          # координаты ОРИГИНАЛА (транскрипция по оригиналу)
+    end_sec = Column(Float)
+    language = Column(String, index=True)  # 'ru' / 'tt' / 'unknown'
+    confidence = Column(Float)
+    position = Column(Integer)          # порядковый номер слова в аудио
+
+    audio = relationship("AudioFile", back_populates="words")
+
+
+class WordCount(Base):
+    """Кол-во вхождений каждого слова В ПРЕДЕЛАХ одного аудио (для статистики)."""
+    __tablename__ = "word_counts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    audio_id = Column(PG_UUID(as_uuid=True), ForeignKey("audio_files.id", ondelete="CASCADE"), index=True)
+    text = Column(String, index=True)
+    language = Column(String, index=True)
+    count = Column(Integer)
+
+    audio = relationship("AudioFile", back_populates="word_counts")
+
+
+# Индекс под поиск по слову+языку
+Index("ix_words_text_lang", Word.text, Word.language)
