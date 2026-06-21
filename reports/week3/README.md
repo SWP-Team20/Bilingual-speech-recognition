@@ -7,7 +7,7 @@
 **Project Description:**
 Bilingual Speech Recognition is a web-based application designed to support the transcription and analysis of bilingual Russian–Tatar speech recordings. The system allows users to upload audio files, generate transcriptions, and identify language usage within recordings.
 
-**License:** INSERT LINK TO LICENSE
+**License:** [MIT License](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/LICENSE)
 
 ---
 
@@ -15,25 +15,21 @@ Bilingual Speech Recognition is a web-based application designed to support the 
 
 The user stories created during Assignment 2 were migrated into an issue-based Product Backlog. The backlog was refined throughout the Sprint by clarifying requirements, estimating work, and decomposing implementation tasks where necessary.
 
-### Historical User Stories
+**Total Product Backlog Size:** 40
 
-https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week2/user-stories.md
+**Total Sprint Size:** 7
 
-### Current User Story Registry
+## Links:
 
-https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/user-stories.md
+[Historical user stories since Assignment 2](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week2/user-stories.md)
 
-### Product Backlog Board
+[Current user stories registry](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/user-stories.md)
 
-https://github.com/orgs/SWP-Team20/projects/1
+[Product Backlog board](https://github.com/orgs/SWP-Team20/projects/1/views/7)
 
-### Sprint Backlog Board
+[Sprint Backlog board](https://github.com/orgs/SWP-Team20/projects/1/views/8?sliceBy%5Bvalue%5D=Sprint+1)
 
-https://github.com/orgs/SWP-Team20/projects/1/views/7
-
-### Sprint Milestone
-
-https://github.com/orgs/SWP-Team20/projects/1/views/8?sliceBy%5Bvalue%5D=Sprint+1
+[Sprint milestone](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/1)
 
 ---
 
@@ -52,110 +48,21 @@ The following customer requirements were addressed in MVP v1:
 
 During the Sprint Review, the customer confirmed that MVP v1 met the agreed scope and approved the delivered functionality.
 
----
+## Links
 
-# Product Backlog Statistics
+- [MVP Tracking View link](https://github.com/orgs/SWP-Team20/projects/1/views/7?groupedBy%5BcolumnId%5D=360662162)
 
-**Total Product Backlog Size:** 40
+- [Customer Review Recording](https://drive.google.com/file/d/1T4xvJoe5uSBhZAn7KBeXx9Ykexe35Y0B/view)
 
-**Total Sprint Size:** 7
+- [Customer Review Summary](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/customer-review-summary.md)
 
----
-
-# MVP v1 Scope
-
-### MVP Tracking View
-
-https://github.com/orgs/SWP-Team20/projects/1/views/7?groupedBy%5BcolumnId%5D=360662162
-
-### MVP v1 Included Features
-
-* Audio upload
-* Audio streams page
-* Automatic transcription
-* Russian/Tatar word highlighting
-* Silence removal
-* Basic transcript visualization
-
-
-
-### CHANGELOG
-
-https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/CHANGELOG.md
-
----
-
-# Sprint Planning
-
-## Sprint Goal
-
-Deliver a functional first version of the bilingual speech transcription platform capable of processing uploaded audio files and generating basic bilingual transcriptions.
-
-## Sprint Structure
-
-The Sprint Backlog consisted of selected Product Backlog Items required to deliver MVP v1.
-
-Each selected Sprint item:
-
-* Had acceptance criteria.
-* Had a Story Point estimate.
-* Was assigned to a team member.
-* Had a designated reviewer.
-* Was tracked using GitHub Issues and Pull Requests.
-
----
-
-# Workflow Implementation
-
-## Issue Templates
-
-### User Story Template
-
-https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/.github/ISSUE_TEMPLATE/user-story.md
-
-### Bug Report Template
-
-INSERT LINK
-
-### Course Task Template
-
-INSERT LINK
-
----
-
-## Pull Request Template
-
-INSERT LINK
-
----
-
-## Reviewed Pull Requests
-
-### Example PR 1
-
-INSERT LINK
-
-### Example PR 2
-
-INSERT LINK
-
-### Example PR 3
-
-INSERT LINK
-
----
-
-# Definition of Done
-
-INSERT LINK TO `docs/definition-of-done.md`
+- [Customer Review Transcript](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/customer-review-transcript.md)
 
 ---
 
 # Roadmap
 
-INSERT LINK TO `docs/roadmap.md`
-
-### Current Direction
+## Current Direction
 
 The next Sprint will focus on:
 
@@ -165,40 +72,20 @@ The next Sprint will focus on:
 * Speaker filtering.
 * Statistics and analysis features.
 
----
-
-# MVP v1 Access
-
-### Deployment
-
-http://10.93.26.206:5173/
-
-### Run Instructions
-
-INSERT LINK TO ROOT README
-
----
-
-# Demonstration Video
-
-INSERT LINK TO VIDEO
+[Roadmap link](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/roadmap.md)
 
 ---
 
 # Verification Evidence
 
-Verification evidence for completed MVP v1 Product Backlog Items can be found in:
-
-* Issue discussions
-* Pull Requests
-* Acceptance criteria verification
-* Sprint Review demonstration
-
-INSERT LINKS TO RELEVANT PRs OR ISSUES
+Verification evidence for completed MVP v1 Product Backlog Items can be found by these closed issues related to User Stories in MVP v1 scope:
+- [US-003: Transcription](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/7)
+- [US-009: Audio upload](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/12)
+- [US-015: Audio streams page](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/19)
 
 ---
 
-# Product Status
+# Product Status & Next Steps
 
 The project currently supports the complete MVP v1 workflow:
 
@@ -210,33 +97,7 @@ The project currently supports the complete MVP v1 workflow:
 
 The customer approved the delivered MVP during the Sprint Review.
 
----
-
-# Customer Review
-
-### Customer Review Summary
-
-INSERT LINK TO `customer-review-summary.md`
-
-### Customer Review Transcript
-
-INSERT LINK TO `customer-review-transcript.md`
-
----
-
-# Reflection and Retrospective
-
-### Reflection
-
-INSERT LINK TO `reflection.md`
-
-### Retrospective
-
-INSERT LINK TO `retrospective.md`
-
-### LLM Usage Report
-
-INSERT LINK TO `llm-report.md`
+The next Sprint will focus on improving speech-recognition quality, integrating real bilingual audio data, refining transcript management, and expanding analysis capabilities. Particular attention will be given to supporting Tatar-specific speech patterns and preparing the platform for more advanced linguistic research functionality.
 
 ---
 
@@ -244,9 +105,49 @@ INSERT LINK TO `llm-report.md`
 
 | Team Member   | Issues       | PRs          | Reviews      |
 | ------------- | ------------ | ------------ | ------------ |
-| Team Member 1 | INSERT LINKS | INSERT LINKS | INSERT LINKS |
-| Team Member 2 | INSERT LINKS | INSERT LINKS | INSERT LINKS |
-| Team Member 3 | INSERT LINKS | INSERT LINKS | INSERT LINKS |
+| AaalekseevP | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/92 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/22, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/24, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/26, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/29, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/32, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/33, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/36, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/37, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/39, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/41, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/44, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/46, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/101, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/48, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/52, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/58 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/102, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/35, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/42, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/49, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/53, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/60, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/62, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/64 |
+| StreetSraker |  https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/80 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/42 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/44, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/46, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/48, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/58, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/101 |
+| ProPupok | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/87 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/64, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/60, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/35, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/62 |https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/22, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/24, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/26, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/29, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/32, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/33, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/36, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/37, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/39, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/41 |
+| lohmo111 | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/55 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/49, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/53, https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/56 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/74 |
+| anakin-shitcoder | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/72 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/102 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/52 |
+
+---
+
+# MVP v1 Access
+
+### Deployment
+
+http://10.93.26.206:5173/
+
+### Run Instructions and Demonstration Video
+
+[Instructions for deployment](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/deployment.md)
+
+[Demonstration video](https://drive.google.com/file/d/1wdpaqrl--hm1bolbkdEZVaFUJePPE0ku/view?usp=sharing)
+
+---
+
+# Workflow Implementation
+
+## Information
+
+PBI types, statuses, priorities, Sprint milestone usage, MVP version tracking, and task-decomposition approach were made with respect to Process 
+
+## Issue Templates
+
+[User Story Template](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/.github/ISSUE_TEMPLATE/user-story.md)
+
+[Other PBI](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/.github/ISSUE_TEMPLATE/other-pbi.md)
+
+[Bug Report Template](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/.github/ISSUE_TEMPLATE/bug-report.md)
+
+[Course Task Template](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/.github/ISSUE_TEMPLATE/course-task.md)
+
+---
+
+## Pull Request Template
+
+[Pull Request Template](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/.github/pull_request_template.md)
 
 ---
 
@@ -254,34 +155,50 @@ INSERT LINK TO `llm-report.md`
 
 ## Product Backlog View
 
-INSERT IMAGE
+![Product Backlog View](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/images/product-backlog-view.png)
 
 ## Sprint Backlog View
 
-INSERT IMAGE
+![Sprint Backlog View](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/images/sprint-backlog-view.png)
 
 ## Sprint Milestone
 
-INSERT IMAGE
+![Sprint Milestone](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/images/sprint-milestone.png)
 
 ## MVP View
 
-INSERT IMAGE
+![MVP View](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/images/mvp-version-grouped-view.png)
 
 ## Release
 
-INSERT IMAGE
+![Release](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/images/semver-release.png)
 
 ## Running MVP
 
-INSERT IMAGE
+![Running MVP](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/images/delivered-mvp-1.png)
 
 ## Reviewed Pull Request
 
-INSERT IMAGE
+![Reviewed Pull Request](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/images/issue-linked-pr.png)
 
 ---
 
-# Next Steps
+# Reviewed Pull Requests
 
-The next Sprint will focus on improving speech-recognition quality, integrating real bilingual audio data, refining transcript management, and expanding analysis capabilities. Particular attention will be given to supporting Tatar-specific speech patterns and preparing the platform for more advanced linguistic research functionality.
+As there are a lot of PRs made in this week, only 3 examples would be presented:
+
+- [12-audio-upload](https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/42)
+- [47-create-deployment-guide](https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/48)
+- [72-Create-llm-report.md](https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/74)
+
+---
+
+# Another Useful Links
+
+- [Definition of Done](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/definition-of-done.md)
+- [Changelog](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/CHANGELOG.md)
+- [Reflection](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/reflection.md)
+- [Retrospective](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/retrospective.md)
+- [LLM Usage Report](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/reports/week3/llm-report.md)
+
+---
