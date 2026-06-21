@@ -24,10 +24,11 @@ In both cases, the generated suggestions were treated as recommendations rather 
 **Tool Used:**
 
 * Google Gemini
+* Claude
 
 ### How It Was Used
 
-Gemini was used during backend development mostly for debugging purposes. When errors occurred, it helped explain error messages, identify possible causes, and suggest troubleshooting steps.
+Claude and Gemini was used during backend development mostly for debugging purposes. When errors occurred, it helped explain error messages, identify possible causes, and suggest troubleshooting steps.
 
 The backend implementation itself was developed and tested by the team member responsible for that part of the project. AI suggestions were used only when additional guidance was needed during problem solving.
 
