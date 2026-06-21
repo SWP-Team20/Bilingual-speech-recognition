@@ -2,6 +2,8 @@
 
 This document covers local development setup (without virtual environments) and production deployment workflows.
 
+apt install nodejs -y
+
 ## System Prerequisites
 
 * **Docker** (v24.0+)
@@ -28,12 +30,18 @@ Open Docker Desktop and delete a container in **Containers** section if it has t
 
 Run this command from the project root directory on your production server to start and deploy Docker:
 ```bash
-docker run --name pg-container -e POSTGRES_PASSWORD=admin -p 15432:5432 postgres
+docker run -d --name pg-container -e POSTGRES_PASSWORD=admin -p 15432:5432 postgres
 ```
 
 ### 3. Run the Backend (FastAPI)
 
 ```bash
+# Install pip
+apt update && apt install python3-venv -y
+
+# [Linux only] create venv
+python3 -m venv venv
+
 # Install dependencies
 pip install -r backend/requirements.txt
 
@@ -49,6 +57,9 @@ python -m uvicorn backend.src.main:app --port 8000 --reload
 Open a new terminal window:
 ```bash
 cd frontend
+
+# Install node.js
+apt install nodejs -y
 
 # Install package dependencies
 npm install
