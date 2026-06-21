@@ -57,7 +57,7 @@ Install dependencies and start the API development server:
 
 ```bash
 pip install -r backend/requirements.txt
-python -m uvicorn backend.src.main:app --port 8000 --reload
+python -m uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --reload
 ```
 
 Interactive API Docs:
