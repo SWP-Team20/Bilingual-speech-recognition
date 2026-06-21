@@ -8,9 +8,9 @@ function App() {
   const [selectedTranscriptionWords, setSelectedTranscriptionWords] = useState([]);
   const fileInputRef = useRef(null);
 
-  const BACKEND_URL = 'http://localhost:8000/upload-audio/';
-  const AUDIO_LIST_URL = 'http://localhost:8000/audio/';
-  const TRANSCRIPTION_URL = 'http://localhost:8000/transcriptions/';
+  const BACKEND_URL = 'http://10.93.26.206:8000/upload-audio/';
+  const AUDIO_LIST_URL = 'http://10.93.26.206:8000/audio/';
+  const TRANSCRIPTION_URL = 'http://10.93.26.206:8000/transcriptions/';
 
   useEffect(() => {
     loadAudioList();
@@ -105,7 +105,7 @@ function App() {
                       controls
                       style={{ width: '100%', marginBottom: '8px' }}
                     >
-                      <source src={`http://localhost:8000/audio/${audio.id}?type=processed`} />
+                      <source src={`http://10.93.26.206:8000/audio/${audio.id}?type=processed`} />
                     </audio>
                     <button
                       onClick={() => handleTranscribeClick(audio.id)}
