@@ -29,7 +29,7 @@ cd Bilingual-speech-recognition
 
 > If you are deploying on VM, proceed with the several changes:
 > 
-> 1. In the file backend/src/main.py add ```"http://<YOUR-IP-ADDRESS>:5173"``` to the ```origins``` list while changing <YOUR-IP-ADDRESS> to the IP address of your VM.
+> 1. In the file backend/src/main.py add ```"http://<YOUR-IP-ADDRESS>:5173"``` to the ```origins``` list while changing \<YOUR-IP-ADDRESS> to the IP address of your VM.
 > 2. In the file frontend/src/App.jsx replace every instance of ```localhost``` to the IP address of your VM.
 
 ### 2. Build and Launch Containers
