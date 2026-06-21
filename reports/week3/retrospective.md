@@ -1,5 +1,4 @@
-
-#Sprint Retrospective
+# Sprint Retrospective
 
 ## What went well: 
 
@@ -17,4 +16,3 @@
 
 - Improve Sprint planning and estimation techniques to ensure realistic commitments
 - Increase team engagement across all organizational and agile processes
- 
