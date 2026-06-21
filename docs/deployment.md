@@ -42,6 +42,9 @@ apt update && apt install python3-venv -y
 # [Linux only] create venv
 python3 -m venv venv
 
+# [Linux only] initialize venv
+source .venv/bin/activate
+
 # Install dependencies
 pip install -r backend/requirements.txt
 
