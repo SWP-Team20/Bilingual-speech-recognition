@@ -8,10 +8,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Bilingual Speech Backend API")
 
 # The origins that are allowed to make requests to backend
-origins = [
-    "http://localhost:5173", 
-    "http://127.0.0.1:5173",
-]
+origins = ["*"]
 
 # The CORS middleware to app instance
 app.add_middleware(

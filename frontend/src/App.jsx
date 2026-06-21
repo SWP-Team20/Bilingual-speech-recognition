@@ -8,9 +8,11 @@ function App() {
   const [selectedTranscriptionWords, setSelectedTranscriptionWords] = useState([]);
   const fileInputRef = useRef(null);
 
-  const BACKEND_URL = 'http://localhost:8000/upload-audio/';
-  const AUDIO_LIST_URL = 'http://localhost:8000/audio/';
-  const TRANSCRIPTION_URL = 'http://localhost:8000/transcriptions/';
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+  const BACKEND_URL = `${API_BASE}/upload-audio/`;
+  const AUDIO_LIST_URL = `${API_BASE}/audio/`;
+  const TRANSCRIPTION_URL = `${API_BASE}/transcriptions/`;
 
   useEffect(() => {
     loadAudioList();
@@ -105,7 +107,7 @@ function App() {
                       controls
                       style={{ width: '100%', marginBottom: '8px' }}
                     >
-                      <source src={`http://localhost:8000/audio/${audio.id}?type=processed`} />
+                      <source src={`${API_BASE}/audio/${audio.id}?type=processed`} />
                     </audio>
                     <button
                       onClick={() => handleTranscribeClick(audio.id)}
