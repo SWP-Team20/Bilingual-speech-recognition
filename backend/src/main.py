@@ -9,14 +9,15 @@ app = FastAPI(title="Bilingual Speech Backend API")
 
 # The origins that are allowed to make requests to backend
 origins = [
-    "http://localhost:5173", 
+    "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "http://10.93.26.206:5173",
 ]
 
 # The CORS middleware to app instance
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, OPTIONS, etc.)
     allow_headers=["*"],  # Allows all headers
