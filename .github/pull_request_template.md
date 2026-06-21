@@ -12,3 +12,9 @@ Closes #(issue)
 - [ ] My code follows the style guidelines
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code
+
+### Changelog presence
+
+**Pick exactly one**:
+- [ ] Added to Changelog
+- [ ] Not applicable because change is not user-visible
