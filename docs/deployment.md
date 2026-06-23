@@ -1,6 +1,6 @@
 # Setup & Deployment Guide
 
-This document covers local or hardcoded VM development setup (without virtual environments) and production deployment workflows.
+This document covers development setup and production deployment workflows.
 
 ## System Prerequisites
 
@@ -26,11 +26,6 @@ Follow these steps to run the application.
 git clone https://github.com/SWP-Team20/Bilingual-speech-recognition
 cd Bilingual-speech-recognition
 ```
-
-> If you are deploying on VM, proceed with the several changes:
-> 
-> 1. In the file backend/src/main.py add ```"http://<YOUR-IP-ADDRESS>:5173"``` to the ```origins``` list while changing \<YOUR-IP-ADDRESS> to the IP address of your VM.
-> 2. In the file frontend/src/App.jsx replace every instance of ```localhost``` to the IP address of your VM.
 
 ### 2. Build and Launch Containers
 
@@ -64,7 +59,7 @@ Interactive API Docs:
 * ```http://localhost:8000/docs``` if deployed locally
 * ```http://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
 
-> **Troubleshooting**: If the backend is frozen after reload, type ```taskkill /F /IM python.exe``` and run the backend again.
+> **Troubleshooting**: If the backend has frozen after reload, type ```taskkill /F /IM python.exe``` and run the backend again.
 
 ### 4. Run the Frontend (Node.js)
 Open a new terminal window. Now install package dependencies and start the server:
@@ -73,6 +68,7 @@ cd frontend
 npm install
 npm run dev -- --host
 ```
+
 Local Web App:
 * ```http://localhost:5173``` if deployed locally
 * ```http://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
