@@ -15,5 +15,6 @@
 | US-015 | Audio streams page | Must Have | [#19](https://github.com/ProPupok/Bilingual-speech-recognition/issues/19) | Active | Done | [Sprint 1](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/1) |
 | US-016 | Audio deletion | Must Have | [#20](https://github.com/ProPupok/Bilingual-speech-recognition/issues/20) | Active | In progress | [Sprint 2](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/2) |
 | US-017 | Light and dark themes | Could Have | [#21](https://github.com/ProPupok/Bilingual-speech-recognition/issues/21) | Active | To Do | — |
+| US-018 | Tags for audio upload | Must Have | [#106](https://github.com/ProPupok/Bilingual-speech-recognition/issues/106) | Active | Ready | — |
 | US-007 | Natural language for filters | — | — | Removed | — | — |
 | US-008 | Corpus manager | — | [#11](https://github.com/ProPupok/Bilingual-speech-recognition/issues/11) | Removed | — | — |
