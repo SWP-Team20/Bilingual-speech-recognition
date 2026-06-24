@@ -30,14 +30,26 @@ if (fs.existsSync(envPath)) {
   console.log(`[Vite Env] Внимание: Файл .env не найден по пути: ${envPath}. Создаю новый.`);
 }
 
+const isHttps = process.argv.includes('--https');
+
+const protocol = isHttps ? 'https' : 'http';
+
 const localIp = getLocalIP();
-const newVar = `VITE_API_URL=http://${localIp}:8000`;
+
+const apiVar = `VITE_API_URL=${protocol}://${localIp}:8000`;
+const httpsVar = `VITE_HTTPS=${isHttps}`;
 
 if (/VITE_API_URL=.*/g.test(envContent)) {
-  envContent = envContent.replace(/VITE_API_URL=.*/g, newVar);
+  envContent = envContent.replace(/VITE_API_URL=.*/g, apiVar);
 } else {
-  envContent = envContent.trim() + `\n${newVar}`;
+  envContent = envContent.trim() + `\n${apiVar}`;
+}
+
+if (/VITE_HTTPS=.*/g.test(envContent)) {
+  envContent = envContent.replace(/VITE_HTTPS=.*/g, httpsVar);
+} else {
+  envContent = envContent.trim() + `\n${httpsVar}`;
 }
 
 fs.writeFileSync(envPath, envContent.trim() + '\n');
-console.log(`[Vite Env] Успешно обновлен коренной .env -> VITE_API_URL=http://${localIp}:8000`);
+console.log(`[Vite Env] Успешно обновлен коренной .env -> ${apiVar} и ${httpsVar}`);

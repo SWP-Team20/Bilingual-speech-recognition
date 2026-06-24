@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node update-ip.js && vite --host --force",
+    "dev:https": "node update-ip.js --https && vite --host --force",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

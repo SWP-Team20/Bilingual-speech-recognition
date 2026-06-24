@@ -56,35 +56,71 @@ pip install -r backend/requirements.txt
 
 Then, start the API backend server via uvicorn:
 
+
+- **HTTP** protocol:
 ```bash
 uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --reload
 ```
 
+- **HTTPS** protocol:
+```bash
+uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --ssl-keyfile=key.pem --ssl-certfile=cert.pem --reload 
+```
+
 Interactive API Docs:
-* ```http://localhost:8000/docs``` if deployed locally
-* ```http://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
+* HTTP:
+* * ```http://localhost:8000/docs``` if deployed locally
+* * ```http://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
+
+* HTTPS:
+* * ```https://localhost:8000/docs``` if deployed locally
+* * ```https://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
 
 > **Troubleshooting**:
 >
-> 1. If you have an error while trying to start the server, try
->
+> 1. If you have an error while trying to start the server, try inserting at the start of the command ```python -m```. For example:
 > ```bash
 > python -m uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --reload
 > ```
+> 
 >
 > 2. If the backend has frozen after reload, type ```taskkill /F /IM python.exe``` and run the backend again.
 
 ### 4. Run the Frontend (Node.js)
-Open a new terminal window. Now install package dependencies and start the server:
+Open a new terminal window. Now install package dependencies:
 ```bash
 cd frontend
 npm install
-npm run dev -- --host
 ```
 
+Now start the server:
+
+
+- **HTTP** protocol:
+```bash
+npm run dev
+```
+
+- **HTTPS** protocol:
+```bash
+npm run dev:https
+```
+
+> **Troubleshooting**:
+>
+> 1. If you have an error while trying to start the frontend, try adding ```-- --host```. For example:
+> ```bash
+> npm run dev -- --host
+> ```
+
 Local Web App:
-* ```http://localhost:5173``` if deployed locally
-* ```http://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
+* HTTP
+* * ```http://localhost:5173``` if deployed locally with
+* * ```http://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
+
+* HTTPS
+* * ```https://localhost:5173``` if deployed locally
+* * ```https://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
 
 
 
