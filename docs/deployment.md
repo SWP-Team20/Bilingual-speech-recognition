@@ -69,12 +69,12 @@ uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --ssl-keyfile=key.pem --
 
 Interactive API Docs:
 * HTTP:
-* * ```http://localhost:8000/docs``` if deployed locally
-* * ```http://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
+  * ```http://localhost:8000/docs``` if deployed locally
+  * ```http://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
 
 * HTTPS:
-* * ```https://localhost:8000/docs``` if deployed locally
-* * ```https://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
+  * ```https://localhost:8000/docs``` if deployed locally
+  * ```https://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
 
 > **Troubleshooting**:
 >
@@ -115,12 +115,12 @@ npm run dev:https
 
 Local Web App:
 * HTTP
-* * ```http://localhost:5173``` if deployed locally with
-* * ```http://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
+  * ```http://localhost:5173``` if deployed locally with
+  * ```http://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
 
 * HTTPS
-* * ```https://localhost:5173``` if deployed locally
-* * ```https://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
+  * ```https://localhost:5173``` if deployed locally
+  * ```https://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
 
 
 
