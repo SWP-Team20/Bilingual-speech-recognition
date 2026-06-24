@@ -1,7 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import AuthPage from './pages/AuthPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
+<<<<<<< Updated upstream
   const [audioList, setAudioList] = useState([]);
   const [selectedAudioId, setSelectedAudioId] = useState(null);
   const [selectedTranscription, setSelectedTranscription] = useState('');
@@ -164,9 +167,27 @@ function App() {
           accept="audio/*"
           onChange={handleFileChange}
           style={{ display: 'none' }}
+=======
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  return (
+    <Router>
+      <Routes>
+        <Route 
+          path="/login" 
+          element={!isAuthenticated ? <AuthPage onLoginSuccess={() => setIsAuthenticated(true)} /> : <Navigate to="/dashboard" />} 
+>>>>>>> Stashed changes
         />
-      </div>
-    </div>
+        <Route 
+          path="/dashboard" 
+          element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="*" 
+          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} 
+        />
+      </Routes>
+    </Router>
   );
 }
 
