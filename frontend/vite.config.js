@@ -1,6 +1,6 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import basicSsl from '@vitejs/plugin-basic-ssl'
+import fs from 'fs'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '../', '')
@@ -9,16 +9,16 @@ export default defineConfig(({ mode }) => {
   const backendUrl = env.VITE_API_URL || 'https://192.168.56.1:8000'
 
   return {
-    plugins: [
-      react(),
-      ...(isHttps ? [basicSsl()] : [])
-    ],
+    plugins: [react()],
     envDir: '../',
     server: {
-      https: isHttps,
+      https: isHttps ? {
+        key: fs.readFileSync('../key.pem'),
+        cert: fs.readFileSync('../cert.pem'),
+      } : false,
       port: 5173,
       proxy: {
-        '/api': {
+        '/audio': {
           target: backendUrl,
           changeOrigin: true,
           secure: false,
@@ -28,26 +28,3 @@ export default defineConfig(({ mode }) => {
     }
   }
 })
-
-
-//import { defineConfig, loadEnv } from 'vite'
-//import react from '@vitejs/plugin-react'
-//import basicSsl from '@vitejs/plugin-basic-ssl'
-//
-//export default defineConfig(({ mode }) => {
-//  const env = loadEnv(mode, '../', '')
-//
-//  const isHttps = env.VITE_HTTPS === 'true'
-//
-//  return {
-//    plugins: [
-//      react(),
-//      ...(isHttps ? [basicSsl()] : [])
-//    ],
-//    envDir: '../',
-//    server: {
-//      https: isHttps,
-//      port: 5173
-//    }
-//  }
-//})

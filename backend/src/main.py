@@ -8,16 +8,15 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title="Bilingual Speech Backend API")
 
 origins = [
-    "https://localhost:3000",       # Если фронтенд на React/Next.js локально
-    "https://192.168.56.1:5173",    # Если фронтенд открыт по локальному IP
-    "https://10.93.26.206:5173",    # Если фронтенд открыт по локальному IP
-    "https://localhost:5173",       # Если используется Vite
+    "https://10.93.26.206:5173",
+    "https://127.0.0.1:5173"
+    "https://localhost:5173",
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins, # Используем явный список доменов
-    allow_credentials=True, # Оставляем True
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
