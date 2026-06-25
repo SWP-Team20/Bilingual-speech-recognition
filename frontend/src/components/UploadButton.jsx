@@ -1,8 +1,10 @@
-import { useRef } from 'react';
+import { useState, useRef } from 'react';
 import { audioApi } from '../api/audioApi';
+import uploadIcon from '../assets/upload-icon.svg'; 
 
-function UploadButton({ onUploadSuccess }) {
+function UploadButton({ onUploadSuccess, style }) {
   const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
@@ -12,6 +14,7 @@ function UploadButton({ onUploadSuccess }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsUploading(true);
     try {
       await audioApi.uploadAudioFile(file);
       await onUploadSuccess();
@@ -21,23 +24,69 @@ function UploadButton({ onUploadSuccess }) {
     } catch (error) {
       console.error(error);
       alert("Error uploading audio.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
   return (
     <>
+      <style>{`
+        @keyframes buttonSpinner {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+
       <button
         onClick={handleButtonClick}
+        disabled={isUploading}
         style={{ 
-          padding: '8px 16px', 
-          backgroundColor: '#bbb', 
+          width: '140px',             
+          height: '48px', 
+          padding: 0,
+          backgroundColor: isUploading ? '#ddd' : '#d9d9d9', 
+          color: isUploading ? '#888' : '#000',
           border: 'none', 
           borderRadius: '4px', 
-          cursor: 'pointer',
-          fontWeight: '500'
+          cursor: isUploading ? 'not-allowed' : 'pointer',
+          fontWeight: 'bold',
+          fontSize: '18px',
+          display: 'inline-flex',     
+          alignItems: 'center',       
+          justifyContent: 'center',    
+          verticalAlign: 'middle',
+          gap: '12px',
+          boxSizing: 'border-box',
+          ...style 
         }}
       >
-        Upload
+        {isUploading ? (
+          /* Processing State */
+          <div style={{
+            width: '20px',
+            height: '20px',
+            border: '2px solid rgba(0,0,0,0.2)',
+            borderTopColor: '#000',
+            borderRadius: '50%',
+            animation: 'buttonSpinner 0.6s linear infinite'
+          }} />
+        ) : (
+          /* Normal State */
+          <>
+            <span>Upload</span> 
+            <img 
+              src={uploadIcon} 
+              alt="" 
+              style={{ 
+                width: '24px', 
+                height: '24px', 
+                objectFit: 'contain',
+                display: 'block',
+                transform: 'translateY(-1px)'
+              }} 
+            />
+          </>
+        )}
       </button>
       
       <input

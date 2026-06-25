@@ -2,4 +2,6 @@
 /storage/
 /backend/src/__pycache__/
 /backend/src/routers/__pycache__/
-/node_modules
+/backend/src/services/__pycache__/
+/node_modules/
+.env

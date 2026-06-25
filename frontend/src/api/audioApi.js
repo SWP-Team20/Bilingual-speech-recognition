@@ -9,10 +9,25 @@ export const BACKEND_URLS = {
   transcription: `${API_BASE}/transcriptions/`
 };
 
+const api = axios.create();
+
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const audioApi = {
   // Fetch the list of all uploaded audio records
   fetchAudioList: async () => {
-    const response = await axios.get(BACKEND_URLS.list);
+    const response = await api.get(BACKEND_URLS.list);
     return response.data;
   },
 
@@ -20,7 +35,7 @@ export const audioApi = {
   uploadAudioFile: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await axios.post(BACKEND_URLS.upload, formData, {
+    const response = await api.post(BACKEND_URLS.upload, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return response.data;
@@ -28,7 +43,7 @@ export const audioApi = {
 
   // Retrieve the speech transcription map for a specific recording ID
   fetchTranscription: async (audioId) => {
-    const response = await axios.get(`${BACKEND_URLS.transcription}${audioId}`);
+    const response = await api.get(`${BACKEND_URLS.transcription}${audioId}`);
     return response.data;
   }
 };

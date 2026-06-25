@@ -4,33 +4,59 @@ function TranscriptionBox({ transcriptionText, transcriptionWords }) {
   return (
     <div style={{ 
       backgroundColor: '#fff', 
-      padding: '16px', 
+      padding: '24px', 
       borderRadius: '4px', 
       border: '1px solid #ddd', 
-      height: '100%',
-      boxSizing: 'border-box'
+      height: 'fit-content', 
+      boxSizing: 'border-box',
+      width: '100%'
     }}>
-      <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: 'bold' }}>
-        Transcription
-      </h3>
       
-      {/* Dynamic Color Guide Legend */}
+      {/* ================= LANGUAGE BADGES BAR ================= */}
       <div style={{ 
-        marginBottom: '14px', 
-        padding: '10px 12px', 
-        borderRadius: '8px', 
-        backgroundColor: '#e8f5ea', 
-        border: '1px solid #c8e6c9', 
-        fontSize: '13px', 
-        color: '#2b4f36', 
-        fontWeight: 500 
+        display: 'flex', 
+        gap: '12px', 
+        marginBottom: '12px',
+        width: '100%'
       }}>
-        Color legend: <span style={{ color: '#333', fontWeight: 700 }}>Russian = black</span>, <span style={{ color: '#009a55', fontWeight: 700 }}>Tatar = green</span>.
+        {/* Russian Box */}
+        <div style={{
+          width: '80px',
+          padding: '3px 0',
+          backgroundColor: '#000000',
+          border: '1px solid #000000',
+          borderRadius: '4px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#ffffff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          Russian
+        </div>
+
+        {/* Tatar Box */}
+        <div style={{
+          width: '80px',
+          padding: '3px 0',
+          backgroundColor: '#009a55', 
+          border: '1px solid #009a55',
+          borderRadius: '4px',
+          fontSize: '14px',
+          fontWeight: 'bold',
+          color: '#ffffff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          Tatar
+        </div>
       </div>
 
-      {/* Structured Word Stream Processing Container */}
-      <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '14px' }}>
-        {transcriptionWords.length > 0 ? (
+      {/* ================= PRESERVED WORD STREAM PROCESSING CONTAINER ================= */}
+      <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '16px', textAlign: 'left', fontWeight: '500' }}>
+        {transcriptionWords && transcriptionWords.length > 0 ? (
           transcriptionWords.map((word, index) => (
             <span
               key={index}

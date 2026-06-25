@@ -25,7 +25,7 @@ class UpdateTranscriptionRequest(BaseModel):
 
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="Имя пользователя")
-    password: str = Field(..., min_length=6, description="Пароль минимум 6 символов")
+    password: str = Field(..., min_length=4, description="Пароль минимум 4 символа")
     # Используем UserRole вместо str. Pydantic сам проверит валидность роли.
     role: UserRole = Field(default=UserRole.USER, description="Уровень доступа: user, manager, admin")
 

@@ -4,7 +4,15 @@ import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('token');
+    return !!token;
+  });
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+  };
 
   return (
     <Router>
@@ -12,10 +20,10 @@ function App() {
         <Route 
           path="/login" 
           element={!isAuthenticated ? <AuthPage onLoginSuccess={() => setIsAuthenticated(true)} /> : <Navigate to="/dashboard" />} 
-        />
+          />
         <Route 
           path="/dashboard" 
-          element={isAuthenticated ? <DashboardPage /> : <Navigate to="/login" />} 
+          element={isAuthenticated ? <DashboardPage onLogout={handleLogout} /> : <Navigate to="/login" />} 
         />
         <Route 
           path="*" 
