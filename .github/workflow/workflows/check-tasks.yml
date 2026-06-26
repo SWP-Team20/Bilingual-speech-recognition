@@ -1,0 +1,61 @@
+name: "Check PR Tasks and Issue Linking"
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR Description, Checkboxes, and Changelog Rules
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prBody = context.payload.pull_request.body || "";
+            
+            // 1. Validate Issue Link
+            const issueRegex = /(closes|fixes|resolves|close|fix|resolve)\s+#\d+/i;
+            if (!issueRegex.test(prBody)) {
+              core.setFailed("Validation Failed: Missing required issue linkage. Please add 'Closes #issue_number'.");
+              return;
+            }
+            console.log("Issue linkage validated successfully.");
+
+            // 2. Validate Checkboxes (XOR Rule for Changelog)
+            const lines = prBody.split('\n');
+            let hasUncheckedBaseTasks = false;
+            let changelogSectionStarted = false;
+            let changelogCheckedCount = 0;
+
+            for (let line of lines) {
+              const trimmed = line.trim();
+              
+              if (trimmed.toLowerCase().includes("changelog presence")) {
+                changelogSectionStarted = true;
+              }
+
+              if (!changelogSectionStarted) {
+                if (trimmed.startsWith("- [ ]")) {
+                  hasUncheckedBaseTasks = true;
+                }
+              } else {
+                if (trimmed.startsWith("- [x]") || trimmed.startsWith("- [X]")) {
+                  changelogCheckedCount++;
+                }
+              }
+            }
+
+            if (hasUncheckedBaseTasks) {
+              core.setFailed("Validation Failed: One or more required tasks in the main checklist are not completed.");
+              return;
+            }
+            console.log("All main checklist tasks are completed.");
+
+            // 3. Enforce exactly one option in Changelog
+            if (changelogCheckedCount !== 1) {
+              core.setFailed(`Validation Failed: Under 'Changelog presence', you must select exactly one option. Currently checked options: ${changelogCheckedCount}`);
+              return;
+            }
+            console.log("Changelog selection criteria met successfully.");
