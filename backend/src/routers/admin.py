@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from backend.src import models, schemas
 from backend.src.database import get_db
 
-# Импортируем безопасность
 from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user, RoleChecker
 from backend.src.services.auth import hash_password

@@ -17,7 +17,7 @@ def create_initial_admin():
 
         super_user = models.User(
             username="admin",
-            hashed_password=hash_password("supersecurepassword123"),
+            hashed_password=hash_password("admin"),
             role=models.UserRole.ADMIN
         )
         db.add(super_user)

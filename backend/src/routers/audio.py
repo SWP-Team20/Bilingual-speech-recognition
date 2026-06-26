@@ -26,8 +26,7 @@ os.makedirs(BASE_STORAGE_DIR, exist_ok=True)
 @router.get("/audio/", response_model=List[schemas.AudioFileResponse])
 async def get_all_audio(
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
 ):
 
     return db.query(models.AudioFile).all()
@@ -38,8 +37,7 @@ async def get_audio_by_id(
     audio_id: UUID,
     type: str = "original",
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
 ):
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
@@ -72,8 +70,7 @@ async def search_words(
     q: str,
     lang: str = None,
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
 ):
     query = db.query(models.Word).filter(models.Word.text == q.strip().lower())
     if lang:
@@ -88,8 +85,7 @@ async def search_words(
 @router.get("/transcriptions/", response_model=List[schemas.AudioWithTextResponse])
 async def get_all_transcriptions(
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
 ):
     audio_files = db.query(models.AudioFile).all()
     result = []
@@ -113,8 +109,7 @@ async def get_all_transcriptions(
 async def get_transcription_by_id(
     audio_id: UUID,
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
 ):
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
@@ -141,8 +136,7 @@ async def get_transcription_by_id(
 async def upload_audio(
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
 ):
     if not file.content_type.startswith("audio/"):
         raise HTTPException(status_code=400, detail="Файл должен быть аудиоформата")
@@ -184,8 +178,7 @@ async def update_processed_audio(
     audio_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
 ):
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
@@ -208,8 +201,7 @@ async def update_transcription(
     audio_id: UUID,
     payload: schemas.UpdateTranscriptionRequest,
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
 ):
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
@@ -234,8 +226,7 @@ async def update_transcription(
 async def delete_audio(
     audio_id: UUID,
     db: Session = Depends(get_db),
-    # BUG: Line below causes 401 error
-    # current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
 ):
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:

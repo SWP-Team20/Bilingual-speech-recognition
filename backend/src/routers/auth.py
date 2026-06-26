@@ -23,21 +23,21 @@ async def change_my_password(
     db.commit()
     return {"status": "success", "message": "Ваш пароль успешно изменен"}
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user_in: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == user_in.username).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
-
-    new_user = User(
-        username=user_in.username,
-        hashed_password=hash_password(user_in.password),
-        role=user_in.role
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+# @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+# def register(user_in: UserCreate, db: Session = Depends(get_db)):
+#     db_user = db.query(User).filter(User.username == user_in.username).first()
+#     if db_user:
+#         raise HTTPException(status_code=400, detail="Пользователь с таким именем уже существует")
+#
+#     new_user = User(
+#         username=user_in.username,
+#         hashed_password=hash_password(user_in.password),
+#         role=user_in.role
+#     )
+#     db.add(new_user)
+#     db.commit()
+#     db.refresh(new_user)
+#     return new_user
 
 
 @router.post("/login", response_model=Token)

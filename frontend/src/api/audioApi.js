@@ -4,9 +4,9 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const BACKEND_URLS = {
   base: API_BASE,
-  upload: `${API_BASE}/upload-audio/`,
-  list: `${API_BASE}/audio/`,
-  transcription: `${API_BASE}/transcriptions/`
+  upload: `${API_BASE}/api/v1/upload-audio/`,
+  list: `${API_BASE}/api/v1/audio/`,
+  transcription: `${API_BASE}/api/v1/transcriptions/`
 };
 
 const api = axios.create();
@@ -45,5 +45,15 @@ export const audioApi = {
   fetchTranscription: async (audioId) => {
     const response = await api.get(`${BACKEND_URLS.transcription}${audioId}`);
     return response.data;
+  },
+
+  // NEW: Securely fetch the binary audio stream and convert to local object URL
+  fetchAudioFile: async (audioId, type = 'original') => {
+    const response = await api.get(`${BACKEND_URLS.list}${audioId}`, {
+      params: { type },
+      responseType: 'blob' // Instructs Axios to process response data as a binary file
+    });
+
+    return URL.createObjectURL(response.data);
   }
 };
