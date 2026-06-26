@@ -13,6 +13,7 @@ import os, sys, json, shutil, glob, time
 
 os.environ.setdefault("HF_HOME", r"D:\hf_cache")
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("HF_DEACTIVATE_ASYNC_LOAD", "1")
 os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 sys.path.insert(0, os.getcwd())
 

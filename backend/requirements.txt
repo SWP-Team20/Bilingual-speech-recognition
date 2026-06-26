@@ -15,9 +15,14 @@ numpy
 # mixed-пайплайн ru/tt: аудио-LID (mms-lid-256) и татарская Whisper-ASR.
 torch                   # бэкенд для transformers-моделей (CPU/CUDA)
 transformers            # mms-lid-256 (LID) + yasalma/whisper-finetuned-tt-asr (tt)
+accelerate              # потоковая загрузка весов (меньше пик памяти при load)
 
-# Модели тянутся из HuggingFace при первом запуске (кэш HF_HOME). Татарская ветка
-# ~1ГБ, LID ~1ГБ, large-v3 ~1.5ГБ. Без GPU работает, но медленно — см. docs/ru_tt_pipeline.md.
+# Модели тянутся из HuggingFace при первом запуске (кэш HF_HOME):
+#   mms-lid-256 ~3.9ГБ (1B!), Whisper-TT ~1ГБ, large-v3 ~1.5ГБ.
+# ТРЕБОВАНИЕ ПАМЯТИ: держать ВСЕ три резидентно — нужно >=6-8ГБ СВОБОДНОЙ RAM,
+# иначе чтение mmap-весов падает нативным крашем (access violation). Без GPU
+# работает, но медленно — см. docs/ru_tt_pipeline.md. Загрузка весов синхронная
+# (HF_DEACTIVATE_ASYNC_LOAD=1, ставится в коде) — на Windows многопоточная даёт краш.
 
 # Опционально: точнее определять русские слова при тегировании языка (lang_tag).
 # pymorphy3

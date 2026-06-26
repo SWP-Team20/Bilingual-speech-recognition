@@ -10,6 +10,7 @@
 import os
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("HF_DEACTIVATE_ASYNC_LOAD", "1")   # синхронная загрузка весов (Windows mmap)
 
 SR = 16000
 _proc = _model = None

@@ -10,6 +10,9 @@ import os
 
 # конфликт дублирующихся OpenMP-рантаймов (CTranslate2 + torch) -> нативный краш
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+# синхронная загрузка весов transformers: на Windows многопоточная материализация
+# (spawn_materialize) даёт access violation при чтении mmap safetensors. См. docs.
+os.environ.setdefault("HF_DEACTIVATE_ASYNC_LOAD", "1")
 
 SR = 16000
 _fe = _model = None
