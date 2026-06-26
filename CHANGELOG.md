@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Authentification page before accessing the website in 
+- Three roles of the account: user (can observe content on the page), manager and admin (can upload and delete the audios) in
+- Ability to delete audio in a track list in
+- Profile button with options: security and log out in
+- Security page with ability to check the username and role, change the password, and delete the account in
+
+### Changed
+- Audio Streams page was renamed to Dashboard page and completely redesigned, including new font sizes and layout
+- All interface was localized to Russian instead of English
+
 ## [0.1.0] - 21.06.2026
 
 ### Added
