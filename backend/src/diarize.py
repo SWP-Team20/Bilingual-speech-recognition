@@ -32,6 +32,8 @@ def assign_speakers(wav_path, segments, sampling_rate: int = SR):
         "wav": wav_path,
         "segments": [[int(s["start_sample"]), int(s["end_sample"])] for s in segments],
         "threshold": float(os.environ.get("DIARIZE_THRESHOLD", "0.72")),
+        # потолок числа говорящих (домен: семейные записи мама/папа -> 2)
+        "max_speakers": int(os.environ.get("DIARIZE_MAX_SPEAKERS", "2")),
     })
     try:
         p = subprocess.run([sys.executable, "-m", "backend.src.diarize"],
@@ -77,8 +79,23 @@ def _worker():
         embs.append(v / n if n else v)
     X = np.vstack(embs)
     thr = float(req.get("threshold", 0.72))
-    labels = AgglomerativeClustering(n_clusters=None, distance_threshold=thr,
-                                     metric="cosine", linkage="average").fit_predict(X)
+    max_spk = max(1, min(int(req.get("max_speakers", 2)), len(X)))
+    # авто-число говорящих по порогу...
+    labels = list(AgglomerativeClustering(n_clusters=None, distance_threshold=thr,
+                                          metric="cosine", linkage="average").fit_predict(X))
+    # ...но не больше потолка (домен мама/папа). Оставляем max_spk КРУПНЕЙШИХ кластеров
+    # (реальные голоса), а мелкие выбросы (интро/шум) приклеиваем к ближайшему по
+    # центроиду — иначе выброс «съел» бы слот и 2 голоса слиплись бы в один.
+    from collections import Counter
+    if len(set(labels)) > max_spk:
+        keep = [c for c, _ in Counter(labels).most_common(max_spk)]
+        cents = {}
+        for c in keep:
+            v = X[[i for i, l in enumerate(labels) if l == c]].mean(0)
+            n = (v ** 2).sum() ** 0.5
+            cents[c] = v / n if n else v
+        labels = [l if l in keep else max(keep, key=lambda c: float(X[i] @ cents[c]))
+                  for i, l in enumerate(labels)]
     remap, out = {}, []
     for lbl in labels:
         remap.setdefault(lbl, len(remap))
