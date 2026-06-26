@@ -1,0 +1,31 @@
+name: "Check PR Tasks and Issue Linking"
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      # Шаг 1: Проверка, что ВСЕ галочки в чек-листе отмечены
+      - name: Check if all markdown tasks are completed
+        uses: stilliard/github-task-list-completed@v0.0.7
+
+      # Шаг 2: Проверка наличия ключевого слова закрытия issue (например, closes #12)
+      - name: Verify Issue Linking (closes #something)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prBody = context.payload.pull_request.body || "";
+            
+            // Регулярное выражение ищет слова closes/fixes/resolves/close/fix/resolve, за которыми следует # и цифры
+            const issueRegex = /(closes|fixes|resolves|close|fix|resolve)\s+#\d+/i;
+            
+            if (!issueRegex.test(prBody)) {
+              core.setFailed(
+                "Ошибка: В описании Pull Request обязательно должно быть указано ключевое слово для закрытия задачи, например: 'closes #12', 'fixes #45' или 'resolves #101'."
+              );
+            } else {
+              console.log("Успешно: Найдена корректная связь с issue!");
+            }
