@@ -8,10 +8,9 @@ from backend.src.services.auth import hash_password, verify_password, create_acc
 from backend.src.schemas import ChangePasswordRequest
 from backend.src.dependencies import get_current_user, RoleChecker
 from backend.src import models, schemas
+from sqlalchemy import func
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
-
-
 
 @router.post("/change-password", status_code=status.HTTP_200_OK)
 async def change_my_password(
@@ -86,9 +85,31 @@ async def delete_my_account(
         db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ):
-    """Пользователь полностью удаляет свой собственный аккаунт."""
-    db.delete(current_user)
+    if current_user.role == UserRole.ADMIN:
+        another_admin_exists = db.query(models.User.id).filter(
+            models.User.role == UserRole.ADMIN,
+            models.User.id != current_user.id
+        ).first()
 
+        if not another_admin_exists:
+            raise HTTPException(
+                status_code=400,
+                detail="Нельзя удалить аккаунт: вы являетесь единственным администратором в системе"
+            )
+
+    db.delete(current_user)
     db.commit()
 
     return {"status": "success", "message": "Ваш аккаунт был успешно удален"}
+
+# @router.delete("/me", status_code=status.HTTP_200_OK)
+# async def delete_my_account(
+#         db: Session = Depends(get_db),
+#         current_user: User = Depends(get_current_user)
+# ):
+#     """Пользователь полностью удаляет свой собственный аккаунт."""
+#     db.delete(current_user)
+#
+#     db.commit()
+#
+#     return {"status": "success", "message": "Ваш аккаунт был успешно удален"}
