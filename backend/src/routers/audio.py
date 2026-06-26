@@ -180,6 +180,7 @@ async def get_transcription_by_id(audio_id: UUID, db: Session = Depends(get_db))
         "id": audio.id,
         "filename": audio.filename,
         "transcription_text": " ".join(word.get("raw", word.get("text", "")) for word in transcription.get("words", [])),
+        "sentences": transcription.get("sentences", []),   # реплики: спикер + предложение + слова (для показа)
         "words": transcription.get("words", []),
     }
 

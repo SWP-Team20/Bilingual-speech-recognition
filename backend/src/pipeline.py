@@ -23,6 +23,39 @@ from backend.src import audio_process, asr, tatar_asr, lid, lang_tag, text_filte
 
 SR = 16000
 WIN_SEC = int(os.environ.get("ASR_WINDOW_SEC", "25"))   # под-окно для LID/ASR (память + роутинг)
+_SENT_END = (".", "?", "!", "…")
+
+
+def build_sentences(words):
+    """Группирует слова в предложения-реплики: новая реплика при смене говорящего
+    ИЛИ после слова с финальной пунктуацией (из raw). Каждая реплика несёт спикера,
+    язык (ru/tt/mixed) и слова с raw+lang (для покраски по-словно на фронте)."""
+    sents, cur = [], None
+
+    def finalize(c):
+        ws = c["words"]
+        langs = {w["lang"] for w in ws if w["lang"] in ("ru", "tt")}
+        lang = "mixed" if len(langs) > 1 else (next(iter(langs), ws[0]["lang"]) if ws else "unknown")
+        return {
+            "speaker": c["speaker"], "lang": lang,
+            "start": ws[0]["start"], "end": ws[-1]["end"],
+            "text": " ".join((w.get("raw") or w["text"]) for w in ws),
+            "words": [{"raw": w.get("raw") or w["text"], "text": w["text"], "lang": w["lang"]} for w in ws],
+        }
+
+    for w in words:
+        spk = w.get("speaker")
+        if cur is None or cur["speaker"] != spk:
+            if cur:
+                sents.append(finalize(cur))
+            cur = {"speaker": spk, "words": []}
+        cur["words"].append(w)
+        if (w.get("raw") or "").rstrip().endswith(_SENT_END):
+            sents.append(finalize(cur))
+            cur = None
+    if cur:
+        sents.append(finalize(cur))
+    return sents
 
 
 def process_audio(input_path, storage_dir="./storage", audio_id=None,
@@ -83,14 +116,18 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
         "engine": "VAD + MMS-LID + Whisper-large-v3(ru) / Whisper-TT(tt)",
         "stats": proc["stats"],
         "segment_map": proc["segments"],
+        "sentences": build_sentences(words),     # реплики: спикер + предложение + слова
         "words": words,
     }
 
     # 4. артефакты
     with open(os.path.join(folder, "transcription.json"), "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
+    # txt — читаемый: по реплике на строку «Говорящий: текст» (raw с пунктуацией)
     with open(os.path.join(folder, "transcription.txt"), "w", encoding="utf-8") as f:
-        f.write(" ".join(w["text"] for w in words))
+        for s in result["sentences"]:
+            prefix = f"{s['speaker']}: " if s.get("speaker") else ""
+            f.write(prefix + s["text"] + "\n")
 
     # 5. индексация в БД (если передана сессия)
     if db is not None:

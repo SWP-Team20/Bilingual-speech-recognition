@@ -6,6 +6,7 @@ function App() {
   const [selectedAudioId, setSelectedAudioId] = useState(null);
   const [selectedTranscription, setSelectedTranscription] = useState('');
   const [selectedTranscriptionWords, setSelectedTranscriptionWords] = useState([]);
+  const [selectedSentences, setSelectedSentences] = useState([]);
   const fileInputRef = useRef(null);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -55,16 +56,19 @@ function App() {
       setSelectedAudioId(null);
       setSelectedTranscription('');
       setSelectedTranscriptionWords([]);
+      setSelectedSentences([]);
     } else {
       setSelectedAudioId(audioId);
       try {
         const response = await axios.get(`${TRANSCRIPTION_URL}${audioId}`);
         setSelectedTranscription(response.data.transcription_text || 'No transcription found');
         setSelectedTranscriptionWords(response.data.words || []);
+        setSelectedSentences(response.data.sentences || []);
       } catch (error) {
         console.error(error);
         setSelectedTranscription('Error loading transcription');
         setSelectedTranscriptionWords([]);
+        setSelectedSentences([]);
       }
     }
   };
@@ -138,14 +142,35 @@ function App() {
                 <div style={{ marginBottom: '14px', padding: '10px 12px', borderRadius: '8px', backgroundColor: '#e8f5ea', border: '1px solid #c8e6c9', fontSize: '13px', color: '#2b4f36', fontWeight: 500 }}>
                   Color legend: <span style={{ color: '#333', fontWeight: 700 }}>Russian = black</span>, <span style={{ color: '#009a55', fontWeight: 700 }}>Tatar = green</span>.
                 </div>
-                <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '14px' }}>
-                  {selectedTranscriptionWords.length > 0 ? (
+                <div style={{ lineHeight: '1.7', fontSize: '14px' }}>
+                  {selectedSentences.length > 0 ? (
+                    selectedSentences.map((sent, si) => {
+                      const showSpeaker = sent.speaker &&
+                        (si === 0 || selectedSentences[si - 1].speaker !== sent.speaker);
+                      return (
+                        <div key={si} style={{ marginTop: showSpeaker ? '12px' : '3px' }}>
+                          {showSpeaker && (
+                            <div style={{ fontWeight: 700, fontSize: '12px', color: '#666', marginBottom: '2px' }}>
+                              {sent.speaker}
+                            </div>
+                          )}
+                          <div>
+                            {(sent.words || []).map((w, wi) => (
+                              <span key={wi} style={{ color: w.lang === 'tt' ? '#009a55' : '#333' }}>
+                                {w.raw || w.text}{wi < sent.words.length - 1 ? ' ' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : selectedTranscriptionWords.length > 0 ? (
                     selectedTranscriptionWords.map((word, index) => (
                       <span
                         key={index}
                         style={{ color: word.lang === 'tt' ? '#009a55' : '#333' }}
                       >
-                        {word.text}{index < selectedTranscriptionWords.length - 1 ? ' ' : ''}
+                        {word.raw || word.text}{index < selectedTranscriptionWords.length - 1 ? ' ' : ''}
                       </span>
                     ))
                   ) : (
