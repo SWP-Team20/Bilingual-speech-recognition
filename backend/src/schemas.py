@@ -1,6 +1,6 @@
 from datetime import datetime
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.src.models import UserRole
 
@@ -45,4 +45,32 @@ class TokenData(BaseModel):
     username: str | None = None
 
 class ChangePasswordRequest(BaseModel):
-    new_password: str = Field(..., min_length=6, description="Новый пароль, минимум 6 символов")
+    old_password: str = Field(
+        ..., min_length=6, description="Старый пароль"
+    )
+    new_password: str = Field(
+        ...,
+        min_length=6,
+        description="Новый пароль, минимум 6 символов",
+    )
+    confirm_password: str = Field(
+        ...,
+        min_length=6,
+        description="Подтверждение нового пароля",
+    )
+
+    @model_validator(mode="after")
+    def validate_passwords(self) -> "ChangePasswordRequest":
+        # 1. Проверяем совпадение нового пароля и подтверждения
+        if self.new_password != self.confirm_password:
+            raise ValueError(
+                "Новый пароль и подтверждение не совпадают"
+            )
+
+        # 2. Проверяем, что новый пароль изменен
+        if self.old_password == self.new_password:
+            raise ValueError(
+                "Новый пароль не должен совпадать со старым"
+            )
+
+        return self
