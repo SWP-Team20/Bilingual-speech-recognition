@@ -67,3 +67,16 @@ async def get_current_user_profile(
 ):
     """Пользователь просматривает данные своего собственного профиля."""
     return current_user
+
+
+@router.delete("/me", status_code=status.HTTP_200_OK)
+async def delete_my_account(
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    """Пользователь полностью удаляет свой собственный аккаунт."""
+    db.delete(current_user)
+
+    db.commit()
+
+    return {"status": "success", "message": "Ваш аккаунт был успешно удален"}
