@@ -1,6 +1,6 @@
 import React from 'react';
 
-function TranscriptionBox({ transcriptionText, transcriptionWords }) {
+function TranscriptionBox({ transcriptionText, transcriptionWords, audioName }) {
   return (
     <div style={{ 
       backgroundColor: '#fff', 
@@ -54,8 +54,24 @@ function TranscriptionBox({ transcriptionText, transcriptionWords }) {
         </div>
       </div>
 
+      {/* ================= AUDIO FILE NAME LABEL ================= */}
+      {audioName && (
+        <div style={{
+          fontSize: '15px',
+          fontWeight: '700',
+          color: '#555',
+          textAlign: 'left',
+          marginTop: '20px',
+          marginBottom: '16px',
+          paddingBottom: '8px',
+          borderBottom: '1px dashed #eee'
+        }}>
+          {audioName}
+        </div>
+      )}
+
       {/* ================= PRESERVED WORD STREAM PROCESSING CONTAINER ================= */}
-      <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '16px', textAlign: 'left', fontWeight: '500' }}>
+      <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '16px', textAlign: 'left', fontWeight: '500', marginTop: '-8px' }}>
         {transcriptionWords && transcriptionWords.length > 0 ? (
           transcriptionWords.map((word, index) => (
             <span

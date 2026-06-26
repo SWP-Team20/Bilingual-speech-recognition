@@ -53,7 +53,12 @@ export const audioApi = {
       params: { type },
       responseType: 'blob' // Instructs Axios to process response data as a binary file
     });
-
     return URL.createObjectURL(response.data);
+  },
+
+  // Удалить конкретную аудиозапись по ID
+  deleteAudio: async (audioId) => {
+    const response = await api.delete(`${BACKEND_URLS.list}${audioId}`);
+    return response.data;
   }
 };

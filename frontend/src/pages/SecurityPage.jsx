@@ -76,7 +76,8 @@ function SecurityPage({ onDeleteAccountConfirm }) {
       }
     } catch (error) {
       console.error("Ошибка при удалении аккаунта:", error);
-      alert("Не удалось удалить аккаунт. Пожалуйста, попробуйте позже.");
+      const errorMessage = error.response?.data?.detail || "Не удалось удалить аккаунт. Пожалуйста, попробуйте позже.";
+      alert(errorMessage);
     }
   };
 

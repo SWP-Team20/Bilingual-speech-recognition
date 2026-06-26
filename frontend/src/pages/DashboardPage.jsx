@@ -30,6 +30,14 @@ function DashboardPage({ onLogout }) {
     }
   };
 
+  // Метод для обработки успешного удаления трека
+  const handleDeleteSuccess = () => {
+    setSelectedAudioId(null); // Закрываем панель транскрипции удаленного трека
+    setSelectedTranscription('');
+    setSelectedTranscriptionWords([]);
+    loadAudioList(); // Перезагружаем список треков
+  };
+
   // Метод для получения роли пользователя
   const loadUserProfile = async () => {
     try {
@@ -61,6 +69,10 @@ function DashboardPage({ onLogout }) {
       }
     }
   };
+
+  {/* НАХОДИМ ИМЯ ТЕКУЩЕГО ВЫБРАННОГО АУДИОФАЙЛА */}
+  const selectedAudioIndex = audioList.findIndex(a => a.id === selectedAudioId);
+  const currentAudioName = selectedAudioIndex !== -1 ? `Аудио ${selectedAudioIndex + 1}` : '';
 
   return (
     <div style={{ 
@@ -151,6 +163,8 @@ function DashboardPage({ onLogout }) {
                     index={index}
                     isSelected={selectedAudioId === audio.id}
                     onTranscribeToggle={handleTranscribeClick}
+                    onDeleteSuccess={handleDeleteSuccess}
+                    userRole={userRole}
                   />
                 ))}
               </div>
@@ -196,6 +210,7 @@ function DashboardPage({ onLogout }) {
                     transcriptionText={selectedTranscription}
                     transcriptionWords={selectedTranscriptionWords}
                     isLoading={isTranscribing}
+                    audioName={currentAudioName}
                   />
                 </div>
               )}
