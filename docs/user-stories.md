@@ -3,7 +3,6 @@
 | US-001 | Words count | Should Have | [#5](https://github.com/ProPupok/Bilingual-speech-recognition/issues/5) | Active | To Do | — |
 | US-002 | Filter by speakers | Should Have | [#6](https://github.com/ProPupok/Bilingual-speech-recognition/issues/6) | Active | To Do | — |
 | US-003 | Transcription | Must Have | [#7](https://github.com/ProPupok/Bilingual-speech-recognition/issues/7) | Active | Done | [Sprint 1](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/1) |
-| US-004 | Background work | Could Have | [#8](https://github.com/ProPupok/Bilingual-speech-recognition/issues/8) | Active | To Do | — |
 | US-005 | Tatar speech | Could Have | [#9](https://github.com/ProPupok/Bilingual-speech-recognition/issues/9) | Active | To Do | — |
 | US-006 | Statistics | Must Have | [#10](https://github.com/ProPupok/Bilingual-speech-recognition/issues/10) | Active | To Do | — |
 | US-009 | Audio upload | Must Have | [#12](https://github.com/ProPupok/Bilingual-speech-recognition/issues/12) | Active | Done | [Sprint 1](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/1) |
@@ -16,5 +15,6 @@
 | US-016 | Audio deletion | Must Have | [#20](https://github.com/ProPupok/Bilingual-speech-recognition/issues/20) | Active | In progress | [Sprint 2](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/2) |
 | US-017 | Light and dark themes | Could Have | [#21](https://github.com/ProPupok/Bilingual-speech-recognition/issues/21) | Active | To Do | — |
 | US-018 | Tags for audio upload | Must Have | [#106](https://github.com/ProPupok/Bilingual-speech-recognition/issues/106) | Active | Ready | — |
+| US-004 | Background work | — | [#8](https://github.com/ProPupok/Bilingual-speech-recognition/issues/8) | Removed | — | — |
 | US-007 | Natural language for filters | — | — | Removed | — | — |
 | US-008 | Corpus manager | — | [#11](https://github.com/ProPupok/Bilingual-speech-recognition/issues/11) | Removed | — | — |
