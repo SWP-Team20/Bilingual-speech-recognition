@@ -8,11 +8,9 @@ jobs:
   validate-pr:
     runs-on: ubuntu-latest
     steps:
-      # Шаг 1: Проверка, что ВСЕ галочки в чек-листе отмечены
       - name: Check if all markdown tasks are completed
         uses: stilliard/github-task-list-completed@v0.0.7
 
-      # Шаг 2: Проверка наличия ключевого слова закрытия issue (например, closes #12)
       - name: Verify Issue Linking (closes #something)
         uses: actions/github-script@v7
         with:
