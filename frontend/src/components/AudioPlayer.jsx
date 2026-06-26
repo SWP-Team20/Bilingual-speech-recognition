@@ -41,7 +41,7 @@ function AudioPlayer({ audio, index, isSelected, onTranscribeToggle }) {
         margin: '0 0 8px 0',
         color: '#000'
       }}>
-        Audio {index + 1}
+        Аудио {index + 1}
       </div>
 
       <div style={{
@@ -53,7 +53,7 @@ function AudioPlayer({ audio, index, isSelected, onTranscribeToggle }) {
       }}>
         {loading ? (
           <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px', textAlign: 'center' }}>
-            Загрузка аудиопотока...
+            Загрузка аудиозаписи...
           </div>
         ) : (
           <audio
@@ -78,7 +78,7 @@ function AudioPlayer({ audio, index, isSelected, onTranscribeToggle }) {
             transition: 'background-color 0.2s ease'
           }}
         >
-          {isSelected ? 'Hide Transcription' : 'Transcribe'}
+          {isSelected ? 'Спрятать транскрипцию' : 'Показать транскрипцию'}
         </button>
       </div>
     </div>

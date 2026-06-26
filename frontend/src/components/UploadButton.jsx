@@ -2,11 +2,17 @@ import { useState, useRef } from 'react';
 import { audioApi } from '../api/audioApi';
 import uploadIcon from '../assets/upload-icon.svg'; 
 
-function UploadButton({ onUploadSuccess, style }) {
+function UploadButton({ onUploadSuccess, userRole, style }) {
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Проверяем, является ли пользователь обычным юзером
+  const isUserRole = userRole?.toLowerCase() === 'user';
+  // Кнопка должна быть выключена, если идет загрузка ИЛИ если роль пользователя - user
+  const isDisabled = isUploading || isUserRole;
+
   const handleButtonClick = () => {
+    if (isUserRole) return;
     fileInputRef.current?.click();
   };
 
@@ -23,7 +29,7 @@ function UploadButton({ onUploadSuccess, style }) {
       }
     } catch (error) {
       console.error(error);
-      alert("Error uploading audio.");
+      alert("Ошибка загрузки аудио.");
     } finally {
       setIsUploading(false);
     }
@@ -39,26 +45,28 @@ function UploadButton({ onUploadSuccess, style }) {
 
       <button
         onClick={handleButtonClick}
-        disabled={isUploading}
+        disabled={isDisabled}
         style={{ 
-          width: '140px',             
+          width: '160px',             
           height: '48px', 
           padding: 0,
-          backgroundColor: isUploading ? '#ddd' : '#d9d9d9', 
-          color: isUploading ? '#888' : '#000',
+          backgroundColor: isDisabled ? '#e0e0e0' : '#d9d9d9', 
+          color: isDisabled ? '#a0a0a0' : '#000',
           border: 'none', 
           borderRadius: '4px', 
-          cursor: isUploading ? 'not-allowed' : 'pointer',
+          cursor: isDisabled ? 'not-allowed' : 'pointer',
           fontWeight: 'bold',
           fontSize: '18px',
           display: 'inline-flex',     
-          alignItems: 'center',       
+          alignItems: 'center',      
           justifyContent: 'center',    
           verticalAlign: 'middle',
           gap: '12px',
           boxSizing: 'border-box',
+          opacity: isUserRole ? 0.7 : 1,
           ...style 
         }}
+        title={isUserRole ? "Загрузка доступна только менеджерам и администраторам" : ""}
       >
         {isUploading ? (
           /* Processing State */
@@ -73,7 +81,7 @@ function UploadButton({ onUploadSuccess, style }) {
         ) : (
           /* Normal State */
           <>
-            <span>Upload</span> 
+            <span>Загрузить</span> 
             <img 
               src={uploadIcon} 
               alt="" 
@@ -82,7 +90,8 @@ function UploadButton({ onUploadSuccess, style }) {
                 height: '24px', 
                 objectFit: 'contain',
                 display: 'block',
-                transform: 'translateY(-1px)'
+                transform: 'translateY(-1px)',
+                filter: isDisabled ? 'grayscale(1) opacity(0.5)' : 'none'
               }} 
             />
           </>

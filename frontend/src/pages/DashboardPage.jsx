@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { audioApi } from '../api/audioApi';
+import { userApi } from '../api/userApi';
 import UploadButton from '../components/UploadButton';
 import AudioPlayer from '../components/AudioPlayer';
 import TranscriptionBox from '../components/TranscriptionBox';
 import ProfileDropdown from '../components/ProfileDropdown';
 
 function DashboardPage({ onLogout }) {
+  const navigate = useNavigate();
   const [audioList, setAudioList] = useState([]);
+  const [userRole, setUserRole] = useState('');
   const [selectedAudioId, setSelectedAudioId] = useState(null);
   const [selectedTranscription, setSelectedTranscription] = useState('');
   const [selectedTranscriptionWords, setSelectedTranscriptionWords] = useState([]);
@@ -14,6 +18,7 @@ function DashboardPage({ onLogout }) {
 
   useEffect(() => {
     loadAudioList();
+    loadUserProfile();
   }, []);
 
   const loadAudioList = async () => {
@@ -21,7 +26,17 @@ function DashboardPage({ onLogout }) {
       const data = await audioApi.fetchAudioList();
       setAudioList(data);
     } catch (error) {
-      console.error("Failed to load audio tracks:", error);
+      console.error("Ошибка загрузки аудио:", error);
+    }
+  };
+
+  // Метод для получения роли пользователя
+  const loadUserProfile = async () => {
+    try {
+      const data = await userApi.fetchProfile();
+      setUserRole(data.role || 'user');
+    } catch (error) {
+      console.error("Ошибка загрузки данных пользователя:", error);
     }
   };
 
@@ -35,11 +50,11 @@ function DashboardPage({ onLogout }) {
       setIsTranscribing(true);
       try {
         const data = await audioApi.fetchTranscription(audioId);
-        setSelectedTranscription(data.transcription_text || 'No transcription found');
+        setSelectedTranscription(data.transcription_text || 'Транскрипция не найдена.');
         setSelectedTranscriptionWords(data.words || []);
       } catch (error) {
         console.error(error);
-        setSelectedTranscription('Error loading transcription');
+        setSelectedTranscription('Ошибка загрузки транскрипции');
         setSelectedTranscriptionWords([]);
       } finally {
         setIsTranscribing(false);
@@ -75,12 +90,17 @@ function DashboardPage({ onLogout }) {
             Bilingual Speech Recognition
           </h1>
 
+          {/* Передаем роль пользователя в кнопку загрузки */}
           <UploadButton 
             onUploadSuccess={loadAudioList} 
+            userRole={userRole}
             style={{ height: '48px', boxSizing: 'border-box' }} 
           />
           
-          <ProfileDropdown onLogout={onLogout} />
+          <ProfileDropdown 
+            onLogout={onLogout} 
+            onNavigateToSecurity={() => navigate('/security')} 
+          />
         </div>
 
         {/* ================= MAIN CONTENT GRID MATRIX ================= */}
@@ -94,7 +114,6 @@ function DashboardPage({ onLogout }) {
 
           {/* LEFT SIDE TRACK: AUDIO WORKSPACE STREAM SELECTION */}
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', alignItems: 'stretch' }}>
-            {/* Top Level Column Design Header */}
             <div style={{ 
               backgroundColor: '#522504', 
               color: '#fff', 
@@ -108,17 +127,15 @@ function DashboardPage({ onLogout }) {
               boxSizing: 'border-box',
               flexShrink: 0
             }}>
-              Audio Streams
+              Аудиозаписи
             </div>
 
-            {/* Sub-Header Column Label */}
             <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
               <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>
-                Audio Streams
+                Аудиозаписи
               </h2>
             </div>
 
-            {/* SCROLL CONTAINER */}
             <div style={{ 
               flex: 1, 
               overflowY: 'auto', 
@@ -142,8 +159,6 @@ function DashboardPage({ onLogout }) {
 
           {/* RIGHT SIDE TRACK: DYNAMIC TRANSLATION DISPLAY LAYER */}
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', alignItems: 'stretch' }}>
-            
-            {/* Top Level Column Design Header turned into an Unavailable Button */}
             <button 
               disabled
               style={{ 
@@ -163,18 +178,17 @@ function DashboardPage({ onLogout }) {
                 fontFamily: 'inherit',
                 letterSpacing: '0.5px'
               }}
+              title={"Вкладка в разработке"}
             >
-              Statistics
+              Статистика
             </button>
 
-            {/* SCROLL CONTAINER */}
             <div style={{ flex: 1, overflowY: 'auto', height: '100%', minHeight: 0, width: '100%' }}>
               {selectedAudioId && (
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-                  {/* Transcription Sub-Header Label */}
                   <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
                     <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>
-                      Transcription
+                      Транскрипция
                     </h2>
                   </div>
                   

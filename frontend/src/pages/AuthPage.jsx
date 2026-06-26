@@ -30,7 +30,7 @@ const handleLoginSubmit = async (e) => {
 
       // If backend returns 401 or 400, catch it here
       if (!response.ok) {
-        throw new Error(data.detail || 'Incorrect username or password.');
+        throw new Error(data.detail || 'Неправильное имя пользователя или пароль.');
       }
 
       // SUCCESS: Save token and navigate to Dashboard
@@ -39,8 +39,8 @@ const handleLoginSubmit = async (e) => {
       
     } catch (err) {
       // FAILURE: Stay on this page and show the message
-      console.error("Login failed:", err);
-      setError(err.message || 'Incorrect username or password.');
+      console.error("Ошибка аутентификации:", err);
+      setError(err.message || 'Неправильное имя пользователя или пароль.');
     } finally {
       setIsLoading(false);
     }
@@ -86,10 +86,10 @@ const handleLoginSubmit = async (e) => {
           <p style={{
             fontSize: '14px',
             color: '#666',
-            margin: '0 0 35px 0',
+            margin: '15px 0 35px 0',
             fontFamily: 'system-ui, sans-serif'
           }}>
-            Use username <strong style={{ color: '#000' }}>"admin"</strong> and password <strong style={{ color: '#000' }}>"admin"</strong> to access the site
+            Используйте имя пользователя <strong style={{ color: '#000' }}>"admin"</strong> и<br></br>пароль <strong style={{ color: '#000' }}>"admin"</strong>, чтобы получить доступ
           </p>
 
           {/* Error Message Box */}
@@ -110,7 +110,7 @@ const handleLoginSubmit = async (e) => {
 
           <input
             type="text"
-            placeholder="Username"
+            placeholder="Имя пользователя"
             value={username}
             disabled={isLoading}
             onChange={(e) => setUsername(e.target.value)}
@@ -132,7 +132,7 @@ const handleLoginSubmit = async (e) => {
 
           <input
             type="password"
-            placeholder="Password"
+            placeholder="Пароль"
             value={password}
             disabled={isLoading}
             onChange={(e) => setPassword(e.target.value)}
@@ -169,7 +169,7 @@ const handleLoginSubmit = async (e) => {
                 fontFamily: 'system-ui, sans-serif'
               }}
             >
-              {isLoading ? 'Logging in...' : 'Log in'}
+              {isLoading ? 'Производится вход...' : 'Войти'}
             </button>
           </div>
         </form>

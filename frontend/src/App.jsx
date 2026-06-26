@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useState } from 'react';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
+import SecurityPage from './pages/SecurityPage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -14,17 +15,39 @@ function App() {
     setIsAuthenticated(false);
   };
 
+  const handleDeleteAccount = () => {
+    localStorage.removeItem('token');
+    setIsAuthenticated(false);
+  };
+
   return (
     <Router>
       <Routes>
         <Route 
           path="/login" 
           element={!isAuthenticated ? <AuthPage onLoginSuccess={() => setIsAuthenticated(true)} /> : <Navigate to="/dashboard" />} 
-          />
+        />
+        
         <Route 
           path="/dashboard" 
           element={isAuthenticated ? <DashboardPage onLogout={handleLogout} /> : <Navigate to="/login" />} 
         />
+
+        <Route 
+          path="/security" 
+          element={
+            isAuthenticated ? (
+              <SecurityPage 
+                username="Current_User" 
+                onBack={() => window.location.href = '/dashboard'} 
+                onDeleteAccountConfirm={handleDeleteAccount}
+              />
+            ) : (
+              <Navigate to="/login" />
+            )
+          } 
+        />
+
         <Route 
           path="*" 
           element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} 

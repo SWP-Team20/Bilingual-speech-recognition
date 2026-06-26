@@ -21,7 +21,7 @@ function TranscriptionBox({ transcriptionText, transcriptionWords }) {
       }}>
         {/* Russian Box */}
         <div style={{
-          width: '80px',
+          width: '90px',
           padding: '3px 0',
           backgroundColor: '#000000',
           border: '1px solid #000000',
@@ -33,12 +33,12 @@ function TranscriptionBox({ transcriptionText, transcriptionWords }) {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          Russian
+          Русский
         </div>
 
         {/* Tatar Box */}
         <div style={{
-          width: '80px',
+          width: '90px',
           padding: '3px 0',
           backgroundColor: '#009a55', 
           border: '1px solid #009a55',
@@ -50,7 +50,7 @@ function TranscriptionBox({ transcriptionText, transcriptionWords }) {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          Tatar
+          Татарский
         </div>
       </div>
 
