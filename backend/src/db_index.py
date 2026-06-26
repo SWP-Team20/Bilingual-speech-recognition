@@ -16,9 +16,10 @@ def save_transcription(db, audio_id, words, segments, stats):
     conf_sum = 0.0
     for i, w in enumerate(words):
         db.add(models.Word(
-            audio_id=audio_id, text=w["text"], start_sec=w["start"],
-            end_sec=w["end"], language=w["lang"], confidence=w["conf"],
-            position=i,
+            audio_id=audio_id, text=w["text"], raw=w.get("raw"),
+            start_sec=w["start"], end_sec=w["end"], language=w["lang"],
+            confidence=w["conf"], position=i,
+            speaker_id=w.get("speaker_id"),     # NULL до шага диаризации
         ))
         counter[(w["text"], w["lang"])] += 1
         lang_counter[w["lang"]] += 1

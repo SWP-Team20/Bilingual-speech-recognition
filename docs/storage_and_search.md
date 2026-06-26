@@ -1,132 +1,126 @@
-# Хранение данных и поиск (ru/tt корпус)
+# Схема хранения и поиска (ru/tt корпус)
 
-Документ: что храним от аудио, в каком виде JSON, какие метрики в Postgres и как
-устроен фильтрованный поиск (включая «RAG-lite»).
+Что храним от каждой записи, как выглядят транскрипции, какие поля в Postgres.
+Фильтры поиска: **дата · слово · говорящий · язык** (только это, без эмбеддингов).
 
-## 1. Где что лежит (гибрид: диск + Postgres)
+## 1. Где что лежит (диск + Postgres)
 
-Хранить полные транскрипты в Postgres — расточительно. Поэтому раздельно:
+Полные транскрипты в Postgres не храним. Раздельно:
 
-| Данные | Где | Зачем |
-|---|---|---|
-| Оригинал аудио `original_16k.wav` | диск `storage/<audio_id>/` | воспроизведение, повторная обработка |
-| Обрезанное `processed.wav` (без пауз) | диск `storage/<audio_id>/` | быстрый плеер |
-| Полный транскрипт `transcription.json` | диск `storage/<audio_id>/` | слова с таймкодами/тегами — источник правды |
-| Плоский текст `transcription.txt` | диск `storage/<audio_id>/` | человекочитаемо, полнотекст |
-| **Метаданные + индекс для поиска** | **Postgres** | фильтры, агрегаты, быстрый поиск |
+| Данные | Где |
+|---|---|
+| `original_16k.wav` (оригинал), `processed.wav` (без пауз) | диск `storage/<audio_id>/` |
+| `transcription.json` (слова с таймкодами/тегами), `transcription.txt` (плоский текст) | диск `storage/<audio_id>/` |
+| метаданные, метрики, индекс слов, говорящие | **Postgres** |
 
-Принцип: **Postgres = индекс и метрики, диск = тяжёлые артефакты.** В БД не кладём
-сырой текст блобами — только то, по чему ищем/фильтруем/агрегируем.
+Postgres = индекс/метрики/фильтры; диск = тяжёлые файлы.
 
-## 2. Формат transcription.json
+## 2. Как выглядят транскрипции
 
+### transcription.json (источник правды)
 ```jsonc
 {
-  "audio_id": "3f2b...e91",
-  "filename": "razgovor_na_kuhne.mp3",
-  "recorded_at": "2026-06-20T18:30:00",     // дата записи (если известна)
-  "timeline": "original",                    // таймкоды в координатах оригинала
+  "audio_id": "3f2b8c10-...-e91",
+  "filename": "kuhnya_20_06.mp3",
+  "recorded_at": "2026-06-20T18:30:00",
   "engine": "VAD + MMS-LID + Whisper-large-v3(ru) / Whisper-TT(tt)",
-  "stats": {
-    "total_sec": 41.05, "speech_sec": 33.2, "silence_removed_sec": 7.85,
-    "trim_ratio": 0.809, "n_segments": 8
-  },
-  "segment_map": [                            // карта VAD orig<->trim (для плеера)
-    {"orig_start": 0.0, "orig_end": 1.7, "trim_start": 0.0, "trim_end": 1.7}
+  "stats": { "total_sec": 41.05, "speech_sec": 33.2, "silence_removed_sec": 7.85,
+             "trim_ratio": 0.809, "n_segments": 8 },
+  "segment_map": [
+    { "orig_start": 0.0, "orig_end": 1.7, "trim_start": 0.0, "trim_end": 1.7 }
   ],
   "words": [
-    {
-      "text": "станция",                      // нормализованное слово (для поиска)
-      "raw": "станция,",                      // как выдала ASR (с пунктуацией)
-      "start": 4.12, "end": 4.63,             // таймкоды в секундах (оригинал)
-      "conf": 0.91,                           // уверенность (tt из Whisper-TT может быть null)
-      "lang": "ru",                           // 'ru' | 'tt' | 'unknown'
-      "seg_lang": "ru",                        // решение аудио-LID для сегмента
-      "speaker": "мама"                       // ⟵ добавится после диаризации (пока null)
-    }
+    { "text": "станция", "raw": "станция,", "start": 4.12, "end": 4.63,
+      "conf": 0.91, "lang": "ru", "seg_lang": "ru", "speaker": "мама" },
+    { "text": "җиңү", "raw": "Җиңү", "start": 9.10, "end": 9.55,
+      "conf": null, "lang": "tt", "seg_lang": "tt", "speaker": "папа" }
   ]
 }
 ```
+Поле слова | смысл
+---|---
+`text` | нормализованное (lower, только буквы) — **по нему ищем**
+`raw` | как выдала ASR (регистр/пунктуация) — для показа
+`start`,`end` | секунды в координатах ОРИГИНАЛА — прыжок в плеере
+`conf` | уверенность (у tt из Whisper-TT может быть `null`)
+`lang` | `ru` / `tt` / `unknown`
+`seg_lang` | решение аудио-LID для сегмента
+`speaker` | `мама` / `папа` / … (`null` до диаризации)
 
-Ключевые поля слова для поиска: `text` (нормализованное), `lang`, `start/end`
-(прыжок к месту), `speaker`, `conf` (отсев мусора). `raw` — для отображения.
+### transcription.txt
+Плоская строка нормализованных слов через пробел (для глаз/полнотекста):
+`братан срочно как будет на татарском покрывало япма ...`
 
-## 3. Postgres: что храним (метрики + индекс)
+## 3. Схема Postgres (что хранится на запись)
 
-Уже есть (origin/main): `audio_files`, `speech_segments`, `words`, `word_counts`.
+### `audio_files` — одна строка на запись (метаданные + метрики)
+| поле | тип | смысл |
+|---|---|---|
+| id | UUID PK | идентификатор |
+| filename | str | имя файла |
+| content_type | str | mime |
+| uploaded_at | datetime | когда загрузили |
+| **recorded_at** | datetime, idx | **дата записи — фильтр по дате** |
+| folder_path | str | путь к `storage/<id>/` |
+| status | str | queued/processing/done/error |
+| primary_language | str | доминирующий язык записи |
+| duration_sec, speech_sec, silence_removed_sec | float | длительности |
+| total_words, unique_words | int | кол-во слов / уникальных |
+| words_per_minute | float | темп речи |
+| ru_words, tt_words, unknown_words | int | разбивка по языку |
+| avg_confidence | float | средняя уверенность |
 
-### audio_files — карточка записи + метрики
-`id, filename, content_type, uploaded_at, recorded_at, folder_path,
-primary_language, status, duration_sec, speech_sec, silence_removed_sec,
-total_words, unique_words, words_per_minute, ru_words, tt_words, unknown_words,
-avg_confidence`.
+### `words` — одна строка на слово («мешок слов», ядро поиска)
+| поле | тип | смысл |
+|---|---|---|
+| id | int PK | |
+| audio_id | UUID FK→audio_files | к какой записи |
+| **text** | str, idx | нормализованное слово — **фильтр по слову** |
+| raw | str | форма ASR (для показа) |
+| start_sec, end_sec | float | таймкоды (оригинал) |
+| **language** | str, idx | ru/tt/unknown — **фильтр по языку** |
+| confidence | float | уверенность |
+| position | int | порядковый номер в аудио |
+| **speaker_id** | int FK→speakers, idx | **фильтр по говорящему** (NULL до диаризации) |
 
-### words — «мешок слов» (bag-of-words), каждое слово = строка
-`id, audio_id, text, start_sec, end_sec, language, confidence, position`
-+ **(добавить)** `speaker_id`.
-Это и есть индекс для поиска по слову: фильтр по `text` + `language` + джойн к
-`audio_files` за датой.
+### `speakers` — говорящие (мама/папа), глобально по корпусу
+| поле | тип | смысл |
+|---|---|---|
+| id | int PK | |
+| label | str, idx | `мама`/`папа`/… |
+| created_at | datetime | |
 
-### word_counts — частоты слова в пределах одного аудио
-`id, audio_id, text, language, count` — для статистики и «топ слов».
+«Список говорящих в записи» = `SELECT DISTINCT speaker_id FROM words WHERE audio_id=?`.
 
-### ⟵ Добавляем для требований
+### `word_counts` — частоты слова в пределах аудио (для статистики/топ-слов)
+`id, audio_id, text, language, count`.
 
-**speakers** — говорящие (мама/папа), глобально по корпусу:
-```
-speakers: id, label ('мама'/'папа'/'ребёнок'), voice_embedding (vector, для диаризации),
-          created_at
-words.speaker_id -> speakers.id        // у каждого слова — кто сказал
-```
-Диаризация (кто говорит) — отдельный шаг пайплайна (напр. pyannote / ECAPA-эмбеддинги
-+ кластеризация); пока поле `speaker_id` = null, схема к нему готова.
+### `speech_segments` — карта VAD (для плеера orig↔trim)
+`id, audio_id, orig_start, orig_end, trim_start, trim_end`.
 
-**Полнотекстовый / нечёткий поиск по словам:**
-- `pg_trgm` + GIN-индекс на `words.text` — **нечёткий** поиск (важно: татарская ASR
-  ошибается в орфографии, точное совпадение слишком строгое; триграммы ловят «милодрама»≈«мелодрама»).
-- либо `tsvector` + GIN на агрегированном тексте аудио — классический full-text.
+Индексы под фильтры: `audio_files.recorded_at`, `words.text`, `words.language`,
+`words.speaker_id`, составной `ix_words_text_lang (text, language)`.
+Для нечёткого поиска по слову (татарская ASR ошибается в орфографии) — опционально
+`pg_trgm` + GIN на `words.text`.
 
-## 4. Фильтрованный поиск + «RAG-lite»
+## 4. Поиск по фильтрам (дата · слово · говорящий · язык)
 
-### Базовые фильтры (то, что просили) — `date · word · speaker`
-SQL поверх `words ⋈ audio_files ⋈ speakers`:
 ```sql
-SELECT a.id, a.filename, w.text, w.start_sec, s.label
+SELECT a.id, a.filename, a.recorded_at, w.text, w.start_sec,
+       w.language, s.label AS speaker
 FROM words w
 JOIN audio_files a ON a.id = w.audio_id
 LEFT JOIN speakers s ON s.id = w.speaker_id
-WHERE w.text % :query                       -- нечёткое совпадение (pg_trgm)
-  AND a.recorded_at BETWEEN :from AND :to    -- фильтр по дате
-  AND (:speaker IS NULL OR s.label = :speaker)
-ORDER BY a.recorded_at DESC;
+WHERE (:word     IS NULL OR w.text = :word)              -- слово
+  AND (:lang     IS NULL OR w.language = :lang)          -- язык ru/tt
+  AND (:speaker  IS NULL OR s.label = :speaker)          -- говорящий
+  AND (:from     IS NULL OR a.recorded_at >= :from)      -- дата с
+  AND (:to       IS NULL OR a.recorded_at <  :to)        -- дата по
+ORDER BY a.recorded_at DESC, w.position;
 ```
-Результат сразу даёт таймкод `start_sec` — можно прыгнуть в плеере на это слово.
+Выдача сразу содержит `start_sec` → переход к месту слова в записи.
 
-### Что ещё стоит добавить в фильтры (ты не упомянул)
-- **language (ru/tt)** — «покажи только татарские слова/записи». Уже есть `words.language`.
-- **confidence ≥ порог** — отсечь ненадёжные распознавания из выдачи (особенно tt).
-- **диапазон по времени внутри аудио** — `start_sec` уже позволяет.
-- **фраза / несколько слов подряд** — через `position` (n-граммы), а не одно слово.
-- **тема/тег** — таблица `tags(id, audio_id, label)` (ручные или авто-темы) для группировки.
-- **длительность / wpm / язык-доминанта записи** — фильтры по `audio_files` (есть).
-- **комбо speaker+language** — «что мама говорила по-татарски».
-
-### «Упрощённый RAG» (семантический поиск) — фаза 2
-Кейворд-поиск находит точное слово; RAG-lite находит **по смыслу** («когда говорили
-про садик»), даже если слова другие:
-- завести `utterances(id, audio_id, speaker_id, start_sec, end_sec, text, embedding vector)`
-  — реплики/фразы (между паузами), не отдельные слова;
-- расширение **pgvector**, GIN/IVFFlat-индекс по `embedding`;
-- эмбеддинги — мультиязычной моделью (ru+tt), напр. `intfloat/multilingual-e5` или
-  `sentence-transformers/paraphrase-multilingual-MiniLM`;
-- запрос: эмбеддим вопрос → `ORDER BY embedding <=> :q LIMIT k`, **с теми же фильтрами**
-  (дата/спикер/язык) в `WHERE` → гибрид «фильтры + семантика».
-
-Это и есть «RAG-lite»: retrieval релевантных реплик по вектору + структурные фильтры;
-без генерации (или с опциональной выжимкой ответа поверх найденных реплик).
-
-## 5. Что нужно от пайплайна для всего этого
-- слова с таймкодами/языком/conf — **есть**;
-- `recorded_at` — прокинуть из загрузки (есть поле);
-- `speaker_id` — **нужен шаг диаризации** (новый этап);
-- `utterances` + эмбеддинги — **новый шаг** (фаза 2, для RAG-lite).
+## 5. Что нужно дописать в пайплайн
+- `recorded_at` — прокинуть при загрузке (поле есть).
+- `speaker_id` — **шаг диаризации** (кто говорит); до него NULL, схема готова.
+Остальное (слова/язык/метрики/даты) пишется уже сейчас в `db_index.save_transcription`.

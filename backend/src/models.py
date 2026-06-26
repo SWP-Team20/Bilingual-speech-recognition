@@ -18,7 +18,7 @@ class AudioFile(Base):
     filename = Column(String, index=True)
     content_type = Column(String)
     uploaded_at = Column(DateTime, default=datetime.now)
-    recorded_at = Column(DateTime, nullable=True)         # дата записи (US-012)
+    recorded_at = Column(DateTime, nullable=True, index=True)   # дата записи — ФИЛЬТР по дате
     folder_path = Column(String, nullable=False)
 
     primary_language = Column(String, nullable=True)
@@ -39,6 +39,19 @@ class AudioFile(Base):
     words = relationship("Word", back_populates="audio", cascade="all, delete-orphan")
     word_counts = relationship("WordCount", back_populates="audio", cascade="all, delete-orphan")
     segments = relationship("SpeechSegment", back_populates="audio", cascade="all, delete-orphan")
+
+
+class Speaker(Base):
+    """Говорящий (мама/папа/ребёнок). Глобальный по корпусу: один человек —
+    одна запись, на него ссылаются слова из разных аудио. Заполняется шагом
+    диаризации (кто говорит); до него words.speaker_id = NULL."""
+    __tablename__ = "speakers"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    label = Column(String, index=True)                    # 'мама' / 'папа' / ... — ФИЛЬТР по говорящему
+    created_at = Column(DateTime, default=datetime.now)
+
+    words = relationship("Word", back_populates="speaker")
 
 
 class SpeechSegment(Base):
@@ -62,14 +75,18 @@ class Word(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     audio_id = Column(PG_UUID(as_uuid=True), ForeignKey("audio_files.id", ondelete="CASCADE"), index=True)
-    text = Column(String, index=True)
+    text = Column(String, index=True)                  # нормализованное слово — ФИЛЬТР по слову
+    raw = Column(String, nullable=True)                # как выдала ASR (с пунктуацией), для показа
     start_sec = Column(Float)          # координаты ОРИГИНАЛА (транскрипция по оригиналу)
     end_sec = Column(Float)
-    language = Column(String, index=True)  # 'ru' / 'tt' / 'unknown'
+    language = Column(String, index=True)              # 'ru'/'tt'/'unknown' — ФИЛЬТР по языку
     confidence = Column(Float)
     position = Column(Integer)          # порядковый номер слова в аудио
+    speaker_id = Column(Integer, ForeignKey("speakers.id", ondelete="SET NULL"),
+                        nullable=True, index=True)     # кто сказал — ФИЛЬТР по говорящему (NULL до диаризации)
 
     audio = relationship("AudioFile", back_populates="words")
+    speaker = relationship("Speaker", back_populates="words")
 
 
 class WordCount(Base):
