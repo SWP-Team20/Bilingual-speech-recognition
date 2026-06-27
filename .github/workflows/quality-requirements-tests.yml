@@ -1,5 +1,38 @@
-quality-requirements-tests:
+name: Quality Requirements Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-requirements-tests:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: test_user
+      DB_PASSWORD: test_password
+      DB_NAME: test_db
+
     steps:
       - name: Checkout project source
         uses: actions/checkout@v4
@@ -8,26 +41,35 @@ quality-requirements-tests:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Добавлены pytest и httpx (или requests), так как они нужны для работы TestClient в FastAPI
-          pip install numpy faster-whisper transformers pytest httpx 
-          # Если у вас есть requirements.txt, лучше использовать: pip install -r requirements.txt
-
-      - name: Run Unauthorized Audio Access Quality Test (QRT-001)
-        run: |
-          pytest scripts/test_security.py          
-
-      - name: Run Transcription Quality Test (QRT-002)
-        run: |
-          python scripts/transcription_quality_test.py
+          pip install numpy faster-whisper transformers pytest httpx psycopg2-binary uvicorn fastapi
 
       - name: Initialize Database (Create Admin)
         run: |
           python backend/src/init_db.py
 
+      - name: Start FastAPI Application
+        run: |
+          uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 &
+          echo "Waiting for FastAPI to start..."
+          until $(curl --output /dev/null --silent --head --fail http://localhost:8000); do
+            printf '.'
+            sleep 1
+          done
+          echo "FastAPI is ready!"
+
+      - name: Run Unauthorized Audio Access Quality Test (QRT-001)
+        run: |
+          pytest scripts/test_security.py          
+
       - name: Run Authentication Performance Test (QRT-003)
         run: |
           pytest scripts/test_auth_perf.py
+
+      - name: Run Transcription Quality Test (QRT-002)
+        run: |
+          python scripts/transcription_quality_test.py
