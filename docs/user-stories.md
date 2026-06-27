@@ -16,6 +16,7 @@
 | US-017 | Light and dark themes | Could Have | https://github.com/ProPupok/Bilingual-speech-recognition/issues/21 | Active | To Do | — |
 | US-018 | Tags for audio upload | Must Have | https://github.com/ProPupok/Bilingual-speech-recognition/issues/106 | Active | Ready | — |
 | US-019 | Admin page and functionality | Must Have | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/132 | Active | Ready | — |
+| US-020 | Modifiable audio segmentation | Should Have | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/151 | Active | To Do | — |
 | US-004 | Background work | — | https://github.com/ProPupok/Bilingual-speech-recognition/issues/8 | Removed | — | — |
 | US-007 | Natural language for filters | — | — | Removed | — | — |
 | US-008 | Corpus manager | — | https://github.com/ProPupok/Bilingual-speech-recognition/issues/11 | Removed | — | — |
