@@ -10,7 +10,6 @@ export default defineConfig([
     files: ['**/*.{js,jsx}'],
     extends: [
       js.configs.recommended,
-      reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
     languageOptions: {
@@ -26,10 +25,7 @@ export default defineConfig([
       "no-undef": "off",
       "no-shadow": "off",
       "no-inner-declarations": "off",
-      "no-redeclare": "off",
-
-      "react-hooks/rules-of-hooks": "off",
-      "react-hooks/exhaustive-deps": "off"
+      "no-redeclare": "off"
     }
   }
 ])
