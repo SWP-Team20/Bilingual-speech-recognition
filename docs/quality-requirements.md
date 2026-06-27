@@ -15,11 +15,9 @@
 
 **Linked quality requirement tests:** [QRT-002](quality-requirements-tests.md#qrt-002-automated-transcription-accuracy-verification-)
 
-## QR-003: User Authentication Latency
-**ISO/IEC 25010 sub-characteristic:** Time behaviour
+## QR-003: Pull Request Quality and Compliance Check
+**ISO/IEC 25010 sub-characteristic:** Maintainability
 
-**Why this matters:** Authentication is the first entry point to the system. Delays during login lead to perceived poor application performance and user frustration.
+**Why this matters:** When a developer opens or updates a Pull Request, the system shall verify that the PR body contains a non-empty description, has all mandatory checkboxes completed, and includes a valid reference linking it to a tracking issue.
 
-**Scenario:** When a user submits a valid username and password through the login endpoint under standard production load, the system shall complete the authorization process and return an authentication token within 1000 ms.
-
-**Linked quality requirement tests:** [QRT-003](quality-requirements-tests.md#qrt-003-automated-authentication-latency-performance-test-)
+**Linked quality requirement tests:** [QRT-003](quality-requirements-tests.md#qrt-003-pull-request-compliance-static-analysis-test)
