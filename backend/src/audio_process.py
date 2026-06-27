@@ -122,4 +122,5 @@ def process_silence(input_path: str, work_dir: str):
         "processed_wav": processed_wav,
         "segments": segments,
         "stats": stats,
+        "audio": audio,                 # декодированный массив (для маршрутизации сегментов)
     }
