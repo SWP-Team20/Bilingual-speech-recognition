@@ -6,6 +6,8 @@ This project supports a longitudinal study of bilingual language development in 
 
 ## Helpful links
 
+To access deployed app in Innopolis University network go to the https://10.93.26.206:5173/
+
 To run this app read the [Setup & Deployment Guide](docs/deployment.md).
 
 To check releases and latest changes consult with the [Changelog](CHANGELOG.md).
