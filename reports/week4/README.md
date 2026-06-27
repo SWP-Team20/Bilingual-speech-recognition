@@ -143,7 +143,7 @@ Authentification, roles separation, transcription improvement, localization.
 
 ### Example Reviewed Issue-Linked PR
 
-[ADD REVIEWED ISSUE-LINKED PR SCREENSHOT]
+![PR Example](images/pr-example.png)
 
 ### Links
 
