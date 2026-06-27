@@ -23,12 +23,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 15432:5432
 
     env:
-      DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+      DATABASE_URL: postgresql://test_user:test_password@localhost:15432/test_db
       DB_HOST: localhost
-      DB_PORT: 5432
+      DB_PORT: 15432
       DB_USER: test_user
       DB_PASSWORD: test_password
       DB_NAME: test_db
