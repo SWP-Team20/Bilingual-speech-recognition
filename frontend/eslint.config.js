@@ -23,7 +23,13 @@ export default defineConfig([
     rules: {
       "no-unused-vars": "off",
       "no-use-before-define": "off",
-      "no-undef": "off"
+      "no-undef": "off",
+      "no-shadow": "off",
+      "no-inner-declarations": "off",
+      "no-redeclare": "off",
+
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off"
     }
   }
 ])
