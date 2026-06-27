@@ -13,16 +13,18 @@
 
 **Evidence location:** GitHub CI job log for the `api-security-test` runner on the default branch.
 
-## QRT-002: Automated Transcription Accuracy Verification 
+## QRT-002: Front-End Build and Code Quality Verification
 **Linked quality requirement:** QR-002
 
-**Verification method:**
+**Verification method:** Automated CI pipeline build and static analysis test.
 
-**Automated command or CI check:** 
+**Test data, setup, or environment:** CI testing environment with Node.js installed and full access to the front-end source repository.
 
-**Expected measurable result:**
+**Automated command or CI check:** npm run lint && npm run test:unit && npm run build (executed during the frontend-quality-check CI job).
 
-**Evidence location:**
+**Expected measurable result:** The test suite and build command exit with code 0, confirming zero linter errors, and a successful production build without compilation errors.
+
+**Evidence location:** GitHub CI job log for the frontend-quality-check runner on the default branch.
 
 ## QRT-003: Pull Request Compliance Static Analysis Test
 **Linked quality requirement:** QR-003
