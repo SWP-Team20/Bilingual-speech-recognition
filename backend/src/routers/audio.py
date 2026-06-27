@@ -311,6 +311,9 @@ async def update_transcription(
         "transcription_text": payload.transcription_text
     }
 
+import os
+import shutil
+from fastapi import Response, status, HTTPException
 
 @router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_audio(
@@ -325,9 +328,34 @@ async def delete_audio(
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
-    if os.path.exists(audio.folder_path):
-        shutil.rmtree(audio.folder_path)
+    try:
+        if audio.folder_path:
+            shutil.rmtree(audio.folder_path, ignore_errors=True)
+    except Exception:
+        pass
 
     db.delete(audio)
     db.commit()
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# @router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
+# async def delete_audio(
+#     audio_id: UUID,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(get_current_user)
+# ):
+#     if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+#
+#     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+#     if not audio:
+#         raise HTTPException(status_code=404, detail="Запись не найдена")
+#
+#     if os.path.exists(audio.folder_path):
+#         shutil.rmtree(audio.folder_path)
+#
+#     db.delete(audio)
+#     db.commit()
+#     return Response(status_code=status.HTTP_204_NO_CONTENT)
