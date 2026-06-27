@@ -21,6 +21,7 @@
 **[03:08–03:55] Team:** We also completely redesigned the page, so it looks more like a high-end product. For now, we'd like to run a User Acceptance Test (UAT) with you: we give you access to the website, and we have a few made-up scenarios. You go through them, and for each test there's an expected outcome — we check whether you can reach those results by following the steps. First, are you currently connected to an Innopolis network?
 
 **[03:55–04:33] Client:** No, but let me try — the university VPN. I'm trying to connect; I used to be able to.
+
 **[Team:]** Our product is deployed on a university virtual machine, so it's only available to university guests, students, and staff.
 
 **[04:33–05:07] (connection/audio troubleshooting)** — "Can you hear me?" / "Yes, yes." / "We sent you the link in the KTOLOG chat — can you please try to access it and, if you can, share your screen."
@@ -44,10 +45,13 @@
 **[11:47–12:11] Team:** As with your own computer, it takes a moment. Before we go on — do you have any feedback, suggestions, or concerns about these three scenarios that could help us build a more valuable product?
 
 **[12:11–13:24] Client:** It looks good. Let me recap. Scenario 1 was getting a transcription. The next was changing the password — useful not only for leaks/broken passwords, but also because team members come and go on a long-running project, and this is very data-security-sensitive (children's speech and private family data), so passwords need updating periodically. Good that you came up with that scenario. The third was deleting audio — add, transcribe, delete when not needed. It all looks good. Since it's a lot of data being stored, I wonder if it's possible to see how much space it takes — to track how much data we're storing on the server.
+
 **[Team:]** We can probably do that, okay.
 
 **[13:24–14:27] Client:** This would be useful — it's huge amounts of data. At this point it works well.
+
 **[Team:]** I'm glad you're making suggestions, because non-technical clients can't always see features that could exist until we really play with the product; we can't always foresee what's needed.
+
 **[Client:]** At this point it looks good.
 
 **[14:27–15:08] Client/Team (about the real data):** We still don't have the original audio — it's something on the KFU side; it's taking longer than expected, but we can continue development. In development we hit a problem: everything in our system was processed sequentially, not in parallel, so when we plugged in a new model it took much longer than before. We moved it to parallel processing — you can now upload several audios and they're processed in parallel.
@@ -55,12 +59,15 @@
 **[15:08–16:10] Team:** For now, transcribing takes at least about twice the audio duration. The lower bound is the audio duration itself, because audio can't be processed faster than it plays. To improve speed — to train the model and make it faster — we need a lot of data from this research, not only to speed up transcription but also to identify speakers correctly. Right now we split speakers as "speaker one, speaker two, speaker three," but in the final project we want it to be "mom, dad, child," or someone else.
 
 **[16:38–17:24] Team/Client:** It may take more time, or our pipeline might not work with that.
+
 **[Client:]** I see — it depends on the quality and how heavy the audio files are. So it's crucial to have the files that will actually be used. I'll try to speed it up and get them from the other side as well.
 
 **[17:24–18:11] Team:** One more point: if the server has a GPU, processing will be faster than now.
+
 **[Client:]** I see — so the type/quality of the server matters. They probably already have a server or are negotiating one, since it's a big multi-year project. Good to put on a side note: processing could be quicker with a GPU server.
 
 **[18:11–19:28] Team (HTTPS/SSL):** To authenticate securely we added an SSL certificate — we moved from HTTP to HTTPS. When you get the final project, on your server you'll need to obtain an SSL certificate from an organization. For now, as a demo/test, I made my own (self-signed) certificate, so the browser shows "this website is not secure / has a self-assigned certificate." I want to reassure you that this is not an issue — it's just a testing requirement and will be adjusted in your research deployment.
+
 **[Client:]** I see — that's an important note.
 
 **[19:28–20:33] Team (role demo):** Let me show other features and confirm the roles work. Logging in as a plain user (username "user"): the upload and delete buttons are not available, but you can still open an audio and see its transcription. You can go to your profile, check your role and username, change your password, and also delete the account — it shows a confirmation pop-up so you can't misclick. After confirming, "Your account was successfully deleted," and you can no longer log in with the old credentials.
@@ -68,14 +75,19 @@
 **[20:33–21:28] Team (admin panel — planned):** Right now we can only create users manually through code. We'll add an admin panel in the navigation tabs showing a list of users, with the ability to change passwords, delete a user, or update a role (user → manager, manager → admin). We'll do that in the next sprint (next week).
 
 **[21:28–22:26] Team/Client (statistics — planned):** The week after, we'll probably work on statistics. That step is currently disabled because it's still in development.
+
 **[Client:]** By statistics you mean… words, languages?
+
 **[Team:]** Yes — as discussed in the previous meeting.
 
 **[22:26–23:15] Team (search, filters, tags — planned):** We'll also add a search bar (located here) and filters for audios, as requested — date, language, and speaker. Next week we'll add tags for audios: you'll be able to change the audio's name and its upload date. There will be a confirmation window for the name and date, because an audio might have been recorded some days before it was uploaded, so it's necessary to be able to change the date.
+
 **[Client:]** Absolutely, yes, that should be possible.
 
 **[23:15–24:02] Team (design feedback):** As the front-end designer, I'd change the brown color to something more user-friendly — maybe blue. If you have any preference, feel free to say so.
+
 **[Client:]** Green would be good — it's a partly Tatar project, so green fits. Brown feels too official.
+
 **[Team:]** Agreed.
 
 **[24:02–24:56] Team (next sprint scope):** So that's it for the current sprint. Let's confirm the scope for next week:
@@ -89,12 +101,19 @@
 2. **Transcription accuracy/correctness** — researchers shouldn't have to rewrite an entirely wrong transcription, so we keep an eye on this.
 3. **Maintainability** — we also check pull-request quality so we can restore history if something goes wrong, and in case ownership is handed to other developers.
 To test these, we created automated tests in GitHub Actions: a Python script checks accessibility as an unauthorized user, the quality of transcriptions, and the pull requests themselves.
+
 **[Client:]** Great, I see.
 
 **[27:24–29:09] Wrap-up:**
+
 **[Client:]** Nice, looks good. That's all for now.
+
 **[Team:]** Any suggestions or comments? Did we do anything wrong?
+
 **[Client:]** No, so far so good. I really like how it looks — the visual part and the functions. Let's hope we manage to get the real files, so we can work with raw material that may sound different and deal with noise. For now, let's aim at this kind of clean recording and develop the features on that basis, and hopefully get the files in time. If not, we'll pass this on and there'll be updated versions later. All right — looks good, sounds good.
+
 **[Team:]** If you're satisfied, let's call it a day and finish the meeting. It was nice talking with you.
+
 **[Client:]** Same here. Thank you everyone, great work — thank you for keeping track, being punctual, and proceeding with the project. I really like that you manage to explain the technical stuff in non-technical language. Very cool. Thank you, guys. Goodbye.
+
 **[Team:]** Goodbye.
