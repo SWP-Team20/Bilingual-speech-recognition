@@ -1,3 +1,5 @@
+#Quality Requirements Tests
+
 ## QRT-001: Unauthorized Audio Access Verification
 **Linked quality requirement:** QR-001
 
@@ -14,13 +16,13 @@
 ## QRT-002: Automated Transcription Accuracy Verification 
 **Linked quality requirement:** QR-002
 
-**Verification method:** Automated end-to-end integration test rig utilizing production processing components. **Test data, setup, or environment:** Execution inside the repository pipeline environment targeting a set of verified bilingual reference audio files. 
+**Verification method:**
 
-**Automated command or CI check:** `python scripts/transcription_quality_test.py` (executed via the `transcription-accuracy-test` job in the repository pipeline). 
+**Automated command or CI check:** 
 
-**Expected measurable result:** The test script completes execution with exit code 0, verifying that every processed audio file successfully generates a corresponding valid JSON file containing word timestamps and a flat text transcript. 
+**Expected measurable result:**
 
-**Evidence location:** GitHub Actions log history execution data tracking the output metrics of the `transcription-accuracy-test` job.
+**Evidence location:**
 
 ## QRT-003: Pull Request Compliance Static Analysis Test
 **Linked quality requirement:** QR-003
