@@ -19,13 +19,10 @@ Bilingual Speech Recognition is a web-based application designed to support the 
 
 ### Links:
 
-[Product Backlog board](https://github.com/orgs/SWP-Team20/projects/1/views/7)
-
-[Sprint Backlog board](https://github.com/orgs/SWP-Team20/projects/1/views/8?sliceBy%5Bvalue%5D=Sprint+2)
-
-[Sprint milestone](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/2)
-
-[Roadmap](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/roadmap.md)
+- [Product Backlog board](https://github.com/orgs/SWP-Team20/projects/1/views/7)
+- [Sprint Backlog board](https://github.com/orgs/SWP-Team20/projects/1/views/8?sliceBy%5Bvalue%5D=Sprint+2)
+- [Sprint milestone](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/2)
+- [Roadmap](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/roadmap.md)
 
 ## Delivered Product
 
@@ -40,13 +37,10 @@ Bilingual Speech Recognition is a web-based application designed to support the 
 
 ### Links:
 
-[SemVer Release](...)
-
-[Changelog](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/CHANGELOG.md)
-
-[Deployed Product](https://10.93.26.206:5173/)
-
-[Deployment Insctructions](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/deployment.md)
+- [SemVer Release](...)
+- [Changelog](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/CHANGELOG.md)
+- [Deployed Product](https://10.93.26.206:5173/)
+- [Deployment Insctructions](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/main/docs/deployment.md)
 
 ## Contribution Traceability
 
