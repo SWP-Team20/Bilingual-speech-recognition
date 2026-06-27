@@ -22,7 +22,7 @@ Bilingual Speech Recognition is a web-based application designed to support the 
 
 **Total Sprint Size:** 20
 
-[ADD SPRINT MILESTONE SCREENSHOT]
+![Sprint Milestone](images/sprint-milestone.png)
 
 ### Links:
 
@@ -50,13 +50,13 @@ Authentification, roles separation, transcription improvement, localization.
 
 ### Product Screenshots
 
-[ADD AUTH PAGE SCREENSHOT]
+![Authentication page](images/auth-page.png)
 
-[ADD DASHBOARD PAGE WITH UPLOADING AUDIO SCREENSHOT]
+![Dashboard page](images/dashboard-page.png)
 
-[ADD SECURITY PAGE SCREENSHOT]
+![Security page](images/security-page.png)
 
-[ADD DELETION OF ACCOUNT WINDOW POP-UP SCREENSHOT]
+![Deletion of account](images/deletion-window.png)
 
 ### Links:
 
