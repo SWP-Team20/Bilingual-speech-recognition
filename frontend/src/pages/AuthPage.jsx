@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import apiClient from '../api/apiClient';
 
 function AuthPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -18,29 +19,21 @@ const handleLoginSubmit = async (e) => {
       formData.append('username', username.trim());
       formData.append('password', password);
 
-      const response = await fetch('http://localhost:8000/api/v1/auth/login', {
-        method: 'POST',
+      const response = await apiClient.post('/api/v1/auth/login', formData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: formData,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      // If backend returns 401 or 400, catch it here
-      if (!response.ok) {
-        throw new Error(data.detail || 'Неправильное имя пользователя или пароль.');
-      }
-
-      // SUCCESS: Save token and navigate to Dashboard
       localStorage.setItem('token', data.access_token);
-      onLoginSuccess(); 
-      
-    } catch (err) {
-      // FAILURE: Stay on this page and show the message
+      onLoginSuccess();
+
       console.error("Ошибка аутентификации:", err);
-      setError(err.message || 'Неправильное имя пользователя или пароль.');
+
+      const errorMessage = err.response?.data?.detail || 'Неправильное имя пользователя или пароль.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
