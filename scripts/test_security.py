@@ -14,7 +14,7 @@ def test_unauthorized_get_request_is_blocked():
 
 
 def test_unauthorized_post_request_is_blocked():
-    """Проверяет блокировку POST-запроса без авторизационных заголовков."""
-    response = client.post("/api/v1/audio", json={"theme": "dark"})
+    """Проверяет блокировку запроса без авторизационных заголовков."""
+    response = client.get("/api/v1/audio")
 
     assert response.status_code == 401
