@@ -3,10 +3,9 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.src import models
 from backend.src.database import SessionLocal, engine, Base
 from backend.src.services.auth import hash_password
-
+from backend.src import models
 
 def create_initial_admin():
     Base.metadata.create_all(bind=engine)
@@ -25,7 +24,11 @@ def create_initial_admin():
         )
         db.add(super_user)
         db.commit()
-        print("Суперпользователь 'admin' успешно создан!")
+        print("\n------------------------------------\n")
+        print("Пользователь 'admin' успешно создан!")
+        print("\n------------------------------------\n")
+        print("Данные для входа:\n\nИмя пользователя: admin\nПароль: admin")
+        print("\n------------------------------------\n")
     except Exception as e:
         db.rollback()
         print(f"Ошибка при инициализации базы данных: {e}")
