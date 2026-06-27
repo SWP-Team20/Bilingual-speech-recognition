@@ -7,14 +7,13 @@ on:
     branches: [ main ]
 
 jobs:
-  quality-requirements-tests:
+  backend-quality-tests:
     runs-on: ubuntu-latest
 
     services:
       postgres:
         image: postgres:15
         env:
-          # ИЗМЕНЕНО: Настройки учетных данных изменены под жесткие привязки в вашем Python-коде
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: admin
           POSTGRES_DB: postgres
@@ -51,7 +50,7 @@ jobs:
           pip install -r backend/requirements.txt
           pip install pytest httpx psycopg2-binary uvicorn fastapi
 
-      - name: Initialize Database (Create Admin)
+      - name: Initialize Database
         run: |
           python init_db.py
 
@@ -72,3 +71,31 @@ jobs:
       - name: Run Transcription Quality Test (QRT-002)
         run: |
           python scripts/transcription_quality_test.py
+
+  frontend-quality-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: |
+          npm ci
+
+      - name: Run Frontend Code Quality Verification (QRT-003 - Lint)
+        working-directory: ./frontend
+        run: |
+          npm run lint
+
+      - name: Run Frontend Production Build Verification (QRT-003 - Build)
+        working-directory: ./frontend
+        run: |
+          npm run build
