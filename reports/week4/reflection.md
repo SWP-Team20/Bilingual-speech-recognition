@@ -17,12 +17,14 @@ The team has learned:
 
 ## Friction and gaps
 * Corpus manager design appears too formal;
+* Size of audio (with transcription) in the storage shall be visible near that audio in the list;
 * Customizable audio tags, such as title or date are necessary.
 
 
 ## Planned response
-One new PBI was created in correspondence to friction and gaps, as audio tags are already covered by [US-018](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/106):
+Two PBIs were created in correspondence to friction and gaps, and audio tags are already covered by [US-018](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/106):
 * [Corpus Manager Redesign](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/161).
+* [US-021: Audio storage size information](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/164)
 
 Moreover, new features are planned to be added next sprint, such as:
 * [US-010: Correct mistakes](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/13),
