@@ -1,4 +1,4 @@
-# Quality Requirments
+# Quality Requirements
 
 ## QR-001: Audio Files Confidentiality
 **ISO/IEC 25010 sub-characteristic:** Confidentiality
