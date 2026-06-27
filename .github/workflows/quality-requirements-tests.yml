@@ -7,7 +7,32 @@ on:
     branches: [ main ]
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for file changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'scripts/**'
+              - 'init_db.py'
+              - '.github/workflows/quality-requirements-tests.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/quality-requirements-tests.yml'
+
   backend-quality-tests:
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
 
     services:
@@ -73,6 +98,8 @@ jobs:
           python scripts/transcription_quality_test.py
 
   frontend-quality-check:
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout project source
