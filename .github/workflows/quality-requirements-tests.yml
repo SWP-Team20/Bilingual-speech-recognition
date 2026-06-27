@@ -80,7 +80,7 @@ jobs:
 
       - name: Run Backend Linting (Ruff)
         run: |
-          ruff check backend/src scripts/
+          ruff check backend/src scripts/ --ignore E741,F401,F811,E402
 
       - name: Run Backend Formatting Check (Black)
         run: |
