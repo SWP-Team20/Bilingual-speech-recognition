@@ -17,7 +17,7 @@
 """
 import os
 import json
-from uuid import uuid4
+from uuid import uuid4, UUID
 
 from backend.src import audio_process, asr, tatar_asr, lid, lang_tag, text_filter
 
@@ -66,20 +66,37 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
     folder = os.path.join(storage_dir, audio_id)
     os.makedirs(folder, exist_ok=True)
 
-    # 1. препроцессинг (VAD) + декодированный массив
+    # 1. препроцессинг (VAD) + декодированный массив -> processed.wav сохраняется на диск
     proc = audio_process.process_silence(input_path, folder)
     audio = proc["audio"]
 
+    # ОБНОВЛЕНИЕ СТАТУСА: аудио готово (плеер может его грузить), переходим к тексту
+    if db is not None:
+        from backend.src import models
+        try:
+            db_audio = db.query(models.AudioFile).filter(models.AudioFile.id == UUID(audio_id)).first()
+            if db_audio:
+                db_audio.status = "processing_text"
+                db.commit()
+        except Exception:
+            pass  # Игнорируем ошибки БД, чтобы не прерывать пайплайн
+
     # 2a. диаризация: кто говорит -> метка говорящего на каждый VAD-сегмент.
-    # Опционально (ASR_DIARIZE), мягко (при ошибке speaker=None — пайплайн не падает).
     seg_speakers = [None] * len(proc["segments"])
     if os.environ.get("ASR_DIARIZE", "1") == "1":
         try:
+            print("[Pipeline] Launching speaker diarization step...")
             from backend.src import diarize
             idx = diarize.assign_speakers(proc["original_wav"], proc["segments"])
             seg_speakers = [f"Говорящий {k + 1}" if k is not None else None for k in idx]
-        except Exception:
-            pass
+            print(f"[Pipeline] Diarization complete. Assigned labels: {seg_speakers}")
+        except Exception as diarize_err:
+            # Crucial: Log the actual error stack trace to your terminal/logs!
+            import traceback
+            print(f"[Pipeline DIARIZATION ERROR]: {diarize_err}")
+            traceback.print_exc()
+    else:
+        print("[Pipeline] Speaker diarization is explicitly DISABLED via ASR_DIARIZE env var.")
 
     # 2-3. посегментная маршрутизация LID -> ASR -> тег (+ говорящий сегмента)
     words = []
@@ -112,26 +129,38 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
     result = {
         "audio_id": audio_id,
         "filename": original_filename,
-        "timeline": "original",            # транскрипция по оригиналу
+        "timeline": "original",
         "engine": "VAD + MMS-LID + Whisper-large-v3(ru) / Whisper-TT(tt)",
         "stats": proc["stats"],
         "segment_map": proc["segments"],
-        "sentences": build_sentences(words),     # реплики: спикер + предложение + слова
+        "sentences": build_sentences(words),
         "words": words,
     }
 
-    # 4. артефакты
+    # 4. Save physical file artifacts to disk
     with open(os.path.join(folder, "transcription.json"), "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
-    # txt — читаемый: по реплике на строку «Говорящий: текст» (raw с пунктуацией)
+        
     with open(os.path.join(folder, "transcription.txt"), "w", encoding="utf-8") as f:
         for s in result["sentences"]:
             prefix = f"{s['speaker']}: " if s.get("speaker") else ""
             f.write(prefix + s["text"] + "\n")
 
-    # 5. индексация в БД (если передана сессия)
+    # 5. Index inside database AND declare processing completeness
     if db is not None:
         from backend.src import db_index
-        db_index.save_transcription(db, audio_id, words, proc["segments"], proc["stats"])
+        try:
+            db_index.save_transcription(db, audio_id, words, proc["segments"], proc["stats"])
+            
+            # --- MOVE THE DONE UPDATE HERE ---
+            from backend.src import models
+            db_audio = db.query(models.AudioFile).filter(models.AudioFile.id == UUID(audio_id)).first()
+            if db_audio:
+                db_audio.status = "done"
+                db.commit()
+                print(f"[Pipeline] Successfully set status to 'done' for {audio_id}")
+        except Exception as db_err:
+            db.rollback()
+            print(f"[Pipeline DB Error] Failed indexing or updating status: {db_err}")
 
     return result

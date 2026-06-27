@@ -1,48 +1,45 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { audioApi } from '../api/audioApi';
 import uploadIcon from '../assets/upload-icon.svg'; 
 
-function UploadButton({ onUploadSuccess, userRole, style }) {
+function UploadButton({ onUploadStart, onUploadEnd, userRole, style }) {
   const fileInputRef = useRef(null);
-  const [isUploading, setIsUploading] = useState(false);
 
-  // Проверяем, является ли пользователь обычным юзером
+  // Кнопка недоступна только если роль "user"
   const isUserRole = userRole?.toLowerCase() === 'user';
-  // Кнопка должна быть выключена, если идет загрузка ИЛИ если роль пользователя - user
-  const isDisabled = isUploading || isUserRole;
+  const isDisabled = isUserRole;
 
   const handleButtonClick = () => {
     if (isUserRole) return;
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      await audioApi.uploadAudioFile(file);
-      await onUploadSuccess();
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Ошибка загрузки аудио.");
-    } finally {
-      setIsUploading(false);
+    // Генерируем временный ID для UI
+    const tempId = `temp-${Date.now()}`;
+    
+    onUploadStart(file.name, tempId);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
+
+    audioApi.uploadAudioFile(file)
+      .then(() => {
+        onUploadEnd(tempId, true); // Успех
+      })
+      .catch((error) => {
+        console.error("Ошибка загрузки:", error);
+        alert(`Не удалось обработать аудио: ${file.name}`);
+        onUploadEnd(tempId, false); // Ошибка
+      });
   };
 
   return (
     <>
-      <style>{`
-        @keyframes buttonSpinner {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-
       <button
         onClick={handleButtonClick}
         disabled={isDisabled}
@@ -68,34 +65,19 @@ function UploadButton({ onUploadSuccess, userRole, style }) {
         }}
         title={isUserRole ? "Загрузка доступна только менеджерам и администраторам" : ""}
       >
-        {isUploading ? (
-          /* Processing State */
-          <div style={{
-            width: '20px',
-            height: '20px',
-            border: '2px solid rgba(0,0,0,0.2)',
-            borderTopColor: '#000',
-            borderRadius: '50%',
-            animation: 'buttonSpinner 0.6s linear infinite'
-          }} />
-        ) : (
-          /* Normal State */
-          <>
-            <span>Загрузить</span> 
-            <img 
-              src={uploadIcon} 
-              alt="" 
-              style={{ 
-                width: '24px', 
-                height: '24px', 
-                objectFit: 'contain',
-                display: 'block',
-                transform: 'translateY(-1px)',
-                filter: isDisabled ? 'grayscale(1) opacity(0.5)' : 'none'
-              }} 
-            />
-          </>
-        )}
+        <span>Загрузить</span> 
+        <img 
+          src={uploadIcon} 
+          alt="" 
+          style={{ 
+            width: '24px', 
+            height: '24px', 
+            objectFit: 'contain',
+            display: 'block',
+            transform: 'translateY(-1px)',
+            filter: isDisabled ? 'grayscale(1) opacity(0.5)' : 'none'
+          }} 
+        />
       </button>
       
       <input

@@ -1,64 +1,48 @@
-import axios from 'axios';
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-export const BACKEND_URLS = {
-  base: API_BASE,
-  upload: `${API_BASE}/api/v1/upload-audio/`,
-  list: `${API_BASE}/api/v1/audio/`,
-  transcription: `${API_BASE}/api/v1/transcriptions/`
-};
-
-const api = axios.create();
-
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import apiClient from './apiClient';
 
 export const audioApi = {
-  // Fetch the list of all uploaded audio records
+  // Matches GET /api/v1/audio/
   fetchAudioList: async () => {
-    const response = await api.get(BACKEND_URLS.list);
+    const response = await apiClient.get('/api/v1/audio/');
     return response.data;
   },
 
-  // Upload a raw audio file using multipart/form-data packaging
+  // Matches POST /api/v1/upload-audio/
   uploadAudioFile: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await api.post(BACKEND_URLS.upload, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    
+    const response = await apiClient.post('/api/v1/upload-audio/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
     });
     return response.data;
   },
 
-  // Retrieve the speech transcription map for a specific recording ID
-  fetchTranscription: async (audioId) => {
-    const response = await api.get(`${BACKEND_URLS.transcription}${audioId}`);
+  // Matches GET /api/v1/audio/{audio_id}/status
+  fetchAudioStatus: async (audioId) => {
+    const response = await apiClient.get(`/api/v1/audio/${audioId}/status`);
     return response.data;
   },
 
-  // NEW: Securely fetch the binary audio stream and convert to local object URL
-  fetchAudioFile: async (audioId, type = 'original') => {
-    const response = await api.get(`${BACKEND_URLS.list}${audioId}`, {
-      params: { type },
-      responseType: 'blob' // Instructs Axios to process response data as a binary file
+  // Matches GET /api/v1/audio/{audio_id}?type=processed
+  fetchAudioFile: async (audioId, type) => {
+    const response = await apiClient.get(`/api/v1/audio/${audioId}?type=${type}`, {
+      responseType: 'blob'
     });
     return URL.createObjectURL(response.data);
   },
 
-  // Удалить конкретную аудиозапись по ID
+  // Matches GET /api/v1/transcriptions/{audio_id}
+  fetchTranscription: async (audioId) => {
+    const response = await apiClient.get(`/api/v1/transcriptions/${audioId}`);
+    return response.data;
+  },
+
+  // Matches DELETE /api/v1/audio/{audio_id}
   deleteAudio: async (audioId) => {
-    const response = await api.delete(`${BACKEND_URLS.list}${audioId}`);
+    const response = await apiClient.delete(`/api/v1/audio/${audioId}`);
     return response.data;
   }
 };

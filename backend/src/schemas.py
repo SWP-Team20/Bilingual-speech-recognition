@@ -9,8 +9,13 @@ class AudioFileResponse(BaseModel):
     filename: str
     folder_path: str
     uploaded_at: datetime
+    status: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class AudioStatusResponse(BaseModel):
+    id: UUID
+    status: str
 
 class AudioWithTextResponse(BaseModel):
     id: UUID

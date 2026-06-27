@@ -1,45 +1,78 @@
 import json
 import os
 import shutil
+import logging
 from uuid import UUID, uuid4
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Response, status
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Response, status, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from backend.src import models, schemas
-from backend.src.database import get_db
-
+from backend.src.database import get_db, SessionLocal
 from backend.src.models import User, UserRole
-from backend.src.dependencies import get_current_user, RoleChecker
-
+from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 BASE_STORAGE_DIR = "./storage"
 os.makedirs(BASE_STORAGE_DIR, exist_ok=True)
 
 
-# --- ADMIN & USER & MANAGER ---
+# --- BACKGROUND TASKS ---
+
+def background_process_audio(input_path: str, storage_dir: str, audio_id: str, original_filename: str):
+    """Выполнение пайплайна в фоне с независимой сессией БД."""
+    db = SessionLocal()
+    try:
+        pipeline.process_audio(
+            input_path=input_path,
+            storage_dir=storage_dir,
+            audio_id=audio_id,
+            original_filename=original_filename,
+            db=db,
+        )
+    except Exception as e:
+        db.rollback()
+        db_audio = db.query(models.AudioFile).filter(models.AudioFile.id == UUID(audio_id)).first()
+        if db_audio:
+            db_audio.status = "error"
+            db.commit()
+        logger.error(f"[BACKGROUND TASK ERROR] Audio ID {audio_id}: {e}")
+    finally:
+        db.close()
+
+
+# --- ALL ROLES (ADMIN, MANAGER, USER) ---
 
 @router.get("/audio/", response_model=List[schemas.AudioFileResponse])
 async def get_all_audio(
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
+    current_user: User = Depends(get_current_user)
 ):
-
     return db.query(models.AudioFile).all()
 
 
 @router.get("/audio/{audio_id}")
 async def get_audio_by_id(
-    audio_id: UUID,
+    audio_id: str,
     type: str = "original",
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
+    current_user: User = Depends(get_current_user)
 ):
-    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+    try:
+        parsed_uuid = UUID(audio_id.strip())
+    except ValueError:
+        # If it's a frontend 'temp-' placeholder ID, catch it here 
+        # and return 202 Accepted so Axios doesn't throw a console error.
+        if audio_id.startswith("temp-"):
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+        
+        raise HTTPException(status_code=404, detail="Запись не найдена (некорректный ID)")
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == parsed_uuid).first()
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
@@ -60,9 +93,32 @@ async def get_audio_by_id(
         raise HTTPException(status_code=400, detail="Используйте type='original' или type='processed'")
 
     if not os.path.exists(file_path):
+        if audio.status in ["processing_audio", "processing"]:
+            return Response(status_code=status.HTTP_202_ACCEPTED)
+        
         raise HTTPException(status_code=404, detail="Файл отсутствует на сервере")
 
     return FileResponse(path=file_path, media_type=media_type, filename=f"{type}_{audio.filename}")
+
+
+# --- Update your status endpoint to handle temporary IDs gracefully ---
+@router.get("/audio/{audio_id}/status", response_model=schemas.AudioStatusResponse)
+async def get_audio_status(
+    audio_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        parsed_uuid = UUID(audio_id.strip())
+    except ValueError:
+        # If it's a temporary upload placeholder, tell the frontend it's actively processing
+        return {"id": uuid4(), "status": "processing_audio"}
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == parsed_uuid).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    return {"id": audio.id, "status": audio.status}
 
 
 @router.get("/search/")
@@ -73,7 +129,7 @@ async def search_words(
     date_from: str = None,
     date_to: str = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
+    current_user: User = Depends(get_current_user)
 ):
     """Поиск по корпусу с фильтрами (все необязательны):
       q         — слово (точное совпадение нормализованного text);
@@ -107,7 +163,7 @@ async def search_words(
 @router.get("/transcriptions/", response_model=List[schemas.AudioWithTextResponse])
 async def get_all_transcriptions(
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
+    current_user: User = Depends(get_current_user)
 ):
     audio_files = db.query(models.AudioFile).all()
     result = []
@@ -131,7 +187,7 @@ async def get_all_transcriptions(
 async def get_transcription_by_id(
     audio_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER, UserRole.USER]))
+    current_user: User = Depends(get_current_user)
 ):
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
@@ -148,19 +204,23 @@ async def get_transcription_by_id(
         "id": audio.id,
         "filename": audio.filename,
         "transcription_text": " ".join(word.get("raw", word.get("text", "")) for word in transcription.get("words", [])),
-        "sentences": transcription.get("sentences", []),   # реплики: спикер + предложение + слова (для показа)
+        "sentences": transcription.get("sentences", []),
         "words": transcription.get("words", []),
     }
 
 
-# --- ADMIN & MANAGER ---
+# --- RESTRICTED ROLES (ADMIN & MANAGER ONLY) ---
 
-@router.post("/upload-audio/", response_model=schemas.AudioFileResponse)
+@router.post("/upload-audio/", response_model=schemas.AudioFileResponse, status_code=status.HTTP_202_ACCEPTED)
 async def upload_audio(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(get_current_user)
 ):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
     if not file.content_type.startswith("audio/"):
         raise HTTPException(status_code=400, detail="Файл должен быть аудиоформата")
 
@@ -180,19 +240,20 @@ async def upload_audio(
         filename=file.filename,
         content_type=file.content_type,
         folder_path=folder_path,
+        status="processing_audio"
     )
     db.add(db_audio)
     db.commit()
+    db.refresh(db_audio)
 
-    pipeline.process_audio(
+    background_tasks.add_task(
+        background_process_audio,
         input_path=orig_file_path,
         storage_dir=BASE_STORAGE_DIR,
         audio_id=str(audio_id),
-        original_filename=file.filename,
-        db=db,
+        original_filename=file.filename
     )
 
-    db.refresh(db_audio)
     return db_audio
 
 
@@ -201,8 +262,11 @@ async def update_processed_audio(
     audio_id: UUID,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(get_current_user)
 ):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
@@ -224,8 +288,11 @@ async def update_transcription(
     audio_id: UUID,
     payload: schemas.UpdateTranscriptionRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(get_current_user)
 ):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
@@ -249,8 +316,11 @@ async def update_transcription(
 async def delete_audio(
     audio_id: UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(RoleChecker([UserRole.ADMIN, UserRole.MANAGER]))
+    current_user: User = Depends(get_current_user)
 ):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")

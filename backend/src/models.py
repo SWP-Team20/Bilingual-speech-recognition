@@ -39,7 +39,7 @@ class AudioFile(Base):
     folder_path = Column(String, nullable=False)
 
     primary_language = Column(String, nullable=True)
-    status = Column(String, default="done")              # queued/processing/done/error
+    status = Column(String, default="processing_audio")        # processing_audio/processing_text/done/error
 
     duration_sec = Column(Float, nullable=True)
     speech_sec = Column(Float, nullable=True)
