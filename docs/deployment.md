@@ -39,7 +39,13 @@ Run this command to start and deploy Docker in the background:
 docker run -d --name pg-container -v db_storage:/var/lib/postgresql -e POSTGRES_PASSWORD=admin -p 15432:5432 postgres
 ```
 
-### 3. Run the Backend (FastAPI)
+### 3. Initialize database (if not existed before)
+
+Run ```init_db.py``` in root directory of the project.
+
+This will create a user with role **admin** that you can use to create new users.
+
+### 4. Run the Backend (FastAPI)
 
 > If your system is Linux, firstly create and initialize venv:
 > 
@@ -86,7 +92,7 @@ Interactive API Docs:
 >
 > 2. If the backend has frozen after reload, type ```taskkill /F /IM python.exe``` and run the backend again.
 
-### 4. Run the Frontend (Node.js)
+### 5. Run the Frontend (Node.js)
 Open a new terminal window. Now install package dependencies:
 ```bash
 cd frontend

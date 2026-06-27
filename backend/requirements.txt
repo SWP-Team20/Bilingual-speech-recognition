@@ -1,6 +1,5 @@
 # Backend dependencies
 
-fastapi
 uvicorn
 pydantic
 python-multipart          # обработка multipart/form-data (загрузка аудио)
@@ -9,8 +8,26 @@ psycopg[binary]           # драйвер PostgreSQL (postgresql+psycopg)
 
 # Аудио + ASR. faster-whisper тянет PyAV (декод аудио, системный ffmpeg НЕ нужен),
 # onnxruntime и встроенный Silero VAD. numpy — операции с аудио-массивами.
-faster-whisper
+faster-whisper          # русская ветка (Whisper large-v3) + VAD
 numpy
 
+# --- авторизация (ветка 18-login-page) ---
+fastapi[all]
+pwdlib[bcrypt]
+python-jose[JWT]
+
+# --- mixed-пайплайн ru/tt: аудио-LID (mms-lid-256) и татарская Whisper-ASR ---
+torch                   # бэкенд для transformers-моделей (CPU/CUDA)
+transformers            # mms-lid-256 (LID) + yasalma/whisper-finetuned-tt-asr (tt)
+accelerate              # потоковая загрузка весов (меньше пик памяти при load)
+speechbrain             # диаризация: ECAPA speaker-эмбеддинги (spkrec-ecapa-voxceleb)
+scikit-learn            # диаризация: агломеративная кластеризация сегментов
+
+# Модели тянутся из HuggingFace при первом запуске (кэш HF_HOME):
+#   mms-lid-256 ~3.9ГБ (1B!), Whisper-TT ~1ГБ, large-v3 ~1.5ГБ.
+# ТРЕБОВАНИЕ ПАМЯТИ: держать ВСЕ три резидентно — нужно >=6-8ГБ СВОБОДНОЙ RAM,
+# иначе чтение mmap-весов падает нативным крашем (access violation). Без GPU
+# работает, но медленно — см. docs/ru_tt_pipeline.md. Загрузка весов синхронная
+# (HF_DEACTIVATE_ASYNC_LOAD=1, ставится в коде) — на Windows многопоточная даёт краш.
 # Опционально: точнее определять русские слова при тегировании языка (lang_tag).
 # pymorphy3

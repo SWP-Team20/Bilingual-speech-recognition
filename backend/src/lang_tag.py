@@ -68,3 +68,22 @@ def tag_language(word: str) -> tuple:
     if all(ch in RU_ALPHA for ch in w):
         return (w, "ru")
     return (w, "unknown")
+
+
+def tag_language_seg(word: str, seg_lang: str) -> tuple:
+    """Тег с учётом языка сегмента из аудио-LID (mixed-пайплайн).
+
+    Приоритет: спецбуквы -> tt; лексикон -> tt; иначе язык сегмента (LID);
+    в крайнем случае -> ru. seg_lang ловит татарские слова, записанные русскими
+    буквами и не попавшие в лексикон (по акустике сегмента).
+    """
+    w = _clean(word)
+    if not w:
+        return (word, "unknown")
+    if has_tatar_letters(w):
+        return (w, "tt")
+    if w in _tatar_words:
+        return (w, "tt")
+    if seg_lang in ("ru", "tt"):
+        return (w, seg_lang)
+    return (w, "ru")
