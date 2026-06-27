@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 28.06.2026
+
 ### Added
 - Authentification page before accessing the website in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/139
 - Three roles of the account: user (can observe content on the page), manager and admin (can upload and delete the audios) in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/139
@@ -19,7 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audio Streams page was renamed to Dashboard page and completely redesigned, including new font sizes and layout in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/139
 - All interface was localized to Russian instead of English in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/139
 - Now transcription contain bilingual Russian/Tatar recognition pipeline with audio language detection per segment and per-word ru/tt tagging in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/139
+
+### Fixed
 - Transcription now displays raw text with punctuation and casing in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/139
+- Audio can be deleted if it is still in database but now on the server storage in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/150
 
 ## [0.1.0] - 21.06.2026
 
@@ -29,5 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Uploaded audio transcription feature in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/49
 - Color coding Russian and Tatar words in transcription in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/52
 
-[unreleased]: https://github.com/SWP-Team20/Bilingual-speech-recognition/compare/v0.1.0...main
+[unreleased]: https://github.com/SWP-Team20/Bilingual-speech-recognition/compare/v0.2.0...main
+[0.2.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.1.0
