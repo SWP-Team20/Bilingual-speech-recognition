@@ -28,3 +28,20 @@
   -  [Change of security protocol](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/103)
   -  [Russian localization](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/130)
   -  [Profile account maintenance](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/131)
+
+  ## Sprint 3
+
+- **Sprint name or number:** 3
+- **Link to the corresponding Sprint milestone:** [Sprint 3](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/3)
+- **Sprint start and finish dates:** 29.06.2026-05.07.2026
+- **Sprint Goal:** Implement and Verify MVP v2
+- **Short focus or expected outcome statement:** All core and additional features related to audio page is finished, statistics remained
+- **Linked planned items for that Sprint, such as user stories and supporting PBIs:**
+  -  [US-002: Filter by speakers](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/6)
+  -  [US-010: Correct mistakes](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/13)
+  -  [US-012: Filter by date](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/16)
+  -  [US-013: Filter by language](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/17)
+  -  [US-018: Tags for audio upload](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/106)
+  -  [US-019: Admin page and functionality](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/132)
+  -  [Corpus Manager Redesign](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/161)
+  -  [US-021: Audio storage size information](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/164)
