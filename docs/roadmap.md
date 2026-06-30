@@ -48,3 +48,4 @@
   -  [US-022: Filter by words](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/198)
   -  [US-023: Filter by status](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/200)
   -  [US-024: Audio search](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/201)
+  -  [Speakers list endpoint](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/207)
