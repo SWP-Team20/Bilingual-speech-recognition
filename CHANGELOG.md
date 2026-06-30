@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Audio filtration by date in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/196
-- Added ability to fetch audio storage information
+- Added ability to fetch audio storage information https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/197
 
 ## [0.2.0] - 28.06.2026
 
