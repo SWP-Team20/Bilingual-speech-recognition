@@ -1,9 +1,11 @@
 import { useRef } from 'react';
 import { audioApi } from '../api/audioApi';
 import uploadIcon from '../assets/upload-icon.svg'; 
+import { useToast } from './ui/Toast';
 
 function UploadButton({ onUploadStart, onUploadEnd, userRole, style }) {
   const fileInputRef = useRef(null);
+  const toast = useToast();
 
   // Кнопка недоступна только если роль "user"
   const isUserRole = userRole?.toLowerCase() === 'user';
@@ -22,6 +24,7 @@ function UploadButton({ onUploadStart, onUploadEnd, userRole, style }) {
     const tempId = `temp-${Date.now()}`;
     
     onUploadStart(file.name, tempId);
+    toast.info(`Загрузка «${file.name}»...`);
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -30,10 +33,11 @@ function UploadButton({ onUploadStart, onUploadEnd, userRole, style }) {
     audioApi.uploadAudioFile(file)
       .then(() => {
         onUploadEnd(tempId, true); // Успех
+        toast.success(`«${file.name}» загружен и обрабатывается`);
       })
       .catch((error) => {
         console.error("Ошибка загрузки:", error);
-        alert(`Не удалось обработать аудио: ${file.name}`);
+        toast.error(`Не удалось обработать аудио: ${file.name}`);
         onUploadEnd(tempId, false); // Ошибка
       });
   };
@@ -43,6 +47,18 @@ function UploadButton({ onUploadStart, onUploadEnd, userRole, style }) {
       <button
         onClick={handleButtonClick}
         disabled={isDisabled}
+        onMouseEnter={(e) => {
+          if (isDisabled) return;
+          e.currentTarget.style.backgroundColor = '#cfcfcf';
+          e.currentTarget.style.boxShadow = '0 4px 10px rgba(0,0,0,0.12)';
+          e.currentTarget.style.transform = 'translateY(-1px)';
+        }}
+        onMouseLeave={(e) => {
+          if (isDisabled) return;
+          e.currentTarget.style.backgroundColor = '#d9d9d9';
+          e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.08)';
+          e.currentTarget.style.transform = 'translateY(0)';
+        }}
         style={{ 
           width: '160px',             
           height: '48px', 
@@ -50,7 +66,7 @@ function UploadButton({ onUploadStart, onUploadEnd, userRole, style }) {
           backgroundColor: isDisabled ? '#e0e0e0' : '#d9d9d9', 
           color: isDisabled ? '#a0a0a0' : '#000',
           border: 'none', 
-          borderRadius: '4px', 
+          borderRadius: '8px', 
           cursor: isDisabled ? 'not-allowed' : 'pointer',
           fontWeight: 'bold',
           fontSize: '18px',
@@ -61,6 +77,8 @@ function UploadButton({ onUploadStart, onUploadEnd, userRole, style }) {
           gap: '12px',
           boxSizing: 'border-box',
           opacity: isUserRole ? 0.7 : 1,
+          boxShadow: isDisabled ? 'none' : '0 1px 2px rgba(0,0,0,0.08)',
+          transition: 'background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease',
           ...style 
         }}
         title={isUserRole ? "Загрузка доступна только менеджерам и администраторам" : ""}

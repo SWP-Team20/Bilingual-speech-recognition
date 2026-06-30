@@ -64,10 +64,10 @@ function AuthPage({ onLoginSuccess }) {
         backgroundColor: '#fff', 
         width: '100%', 
         maxWidth: '540px', 
-        borderRadius: '4px', 
+        borderRadius: '16px', 
         padding: '60px 45px', 
-        boxShadow: '0 4px 20px rgba(0,0,0,0.05)', 
-        border: '1px solid #ddd',
+        boxShadow: '0 18px 50px rgba(0,0,0,0.10)', 
+        border: '1px solid #ececec',
         textAlign: 'center',
         boxSizing: 'border-box'
       }}>
@@ -114,18 +114,21 @@ function AuthPage({ onLoginSuccess }) {
             value={username}
             disabled={isLoading}
             onChange={(e) => setUsername(e.target.value)}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }}
             style={{ 
               width: '100%', 
               height: '48px', 
               backgroundColor: '#fff', 
               border: '1px solid #ddd', 
-              borderRadius: '4px', 
+              borderRadius: '8px', 
               padding: '0 16px', 
               marginBottom: '20px', 
               fontSize: '16px', 
               color: '#000', 
               boxSizing: 'border-box',
               outline: 'none',
+              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
               fontFamily: 'system-ui, sans-serif'
             }}
           />
@@ -136,18 +139,21 @@ function AuthPage({ onLoginSuccess }) {
             value={password}
             disabled={isLoading}
             onChange={(e) => setPassword(e.target.value)}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }}
             style={{ 
               width: '100%', 
               height: '48px', 
               backgroundColor: '#fff', 
               border: '1px solid #ddd', 
-              borderRadius: '4px', 
+              borderRadius: '8px', 
               padding: '0 16px', 
               marginBottom: '30px', 
               fontSize: '16px', 
               color: '#000', 
               boxSizing: 'border-box',
               outline: 'none',
+              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
               fontFamily: 'system-ui, sans-serif'
             }}
           />
@@ -156,12 +162,14 @@ function AuthPage({ onLoginSuccess }) {
             <button
               type="submit"
               disabled={!isFormValid}
+              onMouseEnter={(e) => { if (isFormValid) e.currentTarget.style.backgroundColor = '#166534'; }}
+              onMouseLeave={(e) => { if (isFormValid) e.currentTarget.style.backgroundColor = '#15803d'; }}
               style={{
-                padding: '8px 24px',
-                backgroundColor: isFormValid ? '#1b5e20' : '#bbb', 
+                padding: '10px 28px',
+                backgroundColor: isFormValid ? '#15803d' : '#bbb', 
                 color: 'white',
                 border: 'none',
-                borderRadius: '4px',
+                borderRadius: '8px',
                 cursor: isFormValid ? 'pointer' : 'not-allowed',
                 fontSize: '15px',
                 fontWeight: '500',
