@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
 import { userApi } from '../api/userApi';
-
-const ROLE_TRANSLATIONS = {
-  'user': 'Пользователь',
-  'manager': 'Менеджер',
-  'admin': 'Администратор'
-};
+import { ROLE_TRANSLATIONS, translateRole } from '../constants/roleTranslations';
 
 function AdminPanel() {
   const [usersList, setUsersList] = useState([]);
@@ -166,7 +161,7 @@ function AdminPanel() {
                         {u.username} {isMe && <span style={{ color: '#773505', fontWeight: 'bold' }}>(Я)</span>}
                       </div>
                       <div style={{ fontSize: '14px', color: '#666', marginTop: '4px' }}>
-                        Роль: {ROLE_TRANSLATIONS[u.role?.toLowerCase()] || u.role}
+                        Роль: {translateRole(u.role)}
                       </div>
                     </div>
                     

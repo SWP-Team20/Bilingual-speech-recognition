@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../api/userApi';
+import { translateRole } from '../constants/roleTranslations';
 
 function SecurityPage({ onDeleteAccountConfirm }) {
   const navigate = useNavigate();
@@ -12,12 +13,6 @@ function SecurityPage({ onDeleteAccountConfirm }) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const ROLE_TRANSLATIONS = {
-  'user': 'Пользователь',
-  'manager': 'Менеджер',
-  'admin': 'Администратор'
-  };
 
   useEffect(() => {
     async function loadProfile() {
@@ -109,7 +104,7 @@ function SecurityPage({ onDeleteAccountConfirm }) {
         {/* Role Field */}
         <div style={{ marginBottom: '28px' }}>
           <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', color: '#666', marginBottom: '4px', letterSpacing: '0.5px' }}>Роль</label>
-          <div style={{ fontSize: '18px', fontWeight: '500', color: '#111' }}>{ROLE_TRANSLATIONS[userData.role?.toLowerCase()] || userData.role}</div>
+          <div style={{ fontSize: '18px', fontWeight: '500', color: '#111' }}>{translateRole(userData.role)}</div>
         </div>
 
         <hr style={{ border: 'none', height: '1px', backgroundColor: '#eee', margin: '24px 0' }} />
