@@ -21,6 +21,7 @@
 | US-022 | Filter by words | Must Have | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/198 | Active | Done | [Sprint 3](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/3) |
 | US-023 | Filter by status | Could Have | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/200 | Active | Done | [Sprint 3](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/3) |
 | US-024 | Audio search | Must Have | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/201 | Active | In progress | [Sprint 3](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/3) |
+| US-025 | Original audio download | Must Have | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/211 | Active | In progress | [Sprint 3](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/3) |
 | US-004 | Background work | — | https://github.com/ProPupok/Bilingual-speech-recognition/issues/8 | Removed | — | — |
 | US-007 | Natural language for filters | — | — | Removed | — | — |
 | US-008 | Corpus manager | — | https://github.com/ProPupok/Bilingual-speech-recognition/issues/11 | Removed | — | — |
