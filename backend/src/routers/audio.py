@@ -14,6 +14,12 @@ from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
 
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+from datetime import date, timedelta, datetime
+from typing import List, Optional
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -49,10 +55,28 @@ def background_process_audio(input_path: str, storage_dir: str, audio_id: str, o
 
 @router.get("/audio/", response_model=List[schemas.AudioFileResponse])
 async def get_all_audio(
+    date_specific: Optional[date] = Query(None, description="Поиск за конкретный день (ГГГГ-ММ-ДД)"),
+    date_from: Optional[date] = Query(None, description="Начало периода (ГГГГ-ММ-ДД)"),
+    date_to: Optional[date] = Query(None, description="Конец периода (ГГГГ-ММ-ДД)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(models.AudioFile).all()
+    query = db.query(models.AudioFile)
+
+    if date_specific:
+        start_datetime = datetime.combine(date_specific, datetime.min.time())
+        end_datetime = datetime.combine(date_specific, datetime.max.time())
+        query = query.filter(models.AudioFile.uploaded_at.between(start_datetime, end_datetime))
+
+    elif date_from or date_to:
+        if date_from:
+            start_datetime = datetime.combine(date_from, datetime.min.time())
+            query = query.filter(models.AudioFile.uploaded_at >= start_datetime)
+        if date_to:
+            end_datetime = datetime.combine(date_to, datetime.max.time())
+            query = query.filter(models.AudioFile.uploaded_at <= end_datetime)
+
+    return query.all()
 
 
 @router.get("/audio/{audio_id}")
