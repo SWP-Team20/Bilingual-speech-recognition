@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { audioApi } from '../api/audioApi';
 import ConfirmDialog from './ui/ConfirmDialog';
-import { useToast } from './ui/Toast';
+import { useToast } from './ui/toastContext';
 import { colors, radius, shadow } from '../theme';
 import { isAudioProcessing as statusIsAudioProcessing, isTextProcessing as statusIsTextProcessing, isDone, isError } from '../constants/status';
 

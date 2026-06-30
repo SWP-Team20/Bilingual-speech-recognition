@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { colors, radius, shadow } from '../../theme';
-
-const ToastContext = createContext(null);
+import { ToastContext } from './toastContext';
 
 let idCounter = 0;
 
@@ -81,15 +80,4 @@ export function ToastProvider({ children }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const ctx = useContext(ToastContext);
-  if (!ctx) {
-    // Fallback so components don't crash if used outside a provider.
-    return {
-      show: () => {}, success: () => {}, error: () => {}, info: () => {}, dismiss: () => {},
-    };
-  }
-  return ctx;
 }

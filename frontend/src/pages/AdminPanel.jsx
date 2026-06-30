@@ -3,7 +3,7 @@ import { userApi } from '../api/userApi';
 import { ROLE_TRANSLATIONS, translateRole } from '../constants/roleTranslations';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { Skeleton } from '../components/ui/Skeleton';
-import { useToast } from '../components/ui/Toast';
+import { useToast } from '../components/ui/toastContext';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 

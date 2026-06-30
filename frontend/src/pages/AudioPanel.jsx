@@ -3,7 +3,7 @@ import { audioApi } from '../api/audioApi';
 import AudioPlayer from '../components/AudioPlayer';
 import TranscriptionBox from '../components/TranscriptionBox';
 import { AudioRowSkeleton } from '../components/ui/Skeleton';
-import { useToast } from '../components/ui/Toast';
+import { useToast } from '../components/ui/toastContext';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { colors, radius, MOBILE_BREAKPOINT } from '../theme';
 import { isTerminal } from '../constants/status';
