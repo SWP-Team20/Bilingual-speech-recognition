@@ -6,6 +6,7 @@ import UploadButton from '../components/UploadButton';
 import AudioPlayer from '../components/AudioPlayer';
 import TranscriptionBox from '../components/TranscriptionBox';
 import ProfileDropdown from '../components/ProfileDropdown';
+import AdminPanel from '../components/AdminPanel'; // Импортируем новый компонент
 
 function DashboardPage({ onLogout }) {
   const navigate = useNavigate();
@@ -16,6 +17,9 @@ function DashboardPage({ onLogout }) {
   const [selectedTranscription, setSelectedTranscription] = useState('');
   const [selectedTranscriptionWords, setSelectedTranscriptionWords] = useState([]);
   const [isTranscribing, setIsTranscribing] = useState(false);
+
+  // Текущая активная вкладка: 'audio', 'statistics', или 'admin'
+  const [activeTab, setActiveTab] = useState('audio');
 
   useEffect(() => {
     loadAudioList();
@@ -40,16 +44,12 @@ function DashboardPage({ onLogout }) {
     }
   };
 
-  // --- НОВЫЕ ХЭНДЛЕРЫ ДЛЯ ФОНОВОЙ ЗАГРУЗКИ ---
   const handleUploadStart = (fileName, tempId) => {
-    // Добавляем временный файл в начало списка загрузок
     setPendingUploads(prev => [{ id: tempId, name: fileName, isPending: true }, ...prev]);
   };
 
   const handleUploadEnd = (tempId, isSuccess) => {
-    // Убираем временный файл из списка
     setPendingUploads(prev => prev.filter(item => item.id !== tempId));
-    // Если бэкенд отработал успешно — обновляем настоящий список
     if (isSuccess) loadAudioList();
   };
 
@@ -84,9 +84,24 @@ function DashboardPage({ onLogout }) {
 
   const selectedAudioIndex = audioList.findIndex(a => a.id === selectedAudioId);
   const currentAudioName = selectedAudioIndex !== -1 ? `Аудио ${selectedAudioIndex + 1}` : '';
-
-  // Объединяем фейковые треки и настоящие
   const combinedAudioList = [...pendingUploads, ...audioList];
+
+  const isAdmin = userRole === 'admin';
+
+  // Базовые стили для кнопок-вкладок навигации
+  const tabStyle = {
+    borderRadius: '6px',
+    padding: '14px',
+    textAlign: 'center',
+    fontSize: '20px',
+    fontWeight: 'bold',
+    width: '100%',
+    boxSizing: 'border-box',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    border: 'none',
+    transition: 'all 0.2s ease'
+  };
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#f5f5f5', height: '100vh', maxHeight: '100vh', padding: '40px 0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
@@ -108,55 +123,114 @@ function DashboardPage({ onLogout }) {
           <ProfileDropdown onLogout={onLogout} onNavigateToSecurity={() => navigate('/security')} />
         </div>
 
-        {/* MAIN CONTENT */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', flex: 1, minHeight: 0 }}>
+        {/* NAVIGATION PANEL (TABS) */}
+        <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr 1fr' : '1fr 1fr', gap: '48px', marginBottom: '24px', flexShrink: 0, width: '100%' }}>
           
-          {/* LEFT SIDE */}
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', alignItems: 'stretch' }}>
-            <div style={{ backgroundColor: '#522504', color: '#fff', borderRadius: '6px', padding: '14px', textAlign: 'center', fontSize: '20px', fontWeight: 'bold', marginBottom: '24px', width: '100%', boxSizing: 'border-box', flexShrink: 0 }}>
-              Аудиозаписи
-            </div>
+          {/* Вкладка: Аудиозаписи */}
+          <button 
+            onClick={() => setActiveTab('audio')}
+            style={{ 
+              ...tabStyle, 
+              backgroundColor: activeTab === 'audio' ? '#522504' : '#e0e0e0', 
+              color: activeTab === 'audio' ? '#fff' : '#616161'
+            }}
+          >
+            Аудиозаписи
+          </button>
 
-            <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
-              <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>Аудиозаписи</h2>
-            </div>
+          {/* Вкладка: Статистика */}
+          <button 
+            onClick={() => setActiveTab('statistics')}
+            style={{ 
+              ...tabStyle, 
+              backgroundColor: activeTab === 'statistics' ? '#522504' : '#e0e0e0', 
+              color: activeTab === 'statistics' ? '#fff' : '#616161'
+            }}
+          >
+            Статистика
+          </button>
 
-            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '12px', boxSizing: 'border-box', width: '100%' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                {combinedAudioList.map((audio, index) => (
-                  <AudioPlayer
-                    key={audio.id}
-                    audio={audio}
-                    // Убираем индекс у временных файлов, чтобы нумерация не сбивалась
-                    index={audio.isPending ? null : index - pendingUploads.length}
-                    isSelected={selectedAudioId === audio.id}
-                    onTranscribeToggle={handleTranscribeClick}
-                    onDeleteSuccess={handleDeleteSuccess}
-                    userRole={userRole}
-                  />
-                ))}
+          {/* Вкладка: Админ-панель (только для admin) */}
+          {isAdmin && (
+            <button 
+              onClick={() => setActiveTab('admin')}
+              style={{ 
+                ...tabStyle, 
+                backgroundColor: activeTab === 'admin' ? '#522504' : '#e0e0e0', 
+                color: activeTab === 'admin' ? '#fff' : '#616161'
+              }}
+            >
+              Админ-панель
+            </button>
+          )}
+        </div>
+
+        {/* MAIN CONTENT AREA */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          
+          {/* VIEW 1: AUDIO & TRANSCRIPTION */}
+          {activeTab === 'audio' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', height: '100%', minHeight: 0 }}>
+              {/* LEFT: Audio Streams List */}
+              <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', alignItems: 'stretch' }}>
+                <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
+                  <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>Аудиозаписи</h2>
+                </div>
+
+                <div style={{ flex: 1, overflowY: 'auto', paddingRight: '12px', boxSizing: 'border-box', width: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                    {combinedAudioList.map((audio, index) => (
+                      <AudioPlayer
+                        key={audio.id}
+                        audio={audio}
+                        index={audio.isPending ? null : index - pendingUploads.length}
+                        isSelected={selectedAudioId === audio.id}
+                        onTranscribeToggle={handleTranscribeClick}
+                        onDeleteSuccess={handleDeleteSuccess}
+                        userRole={userRole}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT: Transcription Area */}
+              <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', alignItems: 'stretch' }}>
+                <div style={{ flex: 1, height: '100%', minHeight: 0, width: '100%' }}>
+                  {selectedAudioId ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+                      <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
+                        <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>Транскрипция</h2>
+                      </div>
+                      <TranscriptionBox transcriptionText={selectedTranscription} transcriptionWords={selectedTranscriptionWords} isLoading={isTranscribing} audioName={currentAudioName} />
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9e9e9e', border: '2px dashed #e0e0e0', borderRadius: '6px' }}>
+                      Выберите аудиозапись для просмотра транскрипции
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* RIGHT SIDE */}
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: '100%', alignItems: 'stretch' }}>
-            <button disabled style={{ backgroundColor: '#e0e0e0', color: '#9e9e9e', borderRadius: '6px', padding: '14px', textAlign: 'center', fontSize: '20px', fontWeight: 'bold', marginBottom: '24px', width: '100%', boxSizing: 'border-box', flexShrink: 0, border: '1px dashed #bdbdbd', cursor: 'not-allowed', fontFamily: 'inherit', letterSpacing: '0.5px' }} title={"Вкладка в разработке"}>
-              Статистика
-            </button>
-
-            <div style={{ flex: 1, overflowY: 'auto', height: '100%', minHeight: 0, width: '100%' }}>
-              {selectedAudioId && (
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
-                  <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
-                    <h2 style={{ fontSize: '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>Транскрипция</h2>
-                  </div>
-                  
-                  <TranscriptionBox transcriptionText={selectedTranscription} transcriptionWords={selectedTranscriptionWords} isLoading={isTranscribing} audioName={currentAudioName} />
-                </div>
-              )}
+          {/* VIEW 2: STATISTICS */}
+          {activeTab === 'statistics' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, backgroundColor: '#fff', borderRadius: '6px', border: '1px solid #e0e0e0' }}>
+              <div style={{ textAlign: 'center', color: '#9e9e9e' }}>
+                <h2 style={{ fontSize: '28px', margin: '0 0 8px 0', color: '#616161' }}>Статистика</h2>
+                <p style={{ fontSize: '16px', margin: 0 }}>Вкладка находится в разработке</p>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* VIEW 3: ADMIN PANEL */}
+          {activeTab === 'admin' && isAdmin && (
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+              <AdminPanel />
+            </div>
+          )}
+
         </div>
       </div>
     </div>
