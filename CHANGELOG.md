@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Active tab is now remembered across page reloads in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
 - Responsive layout that stacks the panels on narrow screens in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
 - Audio filtration by specific word, language, speaker, date, or load status in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/207
+- Audio tags, such as title and date, now are visible in audio list and can be assigned to audio before upload in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/207
 
 ### Changed
 - Accent color changed from brown to green, and the profile/upload icons are now black in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
