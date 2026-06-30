@@ -45,3 +45,6 @@
   -  [US-019: Admin page and functionality](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/132)
   -  [Corpus Manager Redesign](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/161)
   -  [US-021: Audio storage size information](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/164)
+  -  [US-022: Filter by words](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/198)
+  -  [US-023: Filter by status](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/200)
+  -  [US-024: Audio search](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/201)
