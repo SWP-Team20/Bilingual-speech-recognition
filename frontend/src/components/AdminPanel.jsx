@@ -43,7 +43,6 @@ function AdminPanel() {
       const data = await userApi.adminGetAllUsers();
       const currentUsers = data || [];
       setUsersList(currentUsers);
-      generateDefaultCredentials(newUserRole, currentUsers);
     } catch (err) {
       console.error("Ошибка при получении списка пользователей:", err);
     }

@@ -40,29 +40,35 @@ function AudioPlayer({ audio, index, isSelected, onTranscribeToggle, onDeleteSuc
 
   // 2. AUDIO STREAM LOADING
   useEffect(() => {
-    if (!audio.id || isAudioProcessing) return;
+  if (!audio.id || isAudioProcessing) return;
 
-    let localUrl = '';
-    const loadAudioFile = async () => {
-      try {
-        setLoading(true);
-        localUrl = await audioApi.fetchAudioFile(audio.id, 'processed');
-        setAudioUrl(localUrl);
-      } catch (error) {
-        console.error(`Ошибка загрузки аудиозаписи ${audio.id}:`, error);
-      } finally {
-        setLoading(false);
+  let localUrl = '';
+  let isMounted = true;
+
+  const loadAudioFile = async () => {
+    try {
+      setLoading(true);
+      const url = await audioApi.fetchAudioFile(audio.id, 'processed');
+      if (!isMounted) {
+        URL.revokeObjectURL(url);
+        return;
       }
-    };
+      localUrl = url;
+      setAudioUrl(localUrl);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (isMounted) setLoading(false);
+    }
+  };
 
-    loadAudioFile();
+  loadAudioFile();
 
-    return () => {
-      if (localUrl) {
-        URL.revokeObjectURL(localUrl);
-      }
-    };
-  }, [audio.id, isAudioProcessing]);
+  return () => {
+    isMounted = false;
+    if (localUrl) URL.revokeObjectURL(localUrl);
+  };
+}, [audio.id, isAudioProcessing]);
 
   if (isAudioProcessing) {
     return (
