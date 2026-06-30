@@ -1,7 +1,6 @@
 from datetime import datetime
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing import Optional
 
 from backend.src.models import UserRole
 
@@ -60,8 +59,13 @@ class ChangePasswordRequest(BaseModel):
         ..., min_length=4, description="Подтверждение нового пароля"
     )
 
-class UpdateAudioNameRequest(BaseModel):
-    filename: str
+class AudioFileSizes(BaseModel):
+    original_mb: float
+    original_16k_mb: float
+    processed_mb: float
+    transcription_txt_mb: float
+    transcription_json_mb: float
+    total_folder_mb: float
 
-class UpdateAudioDateRequest(BaseModel):
-    uploaded_at: datetime
+class TotalStorageResponse(BaseModel):
+    total_allocated_mb: float

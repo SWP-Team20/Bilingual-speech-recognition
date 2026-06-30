@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - New admin panel for users with role admin (user maintenance and control) in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/202
+- Storage size of each audio shown next to it, and total storage usage shown next to the "Аудиозаписи" heading in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- Custom audio player with a waveform supporting play/pause, click and drag-to-scrub seeking, and keyboard controls in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- Toast notifications, confirmation/input modals, loading skeletons, and empty states across the dashboard and admin panel in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- Active tab is now remembered across page reloads in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- Responsive layout that stacks the panels on narrow screens in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+
+### Changed
+- Accent color changed from brown to green, and the profile/upload icons are now black in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- Transcription toggle redesigned into an animated line-and-triangle icon (rotates when active) in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- Audio files now load lazily (only on first play) and audio status polling was consolidated into a single request instead of one per item in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- Native browser alert/confirm/prompt dialogs replaced with in-app toasts and modals in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+- General UI polish (shadows, rounded corners, hover and focus states) backed by centralized theme tokens in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
+
+### Fixed
+- Security page background now matches the rest of the application in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
 
 ## [0.2.0] - 28.06.2026
 
@@ -32,7 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 21.06.2026
 
 ### Added
-
 - Audio Streams page with list of audios and upload functionality in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/42
 - Uploaded audio transcription feature in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/49
 - Color coding Russian and Tatar words in transcription in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/52

@@ -26,6 +26,18 @@ export const audioApi = {
     return response.data;
   },
 
+  // Matches GET /api/v1/audio/{audio_id}/sizes
+  fetchAudioSizes: async (audioId) => {
+    const response = await apiClient.get(`/api/v1/audio/${audioId}/sizes`);
+    return response.data;
+  },
+
+  // Matches GET /api/v1/audio/storage/total
+  fetchTotalStorage: async () => {
+    const response = await apiClient.get('/api/v1/audio/storage/total');
+    return response.data;
+  },
+
   // Matches GET /api/v1/audio/{audio_id}?type=processed
   fetchAudioFile: async (audioId, type) => {
     const response = await apiClient.get(`/api/v1/audio/${audioId}?type=${type}`, {

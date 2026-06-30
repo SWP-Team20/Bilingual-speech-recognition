@@ -7,17 +7,28 @@ import TabButton from '../components/TabButton';
 import AudioPanel from './AudioPanel';
 import StatisticsPanel from './StatisticsPanel';
 import AdminPanel from './AdminPanel';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { MOBILE_BREAKPOINT } from '../theme';
 
 function DashboardPage({ onLogout }) {
   const navigate = useNavigate();
   const [userRole, setUserRole] = useState('');
-  const [activeTab, setActiveTab] = useState('audio');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('activeTab') || 'audio');
   const [pendingUploads, setPendingUploads] = useState([]);
   const [uploadVersion, setUploadVersion] = useState(0);
+  const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
 
   useEffect(() => {
     userApi.fetchProfile()
-      .then(data => setUserRole(data.role || 'user'))
+      .then(data => {
+        const role = data.role || 'user';
+        setUserRole(role);
+        if (activeTab === 'admin' && role !== 'admin') setActiveTab('audio');
+      })
       .catch(error => console.error("Ошибка загрузки данных пользователя:", error));
   }, []);
 
@@ -33,11 +44,11 @@ function DashboardPage({ onLogout }) {
   const isAdmin = userRole === 'admin';
 
   return (
-    <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#f5f5f5', height: '100vh', maxHeight: '100vh', padding: '40px 0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: 'hidden' }}>
-      <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%', padding: '0 40px', flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', minHeight: 0 }}>
+    <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#f5f5f5', height: isNarrow ? 'auto' : '100vh', minHeight: '100vh', maxHeight: isNarrow ? 'none' : '100vh', padding: isNarrow ? '20px 0' : '40px 0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: isNarrow ? 'auto' : 'hidden' }}>
+      <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%', padding: isNarrow ? '0 16px' : '0 40px', flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', minHeight: 0 }}>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', alignItems: 'center', gap: '24px', marginBottom: '40px', width: '100%', flexShrink: 0 }}>
-          <h1 style={{ fontSize: '42px', fontWeight: 'bold', margin: 0, letterSpacing: '-0.5px', padding: 0, textAlign: 'left' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', alignItems: 'center', gap: isNarrow ? '12px' : '24px', marginBottom: isNarrow ? '24px' : '40px', width: '100%', flexShrink: 0 }}>
+          <h1 style={{ fontSize: isNarrow ? '22px' : '42px', fontWeight: 'bold', margin: 0, letterSpacing: '-0.5px', padding: 0, textAlign: 'left' }}>
             Bilingual Speech Recognition
           </h1>
 

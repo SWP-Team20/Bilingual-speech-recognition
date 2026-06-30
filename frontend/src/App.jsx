@@ -3,6 +3,7 @@ import { useState } from 'react';
 import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import SecurityPage from './pages/SecurityPage';
+import { ToastProvider } from './components/ui/Toast';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -21,6 +22,7 @@ function App() {
   };
 
   return (
+    <ToastProvider>
     <Router>
       <Routes>
         <Route 
@@ -54,6 +56,7 @@ function App() {
         />
       </Routes>
     </Router>
+    </ToastProvider>
   );
 }
 

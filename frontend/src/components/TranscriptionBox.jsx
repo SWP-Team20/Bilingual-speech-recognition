@@ -5,11 +5,12 @@ function TranscriptionBox({ transcriptionText, transcriptionWords, sentences, au
     <div style={{ 
       backgroundColor: '#fff', 
       padding: '24px', 
-      borderRadius: '4px', 
-      border: '1px solid #ddd', 
+      borderRadius: '12px', 
+      border: '1px solid #e6e6e6', 
       height: 'fit-content', 
       boxSizing: 'border-box',
-      width: '100%'
+      width: '100%',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
     }}>
       
       {/* ================= LANGUAGE BADGES BAR ================= */}
@@ -76,7 +77,7 @@ function TranscriptionBox({ transcriptionText, transcriptionWords, sentences, au
           // Render via organized speaker sentences if available
           sentences.map((sentence, sIdx) => (
             <div key={sIdx} style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 'bold', color: '#773505', fontSize: '14px', marginBottom: '2px' }}>
+              <span style={{ fontWeight: 'bold', color: '#16a34a', fontSize: '14px', marginBottom: '2px' }}>
                 {sentence.speaker || 'Неизвестный говорящий'}:
               </span>
               <p style={{ margin: 0, fontWeight: '500', color: '#333' }}>
@@ -120,7 +121,7 @@ function TranscriptionBox({ transcriptionText, transcriptionWords, sentences, au
 
             return paragraphs.map((p, pIdx) => (
               <div key={pIdx} style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontWeight: 'bold', color: '#773505', fontSize: '14px', marginBottom: '2px' }}>
+                <span style={{ fontWeight: 'bold', color: '#16a34a', fontSize: '14px', marginBottom: '2px' }}>
                   {p.speaker}:
                 </span>
                 <p style={{ margin: 0, fontWeight: '500' }}>
