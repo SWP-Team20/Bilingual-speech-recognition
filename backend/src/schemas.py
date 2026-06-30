@@ -69,3 +69,15 @@ class AudioFileSizes(BaseModel):
 
 class TotalStorageResponse(BaseModel):
     total_allocated_mb: float
+
+
+class SearchHitResponse(BaseModel):
+    audio_id: UUID
+    text: str
+    raw: str | None = None
+    language: str
+    start_sec: float
+    end_sec: float
+    confidence: float | None = None
+    speaker: str | None = None
+    recorded_at: datetime | None = None

@@ -3,8 +3,8 @@ import os
 import shutil
 import logging
 from uuid import UUID, uuid4
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Response, status, BackgroundTasks
+from typing import Annotated, List, Optional
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Query, Response, status, BackgroundTasks
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -13,6 +13,7 @@ from backend.src.database import get_db, SessionLocal
 from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
+from backend.src.services.audio_filter import CorpusFilters, filter_audio_files, filter_word_hits
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -73,12 +74,33 @@ def get_folder_size(folder_path: str) -> int:
 
 # --- ALL ROLES (ADMIN, MANAGER, USER) ---
 
+def get_corpus_filters(
+    q: Optional[str] = Query(None, description="Слово (точное совпадение нормализованного text)"),
+    lang: Optional[str] = Query(None, description="Язык слова: ru / tt / unknown"),
+    speaker: Optional[str] = Query(None, description="Метка говорящего (мама / папа / …)"),
+    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
+    status: Optional[str] = Query(None, description="Статус обработки: done / processing / error / …"),
+) -> CorpusFilters:
+    return CorpusFilters(
+        word=q,
+        lang=lang,
+        speaker=speaker,
+        date_from=date_from,
+        date_to=date_to,
+        status=status,
+    )
+
+
 @router.get("/audio/", response_model=List[schemas.AudioFileResponse])
 async def get_all_audio(
+    filters: Annotated[CorpusFilters, Depends(get_corpus_filters)],
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    return db.query(models.AudioFile).all()
+    """Список аудио с необязательными фильтрами: дата · слово · говорящий · язык · статус."""
+    query = db.query(models.AudioFile)
+    return filter_audio_files(query, filters).all()
 
 
 @router.get("/audio/{audio_id}")
@@ -199,15 +221,11 @@ async def get_audio_status(
     return {"id": audio.id, "status": audio.status}
 
 
-@router.get("/search/")
+@router.get("/search/", response_model=List[schemas.SearchHitResponse])
 async def search_words(
-    q: str = None,
-    lang: str = None,
-    speaker: str = None,
-    date_from: str = None,
-    date_to: str = None,
+    filters: Annotated[CorpusFilters, Depends(get_corpus_filters)],
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Поиск по корпусу с фильтрами (все необязательны):
       q         — слово (точное совпадение нормализованного text);
@@ -215,35 +233,34 @@ async def search_words(
       speaker   — метка говорящего (мама/папа); работает после диаризации;
       date_from / date_to — диапазон по дате записи (recorded_at, ISO 'YYYY-MM-DD').
     Возвращает вхождения слова + таймкод оригинала (для перехода в плеере)."""
-    query = (db.query(models.Word)
-             .join(models.AudioFile, models.AudioFile.id == models.Word.audio_id))
-    if q:
-        query = query.filter(models.Word.text == q.strip().lower())
-    if lang:
-        query = query.filter(models.Word.language == lang)
-    if speaker:
-        query = (query.join(models.Speaker, models.Speaker.id == models.Word.speaker_id)
-                 .filter(models.Speaker.label == speaker))
-    if date_from:
-        query = query.filter(models.AudioFile.recorded_at >= date_from)
-    if date_to:
-        query = query.filter(models.AudioFile.recorded_at < date_to)
-    hits = query.all()
-    return [{
-        "audio_id": str(h.audio_id), "text": h.text, "raw": h.raw,
-        "language": h.language, "start_sec": h.start_sec, "end_sec": h.end_sec,
-        "confidence": h.confidence,
-        "speaker": h.speaker.label if h.speaker else None,
-        "recorded_at": h.audio.recorded_at.isoformat() if h.audio and h.audio.recorded_at else None,
-    } for h in hits]
+    query = (
+        db.query(models.Word)
+        .join(models.AudioFile, models.AudioFile.id == models.Word.audio_id)
+    )
+    hits = filter_word_hits(query, filters).all()
+    return [
+        {
+            "audio_id": h.audio_id,
+            "text": h.text,
+            "raw": h.raw,
+            "language": h.language,
+            "start_sec": h.start_sec,
+            "end_sec": h.end_sec,
+            "confidence": h.confidence,
+            "speaker": h.speaker.label if h.speaker else None,
+            "recorded_at": h.audio.recorded_at if h.audio else None,
+        }
+        for h in hits
+    ]
 
 
 @router.get("/transcriptions/", response_model=List[schemas.AudioWithTextResponse])
 async def get_all_transcriptions(
+    filters: Annotated[CorpusFilters, Depends(get_corpus_filters)],
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
-    audio_files = db.query(models.AudioFile).all()
+    audio_files = filter_audio_files(db.query(models.AudioFile), filters).all()
     result = []
     for audio in audio_files:
         text_file_path = os.path.join(audio.folder_path, "transcription.txt")
@@ -388,10 +405,6 @@ async def update_transcription(
         "filename": audio.filename,
         "transcription_text": payload.transcription_text
     }
-
-import os
-import shutil
-from fastapi import Response, status, HTTPException
 
 @router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_audio(
