@@ -34,3 +34,5 @@ def create_initial_admin():
         print(f"Ошибка при инициализации базы данных: {e}")
     finally:
         db.close()
+
+create_initial_admin()

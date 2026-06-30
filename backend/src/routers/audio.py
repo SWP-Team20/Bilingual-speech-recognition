@@ -14,6 +14,12 @@ from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
 
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import and_
+from sqlalchemy.orm import Session
+from datetime import date, timedelta, datetime
+from typing import List, Optional
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -49,10 +55,28 @@ def background_process_audio(input_path: str, storage_dir: str, audio_id: str, o
 
 @router.get("/audio/", response_model=List[schemas.AudioFileResponse])
 async def get_all_audio(
+    date_specific: Optional[date] = Query(None, description="Поиск за конкретный день (ГГГГ-ММ-ДД)"),
+    date_from: Optional[date] = Query(None, description="Начало периода (ГГГГ-ММ-ДД)"),
+    date_to: Optional[date] = Query(None, description="Конец периода (ГГГГ-ММ-ДД)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return db.query(models.AudioFile).all()
+    query = db.query(models.AudioFile)
+
+    if date_specific:
+        start_datetime = datetime.combine(date_specific, datetime.min.time())
+        end_datetime = datetime.combine(date_specific, datetime.max.time())
+        query = query.filter(models.AudioFile.uploaded_at.between(start_datetime, end_datetime))
+
+    elif date_from or date_to:
+        if date_from:
+            start_datetime = datetime.combine(date_from, datetime.min.time())
+            query = query.filter(models.AudioFile.uploaded_at >= start_datetime)
+        if date_to:
+            end_datetime = datetime.combine(date_to, datetime.max.time())
+            query = query.filter(models.AudioFile.uploaded_at <= end_datetime)
+
+    return query.all()
 
 
 @router.get("/audio/{audio_id}")
@@ -182,7 +206,6 @@ async def get_all_transcriptions(
         })
     return result
 
-
 @router.get("/transcriptions/{audio_id}")
 async def get_transcription_by_id(
     audio_id: UUID,
@@ -256,6 +279,73 @@ async def upload_audio(
 
     return db_audio
 
+
+@router.patch("/audio/{audio_id}/name", response_model=schemas.AudioFileResponse)
+async def update_audio_name(
+    audio_id: str,
+    payload: schemas.UpdateAudioNameRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Недостаточно прав для выполнения этого действия"
+        )
+
+    try:
+        parsed_uuid = UUID(audio_id.strip())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Некорректный формат ID")
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == parsed_uuid).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    audio.filename = payload.filename
+
+    try:
+        db.commit()
+        db.refresh(audio)
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Ошибка при обновлении имени")
+
+    return audio
+
+
+@router.patch("/audio/{audio_id}/date", response_model=schemas.AudioFileResponse)
+async def update_audio_date(
+    audio_id: str,
+    payload: schemas.UpdateAudioDateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Недостаточно прав для выполнения этого действия"
+        )
+    
+    try:
+        parsed_uuid = UUID(audio_id.strip())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Некорректный формат ID")
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == parsed_uuid).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    audio.uploaded_at = payload.uploaded_at
+
+    try:
+        db.commit()
+        db.refresh(audio)
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Ошибка при обновлении даты")
+
+    return audio
 
 @router.patch("/audio/{audio_id}/processed", response_model=schemas.AudioFileResponse)
 async def update_processed_audio(
@@ -338,24 +428,3 @@ async def delete_audio(
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-# @router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
-# async def delete_audio(
-#     audio_id: UUID,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
-#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
-#
-#     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
-#     if not audio:
-#         raise HTTPException(status_code=404, detail="Запись не найдена")
-#
-#     if os.path.exists(audio.folder_path):
-#         shutil.rmtree(audio.folder_path)
-#
-#     db.delete(audio)
-#     db.commit()
-#     return Response(status_code=status.HTTP_204_NO_CONTENT)
