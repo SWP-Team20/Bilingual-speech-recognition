@@ -8,8 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Audio filtration by date in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/196
-- Added ability to fetch audio storage information in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/197
+- New admin panel for users with role admin (user maintenance and control) in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/202
 
 ## [0.2.0] - 28.06.2026
 
