@@ -12,12 +12,12 @@ sequenceDiagram
     activate API
     API->>DB: Save request metadata (Status: Pending)
     
-    API->>Audio: Send audio for normalization/chunking
+    API->>Audio: Send audio for processing
     activate Audio
     Audio-->>API: Return processed audio chunks
     deactivate Audio
     
-    API->>Model: Process chunks (Detect Language & Transcribe)
+    Audio->>Model: Process chunks (Detect Language & Transcribe)
     activate Model
     Model-->>API: Return Bilingual Text Data
     deactivate Model
