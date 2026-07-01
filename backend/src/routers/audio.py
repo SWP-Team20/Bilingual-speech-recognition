@@ -17,7 +17,12 @@ from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
 
-from backend.src.services.audio_filter import CorpusFilters, filter_audio_files, filter_word_hits
+from backend.src.services.audio_filter import (
+    CorpusFilters,
+    filter_audio_files,
+    filter_word_hits,
+    parse_multi_values,
+)
 from backend.src import db_index
 
 router = APIRouter()
