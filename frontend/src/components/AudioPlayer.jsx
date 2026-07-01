@@ -4,8 +4,11 @@ import ConfirmDialog from './ui/ConfirmDialog';
 import { useToast } from './ui/toastContext';
 import { colors, radius, shadow } from '../theme';
 import { isAudioProcessing as statusIsAudioProcessing, isTextProcessing as statusIsTextProcessing, isDone, isError } from '../constants/status';
+import { canManageCorpus } from '../constants/roleTranslations';
 
 const WAVEFORM_BARS = 46;
+const CONTROLS_GAP = '12px';
+const ACTION_BUTTONS_GAP = '4px';
 
 // Deterministic pseudo-random bar heights so each audio keeps a stable waveform
 function buildWaveform(seedSource) {
@@ -42,6 +45,8 @@ function formatDate(value) {
 
 function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, userRole }) {
   const [loading, setLoading] = useState(false);
+  const [downloadingType, setDownloadingType] = useState(null);
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sizeMb, setSizeMb] = useState(null);
@@ -53,14 +58,16 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
 
   const audioRef = useRef(null);
   const waveRef = useRef(null);
+  const downloadMenuRef = useRef(null);
   const objectUrlRef = useRef('');
   const toast = useToast();
   const waveform = useMemo(() => buildWaveform(audio.id), [audio.id]);
 
   // Status now comes straight from the parent (single polling source).
   const currentStatus = audio.status;
-  const isUserRole = userRole?.toLowerCase() === 'user';
-  const isDeleteDisabled = isDeleting || isUserRole;
+  const canManage = canManageCorpus(userRole);
+  const isDeleteDisabled = isDeleting;
+  const isDownloading = downloadingType !== null;
 
   const isAudioProcessing = statusIsAudioProcessing(currentStatus);
   const isTextProcessing = statusIsTextProcessing(currentStatus);
@@ -83,6 +90,23 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     };
   }, []);
+
+  // Close the download menu on outside click or Escape
+  useEffect(() => {
+    if (!downloadMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target)) {
+        setDownloadMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => { if (e.key === 'Escape') setDownloadMenuOpen(false); };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [downloadMenuOpen]);
 
   // Drag-to-scrub: track the cursor across the whole window while dragging
   useEffect(() => {
@@ -175,7 +199,10 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
           style={{ display: 'none' }}
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: CONTROLS_GAP }}>
+          {/* Play + download (tight), then time — same spacing to waveform */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: CONTROLS_GAP, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: ACTION_BUTTONS_GAP, flexShrink: 0 }}>
           {/* Play / Pause */}
           <button
             onClick={togglePlay}
@@ -208,10 +235,97 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
             )}
           </button>
 
+          {/* Download menu: choose original or processed audio (manager/admin only) */}
+          {canManage && (
+          <div ref={downloadMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+            <button
+              onClick={() => { if (!isDownloading) setDownloadMenuOpen((open) => !open); }}
+              disabled={isDownloading}
+              aria-haspopup="menu"
+              aria-expanded={downloadMenuOpen}
+              aria-label="Скачать аудиозапись"
+              title="Скачать"
+              onMouseEnter={(e) => { if (!isDownloading) e.currentTarget.style.backgroundColor = colors.page; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              style={{
+                flexShrink: 0, width: '40px', height: '40px', borderRadius: radius.sm, border: 'none',
+                backgroundColor: 'transparent', color: colors.dark,
+                cursor: isDownloading ? 'wait' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background-color 0.15s ease',
+              }}
+            >
+              {isDownloading ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  <circle cx="12" cy="12" r="9" fill="none" stroke={colors.waveform} strokeWidth="3" />
+                  <path d="M12 3 a9 9 0 0 1 9 9" fill="none" stroke={colors.dark} strokeWidth="3" strokeLinecap="round" style={{ transformOrigin: 'center', animation: 'spin 0.8s linear infinite' }} />
+                </svg>
+              ) : (
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3v12" />
+                  <path d="M7 10l5 5 5-5" />
+                  <path d="M4 19h16" />
+                </svg>
+              )}
+            </button>
+
+            {downloadMenuOpen && (
+              <div
+                role="menu"
+                style={{
+                  position: 'absolute', top: '46px', left: 0, backgroundColor: colors.surface,
+                  minWidth: '230px', borderRadius: radius.md, border: `1px solid ${colors.border}`,
+                  boxShadow: shadow.lg, zIndex: 1000, overflow: 'hidden',
+                  display: 'flex', flexDirection: 'column', animation: 'downloadMenuIn 0.14s ease-out',
+                }}
+              >
+                <style>{`@keyframes downloadMenuIn { from { opacity: 0; transform: translateY(-6px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
+                <div style={{ padding: '8px 14px 4px', fontSize: '11px', fontWeight: '600', letterSpacing: '0.04em', textTransform: 'uppercase', color: colors.textFaint }}>
+                  Скачать аудио
+                </div>
+                <button
+                  role="menuitem"
+                  onClick={() => handleDownload('original')}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.primarySoft; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  style={{
+                    padding: '10px 14px', backgroundColor: 'transparent', border: 'none', textAlign: 'left',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'flex', flexDirection: 'column', gap: '2px',
+                    transition: 'background-color 0.15s ease',
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: colors.text }}>Оригинал</span>
+                  <span style={{ fontSize: '12px', color: colors.textMuted }}>Исходный файл, как был загружен</span>
+                </button>
+                <div style={{ height: '1px', backgroundColor: colors.divider, width: '100%' }} />
+                <button
+                  role="menuitem"
+                  onClick={() => handleDownload('processed')}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.primarySoft; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  style={{
+                    padding: '10px 14px', backgroundColor: 'transparent', border: 'none', textAlign: 'left',
+                    cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', gap: '2px',
+                    transition: 'background-color 0.15s ease',
+                  }}
+                >
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: colors.text }}>Обработанное</span>
+                  <span style={{ fontSize: '12px', color: colors.textMuted }}>С вырезанными паузами</span>
+                </button>
+              </div>
+            )}
+          </div>
+          )}
+
+          </div>
+
           {/* Time (reflects the drag position while scrubbing) */}
-          <span style={{ flexShrink: 0, fontSize: '13px', color: isDragging ? colors.primary : colors.textMuted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', minWidth: '78px', transition: 'color 0.15s ease' }}>
+          <span style={{ flexShrink: 0, fontSize: '13px', color: isDragging ? colors.primary : colors.textMuted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', transition: 'color 0.15s ease' }}>
             {formatTime(isDragging ? dragRatio * duration : currentTime)}/{formatTime(duration)}
           </span>
+          </div>
 
           {/* Waveform (click, drag, or arrow keys to scrub) */}
           <div
@@ -239,6 +353,8 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
             })}
           </div>
 
+          {/* Action buttons grouped tightly together */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: ACTION_BUTTONS_GAP, flexShrink: 0 }}>
           {/* Transcription toggle (animated line + triangle) */}
           <button
             onClick={() => isFullyDone && onTranscribeToggle(audio.id)}
@@ -274,6 +390,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
           </button>
 
           {/* Delete */}
+          {canManage && (
           <button
             onClick={() => { if (!isDeleteDisabled) setConfirmOpen(true); }}
             disabled={isDeleteDisabled}
@@ -288,11 +405,13 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
               cursor: isDeleteDisabled ? 'not-allowed' : 'pointer',
               fontSize: '14px', fontWeight: 'bold', height: '40px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              opacity: isUserRole ? 0.6 : 1, transition: 'all 0.2s ease',
+              transition: 'all 0.2s ease',
             }}
           >
             {isDeleting ? '...' : '✕'}
           </button>
+          )}
+          </div>
         </div>
 
         {(isTextProcessing || isError(currentStatus)) && (
@@ -371,6 +490,20 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
       el.play().catch(() => {});
     } else {
       el.pause();
+    }
+  }
+
+  async function handleDownload(type) {
+    if (!canManage || isDownloading) return;
+    setDownloadMenuOpen(false);
+    setDownloadingType(type);
+    try {
+      await audioApi.downloadAudioFile(audio.id, type, audio.filename);
+    } catch (error) {
+      console.error("Ошибка при скачивании аудио:", error);
+      toast.error('Не удалось скачать аудиозапись');
+    } finally {
+      setDownloadingType(null);
     }
   }
 

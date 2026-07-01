@@ -7,6 +7,7 @@ import TabButton from '../components/TabButton';
 import AudioPanel from './AudioPanel';
 import StatisticsPanel from './StatisticsPanel';
 import AdminPanel from './AdminPanel';
+import { canManageCorpus } from '../constants/roleTranslations';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { MOBILE_BREAKPOINT } from '../theme';
 
@@ -42,22 +43,25 @@ function DashboardPage({ onLogout }) {
   };
 
   const isAdmin = userRole === 'admin';
+  const canManage = canManageCorpus(userRole);
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#f5f5f5', height: isNarrow ? 'auto' : '100vh', minHeight: '100vh', maxHeight: isNarrow ? 'none' : '100vh', padding: isNarrow ? '20px 0' : '40px 0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: isNarrow ? 'auto' : 'hidden' }}>
       <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%', padding: isNarrow ? '0 16px' : '0 40px', flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', minHeight: 0 }}>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', alignItems: 'center', gap: isNarrow ? '12px' : '24px', marginBottom: isNarrow ? '24px' : '40px', width: '100%', flexShrink: 0 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: canManage ? '1fr auto auto' : '1fr auto', alignItems: 'center', gap: isNarrow ? '12px' : '24px', marginBottom: isNarrow ? '24px' : '40px', width: '100%', flexShrink: 0 }}>
           <h1 style={{ fontSize: isNarrow ? '22px' : '42px', fontWeight: 'bold', margin: 0, letterSpacing: '-0.5px', padding: 0, textAlign: 'left' }}>
             Bilingual Speech Recognition
           </h1>
 
-          <UploadButton
-            onUploadStart={handleUploadStart}
-            onUploadEnd={handleUploadEnd}
-            userRole={userRole}
-            style={{ height: '48px', boxSizing: 'border-box' }}
-          />
+          {canManage && (
+            <UploadButton
+              onUploadStart={handleUploadStart}
+              onUploadEnd={handleUploadEnd}
+              userRole={userRole}
+              style={{ height: '48px', boxSizing: 'border-box' }}
+            />
+          )}
 
           <ProfileDropdown onLogout={onLogout} onNavigateToSecurity={() => navigate('/security')} />
         </div>
