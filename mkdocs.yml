@@ -21,11 +21,12 @@ markdown_extensions:
 
 # Site structure
 nav:
-  - Home: README.md
+  - Home: index.md
   - Development : deployment.md
   - Development Process: development-process.md
   - Definition of Done: definition-of-done.md
   - DB Scheme for team : db_schema_for_team.md
+  - Quality Requirements : quality-requirements.md
   - Quality Requirements Tests : quality-requirements-tests.md
   - Roadmap : roadmap.md
   - RU/TT pipeline : ru_tt_pipeline.md

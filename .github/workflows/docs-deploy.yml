@@ -6,6 +6,7 @@ on:
     paths:
       - 'docs/**'
       - 'mkdocs.yml'
+      - 'README.md'
 
 permissions:
   contents: write
@@ -19,4 +20,5 @@ jobs:
         with:
           python-version: 3.x
       - run: pip install mkdocs-material
+      - run: cp README.md docs/index.md
       - run: mkdocs gh-deploy --force
