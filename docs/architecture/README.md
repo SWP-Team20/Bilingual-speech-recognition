@@ -5,7 +5,7 @@ This directory contains the maintained architecture documentation for the Biling
 The documentation describes the current delivered architecture of the product: a React/Vite frontend, a FastAPI backend, PostgreSQL metadata storage, local file storage for audio/transcript artifacts, and an ASR processing pipeline.
 
 ## Dynamic View
-The dynamic view illustrates how the system's components interact at runtime to fulfill use cases. We use a [Sequence Diagram](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/80a6dac6571c060386a6af8f8ac6d6669d9d33d8/docs/architecture/dynamic-view/dynamic.md) to map out the exact flow of data and control.  
+The dynamic view illustrates how the system's components interact at runtime to fulfill use cases. We use a [Sequence Diagram](dynamic-view/dynamic.md) to map out the exact flow of data and control.  
 
 ### Scenario: Bilingual Audio Processing and Transcription
 This sequence diagram represents the primary workflow of our application: a user uploading an audio file containing bilingual speech, and the system processing it to return a transcribed text
