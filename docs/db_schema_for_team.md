@@ -3,17 +3,34 @@
 ## Принцип хранения
 
 Тяжёлые артефакты лежат на диске в storage/<audio_id>/:
-- оригинал — original<ext>,
-- обрезанное аудио — processed.wav,
-- транскрипция — transcription.json и transcription.txt.
+- загруженный оригинал — `original<ext>`,
+- нормализованный оригинал 16 кГц — `original_16k.wav`,
+- обрезанное аудио — `processed.wav`,
+- транскрипция — `transcription.json` и `transcription.txt`.
 
-В Postgres — только метаданные, метрики, индекс слов и говорящие, то есть то, по чему ищем и фильтруем.
+В Postgres — метаданные, метрики, индекс слов, говорящие и пользователи (авторизация).
 
-Фильтры поиска:
+Фильтры поиска по корпусу:
 - дата,
-- слово,
+- слово (несколько — AND),
 - говорящий,
-- язык.
+- язык (несколько — AND),
+- статус обработки.
+
+## Таблица users
+
+Пользователи и роли (авторизация, не связана с говорящими в транскриптах).
+
+Поля:
+- id (UUID, ключ),
+- username (уникальный),
+- hashed_password,
+- role (`user` / `manager` / `admin`),
+- created_at.
+
+Роли:
+- **user** — просмотр и поиск;
+- **manager** / **admin** — загрузка, редактирование, удаление аудио.
 
 ## Таблица audio_files
 
@@ -21,12 +38,12 @@
 
 Поля:
 - id (UUID, ключ),
-- filename,
+- filename (отображаемое название; уникально без учёта регистра),
 - content_type,
 - uploaded_at,
-- recorded_at (дата записи — фильтр по дате, индекс),
+- recorded_at (дата записи — фильтр по дате, индекс; задаётся при загрузке),
 - folder_path (путь к папке storage/<id>/),
-- status,
+- status (`processing_audio` → `processing_text` → `done` / `error`),
 - primary_language,
 - duration_sec,
 - speech_sec,
@@ -52,7 +69,7 @@
 - language (ru/tt/unknown — фильтр по языку, индекс),
 - confidence (у татарских может быть пусто),
 - position (порядковый номер слова),
-- speaker_id (кто сказал — фильтр по говорящему, пусто до диаризации).
+- speaker_id (кто сказал — фильтр по говорящему; заполняется диаризацией).
 
 ## Таблица speakers
 
@@ -60,7 +77,7 @@
 
 Поля:
 - id,
-- label (мама, папа, ребёнок),
+- label (`Говорящий 1`, `Говорящий 2`… или переименованные мама/папа/ребёнок),
 - created_at.
 
 Список говорящих в записи берётся как уникальные speaker_id у её слов.
@@ -93,10 +110,12 @@
 transcription.json содержит:
 - audio_id,
 - filename,
-- recorded_at,
+- recorded_at (если задана),
+- timeline (`original`),
 - engine,
 - блок stats с длительностями,
 - segment_map с картой VAD,
+- sentences (реплики: speaker, lang, text, words),
 - массив words.
 
 Каждое слово:
@@ -109,25 +128,56 @@ transcription.json содержит:
 - seg_lang,
 - speaker.
 
-transcription.txt — те же нормализованные слова через пробел.
+transcription.txt — реплики построчно: `Говорящий N: текст`.
 
 ## API: как доставать данные
 
-Бэкенд FastAPI, роутер backend/src/routers/audio.py.
+Бэкенд FastAPI, префикс `/api/v1`. Все эндпоинты аудио требуют JWT
+(кроме `POST /auth/login`).
 
-- Загрузка аудио — POST /upload-audio/ (запускает пайплайн).
-- Поиск с фильтрами — GET /search/ с необязательными параметрами q (слово), lang (ru/tt), speaker (метка говорящего), date_from и date_to (диапазон по дате записи); все комбинируются, ответ содержит вхождения слова с таймкодом start_sec для перехода в плеере, а также speaker и recorded_at.
-- Список записей — GET /audio/.
-- Оригинал аудио — GET /audio/{id}?type=original.
-- Обрезанное аудио — GET /audio/{id}?type=processed.
-- Список транскриптов — GET /transcriptions/.
-- Полный транскрипт со словами — GET /transcriptions/{id}.
-- Редактирование текста — PATCH /transcriptions/{id}. Удаление — DELETE /audio/{id}.
+### Авторизация (`backend/src/routers/auth.py`)
+- Вход — `POST /auth/login` (form: username, password) → bearer token.
+- Профиль — `GET /auth/me`.
+- Смена пароля — `POST /auth/change-password`.
+- Удаление своего аккаунта — `DELETE /auth/me`.
+
+### Аудио и транскрипции (`backend/src/routers/audio.py`)
+
+**Все роли (user, manager, admin):**
+- Список записей с фильтрами — `GET /audio/` (`q`, `lang`, `speaker`, `date_from`, `date_to`, `status`).
+- Поиск по названию — `GET /audio/by-filename?filename=...`.
+- Статус обработки — `GET /audio/{id}/status`.
+- Размеры файлов записи — `GET /audio/{id}/sizes`.
+- Общий объём storage — `GET /audio/storage/total`.
+- Поиск по корпусу — `GET /search/` (те же фильтры; возвращает вхождения с `start_sec`).
+- Список транскриптов — `GET /transcriptions/`.
+- Полный транскрипт — `GET /transcriptions/{id}` (words + sentences).
+- Оригинал — `GET /audio/{id}?type=original`.
+- Обрезанное — `GET /audio/{id}?type=processed`.
+- Нормализованный 16 кГц — `GET /audio/{id}?type=original_16k`.
+
+**Только manager / admin:**
+- Загрузка — `POST /upload-audio/` (file, опц. `title`, `recorded_at`) → 202, фоновая обработка.
+- Правка метаданных — `PATCH /audio/{id}` (title, recorded_at).
+- Замена обрезанного файла — `PATCH /audio/{id}/processed`.
+- Редактирование текста — `PATCH /transcriptions/{id}`.
+- Удаление — `DELETE /audio/{id}`.
+
+### Админка пользователей (`backend/src/routers/admin.py`, только admin)
+- Список — `GET /users/`.
+- Создание — `POST /users/`.
+- Смена роли — `PATCH /users/{id}/role`.
+- Сброс пароля — `PATCH /users/{id}/reset-password`.
+- Удаление — `DELETE /users/{id}`.
 
 ## Обрезанное аудио
 
-Хранится как processed.wav в папке записи, отдельной колонки под путь нет: путь равен folder_path плюс имя файла. Скачивается ручкой type=processed. Этого достаточно, явные колонки путей не нужны.
+Хранится как `processed.wav` в папке записи, отдельной колонки под путь нет:
+путь = `folder_path` + имя файла. Скачивается ручкой `type=processed`.
 
 ## Нужно ли что-то добавлять в БД
 
-Для фильтров дата, слово, говорящий, язык схема достаточна: recorded_at, words.text, words.language, speakers и words.speaker_id уже есть, дополнительные таблицы не требуются. Говорящий заполняется автоматически шагом диаризации: пайплайн кластеризует голоса и проставляет speaker_id с анонимными метками (Говорящий 1, Говорящий 2…), их можно переименовать в мама/папа через UI/БД (update строки в speakers). Слова, метрики, частоты, сегменты, говорящие пишутся в db_index.save_transcription. Осталось только заполнять recorded_at — прокинуть дату записи при загрузке (поле есть, фильтр по дате готов).
+Для фильтров дата, слово, говорящий, язык, статус схема достаточна.
+Диаризация и индексация слов работают в проде (`db_index.save_transcription`).
+Метки говорящих «Говорящий N» можно переименовать в мама/папа через UI/БД
+(update строки в `speakers`).
