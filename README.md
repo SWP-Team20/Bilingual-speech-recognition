@@ -1,4 +1,4 @@
-# Bilingual-speech-recognition
+# Bilingual Speech Recognition
 
 ## Description
 
@@ -6,7 +6,9 @@ This project supports a longitudinal study of bilingual language development in 
 
 ## Helpful links
 
-To access deployed app in Innopolis University network go to the https://10.93.26.206:5173/
+To access deployed app in Innopolis University network go to the https://10.93.26.206:5173.
+
+To read hosted documentation check out [Bilingual Speech Recognition Docs](https://swp-team20.github.io/Bilingual-speech-recognition/).
 
 To run this app read the [Setup & Deployment Guide](docs/deployment.md).
 
