@@ -29,7 +29,7 @@ function measureTitleSingleLineWidth(titleEl) {
 
 // Move the search bar to its own row only when a single-line title would
 // reach the action buttons — i.e. there is no horizontal gap left for search.
-export function useHeaderSearchWrap({ headerRef, titleRef, gap = DEFAULT_GAP }) {
+export function useHeaderSearchWrap({ headerRef, titleRef, gap = DEFAULT_GAP, hasUploadButton = true }) {
   const [searchOnOwnRow, setSearchOnOwnRow] = useState(false);
   const rafRef = useRef(0);
 
@@ -40,11 +40,11 @@ export function useHeaderSearchWrap({ headerRef, titleRef, gap = DEFAULT_GAP }) 
 
     const headerWidth = header.clientWidth;
     const titleOneLineWidth = measureTitleSingleLineWidth(title);
-    const actionsWidth = UPLOAD_BUTTON_WIDTH + gap + PROFILE_BUTTON_WIDTH;
+    const actionsWidth = (hasUploadButton ? UPLOAD_BUTTON_WIDTH + gap : 0) + PROFILE_BUTTON_WIDTH;
     const titleReachesActions = titleOneLineWidth + gap + actionsWidth > headerWidth;
 
     setSearchOnOwnRow((prev) => (prev === titleReachesActions ? prev : titleReachesActions));
-  }, [headerRef, titleRef, gap]);
+  }, [headerRef, titleRef, gap, hasUploadButton]);
 
   const scheduleCheck = useCallback(() => {
     cancelAnimationFrame(rafRef.current);

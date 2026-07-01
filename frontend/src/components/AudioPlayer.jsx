@@ -3,7 +3,8 @@ import { audioApi } from '../api/audioApi';
 import ConfirmDialog from './ui/ConfirmDialog';
 import Modal from './ui/Modal';
 import { useToast } from './ui/toastContext';
-import { colors, radius, shadow, focusRing } from '../theme';
+import { colors, radius, shadow, focusRing, MOBILE_BREAKPOINT } from '../theme';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { isAudioProcessing as statusIsAudioProcessing, isTextProcessing as statusIsTextProcessing, isDone, isError } from '../constants/status';
 import { canManageCorpus } from '../constants/roleTranslations';
 
@@ -82,6 +83,8 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
   const objectUrlRef = useRef('');
   const toast = useToast();
   const waveform = useMemo(() => buildWaveform(audio.id), [audio.id]);
+  const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
+  const controlBtnSize = isNarrow ? 36 : 40;
 
   // Status now comes straight from the parent (single polling source).
   const currentStatus = audio.status;
@@ -215,8 +218,16 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
   return (
     <div style={{ marginBottom: '16px', width: '100%', boxSizing: 'border-box', textAlign: 'left' }}>
       <style>{`@keyframes chevronPulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }`}</style>
-      <div style={{ margin: '0 0 8px 0', color: colors.text, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, fontWeight: '500', fontSize: '14px', lineHeight: '20px' }}>
+      <div style={{
+        margin: '0 0 8px 0',
+        color: colors.text,
+        display: 'flex',
+        flexDirection: isNarrow ? 'column' : 'row',
+        alignItems: isNarrow ? 'flex-start' : 'center',
+        justifyContent: 'space-between',
+        gap: isNarrow ? '4px' : '8px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, fontWeight: '500', fontSize: '14px', lineHeight: '20px', width: isNarrow ? '100%' : 'auto' }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '20px' }}>{audio.filename}</span>
           {canManage && (
             <button
@@ -246,7 +257,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
           )}
         </div>
         {displayDate && (
-          <span style={{ flexShrink: 0, fontSize: '14px', fontWeight: '500', lineHeight: '20px', color: colors.textMuted, whiteSpace: 'nowrap' }}>
+          <span style={{ flexShrink: 0, fontSize: isNarrow ? '13px' : '14px', fontWeight: '500', lineHeight: '20px', color: colors.textMuted, whiteSpace: 'nowrap' }}>
             {displayDate}
           </span>
         )}
@@ -255,7 +266,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
       <div
         onMouseEnter={(e) => { e.currentTarget.style.boxShadow = shadow.lg; e.currentTarget.style.borderColor = colors.primarySoftBorder; }}
         onMouseLeave={(e) => { e.currentTarget.style.boxShadow = shadow.sm; e.currentTarget.style.borderColor = colors.border; }}
-        style={{ backgroundColor: colors.surface, padding: '14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, boxSizing: 'border-box', boxShadow: shadow.sm, transition: 'box-shadow 0.2s ease, border-color 0.2s ease' }}
+        style={{ backgroundColor: colors.surface, padding: isNarrow ? '12px' : '14px', borderRadius: radius.md, border: `1px solid ${colors.border}`, boxSizing: 'border-box', boxShadow: shadow.sm, transition: 'box-shadow 0.2s ease, border-color 0.2s ease' }}
       >
         <audio
           ref={audioRef}
@@ -267,9 +278,9 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
           style={{ display: 'none' }}
         />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: CONTROLS_GAP }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isNarrow ? '8px' : CONTROLS_GAP }}>
           {/* Play + download (tight), then time — same spacing to waveform */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: CONTROLS_GAP, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isNarrow ? '8px' : CONTROLS_GAP, flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: ACTION_BUTTONS_GAP, flexShrink: 0 }}>
           {/* Play / Pause */}
           <button
@@ -279,7 +290,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = colors.darkHover)}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.dark)}
             style={{
-              flexShrink: 0, width: '40px', height: '40px', borderRadius: '50%', border: 'none',
+              flexShrink: 0, width: `${controlBtnSize}px`, height: `${controlBtnSize}px`, borderRadius: '50%', border: 'none',
               backgroundColor: colors.dark, color: '#fff', cursor: loading ? 'wait' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'background-color 0.15s ease, transform 0.1s ease',
@@ -316,7 +327,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
               onMouseEnter={(e) => { if (!isDownloading) e.currentTarget.style.backgroundColor = colors.page; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
               style={{
-                flexShrink: 0, width: '40px', height: '40px', borderRadius: radius.sm, border: 'none',
+                flexShrink: 0, width: `${controlBtnSize}px`, height: `${controlBtnSize}px`, borderRadius: radius.sm, border: 'none',
                 backgroundColor: 'transparent', color: colors.dark,
                 cursor: isDownloading ? 'wait' : 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -330,7 +341,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
                   <path d="M12 3 a9 9 0 0 1 9 9" fill="none" stroke={colors.dark} strokeWidth="3" strokeLinecap="round" style={{ transformOrigin: 'center', animation: 'spin 0.8s linear infinite' }} />
                 </svg>
               ) : (
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width={controlBtnSize} height={controlBtnSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 3v12" />
                   <path d="M7 10l5 5 5-5" />
                   <path d="M4 19h16" />
@@ -342,7 +353,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
               <div
                 role="menu"
                 style={{
-                  position: 'absolute', top: '46px', left: 0, backgroundColor: colors.surface,
+                  position: 'absolute', top: `${controlBtnSize + 6}px`, left: 0, backgroundColor: colors.surface,
                   minWidth: '230px', borderRadius: radius.md, border: `1px solid ${colors.border}`,
                   boxShadow: shadow.lg, zIndex: 1000, overflow: 'hidden',
                   display: 'flex', flexDirection: 'column', animation: 'downloadMenuIn 0.14s ease-out',
@@ -390,7 +401,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
           </div>
 
           {/* Time (reflects the drag position while scrubbing) */}
-          <span style={{ flexShrink: 0, fontSize: '13px', color: isDragging ? colors.primary : colors.textMuted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', transition: 'color 0.15s ease' }}>
+          <span style={{ flexShrink: 0, fontSize: isNarrow ? '12px' : '13px', color: isDragging ? colors.primary : colors.textMuted, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', minWidth: isNarrow ? '68px' : undefined, transition: 'color 0.15s ease' }}>
             {formatTime(isDragging ? dragRatio * duration : currentTime)}/{formatTime(duration)}
           </span>
           </div>
@@ -436,7 +447,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
             onMouseEnter={(e) => { if (isFullyDone) e.currentTarget.style.backgroundColor = colors.primarySoft; }}
             onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             style={{
-              flexShrink: 0, width: '40px', height: '40px', borderRadius: radius.sm, border: 'none',
+              flexShrink: 0, width: `${controlBtnSize}px`, height: `${controlBtnSize}px`, borderRadius: radius.sm, border: 'none',
               backgroundColor: 'transparent',
               color: !isFullyDone ? colors.disabled : (isSelected ? colors.primaryHover : colors.primary),
               cursor: isFullyDone ? 'pointer' : 'not-allowed',
@@ -444,7 +455,9 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
             }}
           >
             <svg
-              width="40" height="40" viewBox="0 0 24 24"
+              width={controlBtnSize}
+              height={controlBtnSize}
+              viewBox="0 0 24 24"
               style={{
                 transform: isSelected ? 'rotate(-90deg)' : 'rotate(0deg)',
                 transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -469,9 +482,9 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
               flexShrink: 0, backgroundColor: 'transparent',
               color: isDeleteDisabled ? '#ccc' : colors.danger,
               border: `1px solid ${isDeleteDisabled ? colors.borderStrong : colors.danger}`,
-              borderRadius: radius.sm, padding: '6px 10px',
+              borderRadius: radius.sm, padding: isNarrow ? '6px 8px' : '6px 10px',
               cursor: isDeleteDisabled ? 'not-allowed' : 'pointer',
-              fontSize: '14px', fontWeight: 'bold', height: '40px',
+              fontSize: '14px', fontWeight: 'bold', height: `${controlBtnSize}px`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               transition: 'all 0.2s ease',
             }}
