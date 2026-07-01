@@ -1,9 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from backend.src.database import engine, Base
-from backend.src.routers import audio, auth, admin
+from backend.src.routers import audio, auth, admin, speakers
 
 Base.metadata.create_all(bind=engine)
+
+with engine.begin() as conn:
+    conn.execute(text("ALTER TABLE speakers ADD COLUMN IF NOT EXISTS embedding JSON"))
 
 app = FastAPI(title="Bilingual Speech Backend API")
 
@@ -26,5 +30,6 @@ app.add_middleware(
 )
 
 app.include_router(audio.router, prefix="/api/v1")
+app.include_router(speakers.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")

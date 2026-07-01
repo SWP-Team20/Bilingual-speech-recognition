@@ -21,18 +21,15 @@ SR = 16000
 
 # --- сторона главного процесса: спавн воркера ------------------------------
 def assign_speakers(wav_path, segments, sampling_rate: int = SR):
-    """Возвращает список меток говорящих (0,1,2…), выровненный по segments.
-    <=1 сегмента -> [0]. Считается в отдельном процессе (изоляция speechbrain)."""
+    """Возвращает (метки по segments, {cluster_id: centroid}).
+    Метки — 0,1,2…; <=0 сегментов -> ([], {}). Считается в отдельном процессе."""
     if not segments:
-        return []
-    if len(segments) == 1:
-        return [0]
+        return [], {}
     import subprocess
     payload = json.dumps({
         "wav": wav_path,
         "segments": [[int(s["start_sample"]), int(s["end_sample"])] for s in segments],
         "threshold": float(os.environ.get("DIARIZE_THRESHOLD", "0.72")),
-        # потолок числа говорящих (семейные записи: мама/папа/ребёнок -> 3)
         "max_speakers": int(os.environ.get("DIARIZE_MAX_SPEAKERS", "3")),
     })
     try:
@@ -40,14 +37,35 @@ def assign_speakers(wav_path, segments, sampling_rate: int = SR):
                            input=payload, capture_output=True, text=True,
                            timeout=int(os.environ.get("DIARIZE_TIMEOUT", "900")),
                            env=dict(os.environ), cwd=os.getcwd())
-        line = [l for l in p.stdout.splitlines() if l.strip().startswith("[")]
-        if line:
-            labels = json.loads(line[-1])
-            if isinstance(labels, list) and len(labels) == len(segments):
-                return labels
+        labels, centroids = _parse_worker_output(p.stdout, len(segments))
+        if labels is not None:
+            return labels, centroids
     except Exception:
         pass
-    return [None] * len(segments)             # мягкая деградация
+    return [None] * len(segments), {}
+
+
+def _parse_worker_output(stdout, expected_len):
+    for line in reversed(stdout.splitlines()):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and isinstance(data.get("labels"), list):
+            labels = data["labels"]
+            if len(labels) != expected_len:
+                continue
+            centroids = {}
+            for i, centroid in enumerate(data.get("centroids") or []):
+                if isinstance(centroid, list) and centroid:
+                    centroids[i] = centroid
+            return labels, centroids
+        if isinstance(data, list) and len(data) == expected_len:
+            return data, {}
+    return None, {}
 
 
 # --- сторона воркера: эмбеддинги + кластеризация ----------------------------
@@ -100,7 +118,12 @@ def _worker():
     for lbl in labels:
         remap.setdefault(lbl, len(remap))
         out.append(remap[lbl])
-    print(json.dumps(out))
+    centroids = []
+    for cluster_id in sorted(set(out)):
+        v = X[[i for i, l in enumerate(out) if l == cluster_id]].mean(0)
+        n = (v ** 2).sum() ** 0.5
+        centroids.append((v / n if n else v).tolist())
+    print(json.dumps({"labels": out, "centroids": centroids}))
 
 
 if __name__ == "__main__":

@@ -110,8 +110,10 @@ def apply_audio_corpus_filters(query: Query, filters: CorpusFilters) -> Query:
         query = query.filter(_audio_has_language(models.AudioFile.id, language))
 
     if filters.speaker:
-        query = query.filter(_audio_has_speaker(models.AudioFile.id, filters.speaker))
-
+        term = filters.speaker.strip()
+        if term:
+            query = query.join(models.Speaker, models.Speaker.id == models.Word.speaker_id)
+            query = query.filter(models.Speaker.label.ilike(f"%{term}%"))
     return query
 
 

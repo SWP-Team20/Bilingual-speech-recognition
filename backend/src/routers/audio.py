@@ -16,7 +16,14 @@ from backend.src.database import get_db, SessionLocal
 from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
-from backend.src.services.audio_filter import CorpusFilters, filter_audio_files, filter_word_hits, parse_multi_values
+
+from backend.src.services.audio_filter import (
+    CorpusFilters,
+    filter_audio_files,
+    filter_word_hits,
+    parse_multi_values,
+)
+from backend.src import db_index
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -550,6 +557,32 @@ async def update_transcription(
         "filename": audio.filename,
         "transcription_text": payload.transcription_text
     }
+
+
+@router.post("/audio/{audio_id}/reindex-db", status_code=status.HTTP_204_NO_CONTENT)
+async def reindex_audio_db(
+    audio_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Переиндексировать слова и спикеров из transcription.json в БД (для уже обработанных записей)."""
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    try:
+        db_index.reindex_from_json(db, audio_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Не удалось переиндексировать запись")
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
 
 @router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_audio(

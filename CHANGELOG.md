@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Responsive layout that stacks the panels on narrow screens in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
 - Audio filtration by specific words, languages, speaker, dates, or load status in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/208
 - Audio tags, such as title and date, now are visible in audio list and can be assigned to audio before upload in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/208
+- Download button on each audio row (managers/admins): choose Original or Processed audio in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/212
 - Search bar, where user can find audios by the title in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/213
 
 ### Changed

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy import (
-    Column, String, DateTime, Integer, Float, Text, ForeignKey, Index, Enum
+    Column, String, DateTime, Integer, Float, Text, ForeignKey, Index, Enum, JSON
 )
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import relationship
@@ -59,12 +59,13 @@ class AudioFile(Base):
 
 class Speaker(Base):
     """Говорящий (мама/папа/ребёнок). Глобальный по корпусу: один человек —
-    одна запись, на него ссылаются слова из разных аудио. Заполняется шагом
-    диаризации (кто говорит); до него words.speaker_id = NULL."""
+    одна запись, на него ссылаются слова из разных аудио. Идентификация между
+    записями — по ECAPA-эмбеддингу голоса, а не по метке «Говорящий N»."""
     __tablename__ = "speakers"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    label = Column(String, index=True)                    # 'мама' / 'папа' / ... — ФИЛЬТР по говорящему
+    label = Column(String, index=True)                    # 'мама' / 'папа' / 'Говорящий 1' …
+    embedding = Column(JSON, nullable=True)               # нормализованный центроид голоса
     created_at = Column(DateTime, default=datetime.now)
 
     words = relationship("Word", back_populates="speaker")
