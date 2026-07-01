@@ -21,5 +21,5 @@ jobs:
           python-version: 3.x
       - run: pip install mkdocs-material
       - run: cp README.md docs/index.md
-      - run cp CHANGELOG.md docs/CHANGELOG.md
+      - run: cp CHANGELOG.md docs/CHANGELOG.md
       - run: mkdocs gh-deploy --force
