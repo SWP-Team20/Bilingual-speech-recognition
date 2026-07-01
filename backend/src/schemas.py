@@ -29,6 +29,11 @@ class UpdateTranscriptionRequest(BaseModel):
     transcription_text: str
 
 
+class UpdateAudioMetadataRequest(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    recorded_at: str | None = None
+
+
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="Имя пользователя")
     password: str = Field(..., min_length=4, description="Пароль минимум 4 символа")
