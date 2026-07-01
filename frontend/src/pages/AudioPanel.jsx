@@ -162,6 +162,10 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion }) {
     toast.success('Аудиозапись удалена');
   };
 
+  const handleMetadataUpdated = () => {
+    loadAudioList();
+  };
+
   const handleTranscribeClick = async (audioId) => {
     if (selectedAudioId === audioId) {
       setSelectedAudioId(null);
@@ -387,6 +391,7 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion }) {
                   isSelected={selectedAudioId === audio.id}
                   onTranscribeToggle={handleTranscribeClick}
                   onDeleteSuccess={handleDeleteSuccess}
+                  onMetadataUpdated={handleMetadataUpdated}
                   userRole={userRole}
                 />
               ))

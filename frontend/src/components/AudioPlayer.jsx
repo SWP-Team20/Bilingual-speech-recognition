@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { audioApi } from '../api/audioApi';
 import ConfirmDialog from './ui/ConfirmDialog';
+import Modal from './ui/Modal';
 import { useToast } from './ui/toastContext';
-import { colors, radius, shadow } from '../theme';
+import { colors, radius, shadow, focusRing } from '../theme';
 import { isAudioProcessing as statusIsAudioProcessing, isTextProcessing as statusIsTextProcessing, isDone, isError } from '../constants/status';
 import { canManageCorpus } from '../constants/roleTranslations';
 
@@ -43,12 +44,31 @@ function formatDate(value) {
   return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, userRole }) {
+function toDateInputValue(value) {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+}
+
+function todayStr() {
+  const d = new Date();
+  const tz = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+}
+
+function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, onMetadataUpdated, userRole }) {
   const [loading, setLoading] = useState(false);
   const [downloadingType, setDownloadingType] = useState(null);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editError, setEditError] = useState('');
+  const [isSavingMetadata, setIsSavingMetadata] = useState(false);
   const [sizeMb, setSizeMb] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -73,6 +93,33 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
   const isTextProcessing = statusIsTextProcessing(currentStatus);
   const isFullyDone = isDone(currentStatus);
   const displayDate = formatDate(audio.recorded_at || audio.uploaded_at);
+  const editDateTooLate = editDate && editDate > todayStr();
+
+  const inputBaseStyle = {
+    width: '100%',
+    margin: 0,
+    display: 'block',
+    padding: '10px 12px',
+    borderRadius: radius.sm,
+    border: `1px solid ${colors.borderStrong}`,
+    boxSizing: 'border-box',
+    outline: 'none',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    backgroundColor: colors.surface,
+    color: colors.text,
+  };
+
+  const focusHandlers = {
+    onFocus: (e) => {
+      e.currentTarget.style.borderColor = colors.primary;
+      e.currentTarget.style.boxShadow = focusRing;
+    },
+    onBlur: (e) => {
+      e.currentTarget.style.borderColor = colors.borderStrong;
+      e.currentTarget.style.boxShadow = 'none';
+    },
+  };
 
   // Storage size (skips pending uploads)
   useEffect(() => {
@@ -169,16 +216,37 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
     <div style={{ marginBottom: '16px', width: '100%', boxSizing: 'border-box', textAlign: 'left' }}>
       <style>{`@keyframes chevronPulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }`}</style>
       <div style={{ margin: '0 0 8px 0', color: colors.text, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, fontWeight: '500' }}>
-          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{audio.filename}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, fontWeight: '500', fontSize: '14px', lineHeight: '20px' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: '20px' }}>{audio.filename}</span>
+          {canManage && (
+            <button
+              type="button"
+              onClick={openEditModal}
+              aria-label="Изменить название и дату"
+              title="Изменить название и дату"
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = colors.primarySoft; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+              style={{
+                flexShrink: 0, width: '20px', height: '20px', padding: 0, border: 'none', borderRadius: radius.sm,
+                backgroundColor: 'transparent', color: colors.textMuted, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'background-color 0.15s ease, color 0.15s ease',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </button>
+          )}
           {sizeMb !== null && (
-            <span style={{ flexShrink: 0, fontWeight: '400', fontSize: '13px', color: colors.primary, backgroundColor: colors.primarySoft, padding: '2px 8px', borderRadius: radius.md, whiteSpace: 'nowrap' }}>
+            <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', height: '20px', fontWeight: '400', fontSize: '13px', lineHeight: 1, color: colors.primary, backgroundColor: colors.primarySoft, padding: '0 8px', borderRadius: radius.md, whiteSpace: 'nowrap' }}>
               {sizeMb} МБ
             </span>
           )}
         </div>
         {displayDate && (
-          <span style={{ flexShrink: 0, fontSize: '14px', fontWeight: '500', color: colors.textMuted, whiteSpace: 'nowrap' }}>
+          <span style={{ flexShrink: 0, fontSize: '14px', fontWeight: '500', lineHeight: '20px', color: colors.textMuted, whiteSpace: 'nowrap' }}>
             {displayDate}
           </span>
         )}
@@ -431,6 +499,77 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
         onConfirm={handleDeleteConfirmed}
         onCancel={() => setConfirmOpen(false)}
       />
+
+      <Modal open={editOpen} onClose={closeEditModal} maxWidth="460px" closeOnBackdrop={!isSavingMetadata}>
+        <h4 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 18px 0', color: colors.textStrong }}>
+          Изменить аудиозапись
+        </h4>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>
+            Название
+          </label>
+          <input
+            type="text"
+            value={editTitle}
+            placeholder="Название аудиозаписи"
+            disabled={isSavingMetadata}
+            onChange={(e) => { setEditTitle(e.target.value); if (editError) setEditError(''); }}
+            style={{ ...inputBaseStyle, borderColor: editError ? colors.danger : colors.borderStrong }}
+            {...focusHandlers}
+          />
+        </div>
+
+        <div style={{ marginBottom: editError || editDateTooLate ? '8px' : '24px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>
+            Дата записи
+          </label>
+          <input
+            type="date"
+            value={editDate}
+            max={todayStr()}
+            disabled={isSavingMetadata}
+            onChange={(e) => { setEditDate(e.target.value); if (editError) setEditError(''); }}
+            style={{ ...inputBaseStyle, borderColor: editDateTooLate ? colors.danger : colors.borderStrong }}
+            {...focusHandlers}
+          />
+        </div>
+
+        {editDateTooLate && (
+          <div style={{ marginBottom: '16px', fontSize: '13px', fontWeight: 500, color: colors.danger }}>
+            Дата записи не может быть позже сегодняшней
+          </div>
+        )}
+
+        {editError && (
+          <div style={{ marginBottom: '16px', fontSize: '13px', fontWeight: 500, color: colors.danger }}>
+            {editError}
+          </div>
+        )}
+
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+          <button
+            type="button"
+            onClick={closeEditModal}
+            disabled={isSavingMetadata}
+            onMouseEnter={(e) => { if (!isSavingMetadata) e.currentTarget.style.backgroundColor = '#ececec'; }}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.page)}
+            style={{ backgroundColor: colors.page, color: '#333', border: `1px solid ${colors.borderStrong}`, padding: '10px 18px', borderRadius: radius.sm, fontWeight: 600, cursor: isSavingMetadata ? 'not-allowed' : 'pointer', opacity: isSavingMetadata ? 0.6 : 1, transition: 'background-color 0.15s ease' }}
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveMetadata}
+            disabled={isSavingMetadata || !editTitle.trim() || editDateTooLate}
+            onMouseEnter={(e) => { if (!isSavingMetadata && editTitle.trim() && !editDateTooLate) e.currentTarget.style.backgroundColor = colors.primaryHover; }}
+            onMouseLeave={(e) => { if (!isSavingMetadata && editTitle.trim() && !editDateTooLate) e.currentTarget.style.backgroundColor = colors.primary; }}
+            style={{ backgroundColor: colors.primary, color: '#fff', border: 'none', padding: '10px 18px', borderRadius: radius.sm, fontWeight: 'bold', cursor: (isSavingMetadata || !editTitle.trim() || editDateTooLate) ? 'not-allowed' : 'pointer', opacity: (isSavingMetadata || !editTitle.trim() || editDateTooLate) ? 0.5 : 1, transition: 'background-color 0.15s ease' }}
+          >
+            {isSavingMetadata ? 'Сохранение…' : 'Сохранить'}
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 
@@ -518,6 +657,48 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, u
       toast.error('Не удалось удалить аудиозапись');
     } finally {
       setIsDeleting(false);
+    }
+  }
+
+  function openEditModal() {
+    setEditTitle(audio.filename || '');
+    setEditDate(toDateInputValue(audio.recorded_at || audio.uploaded_at));
+    setEditError('');
+    setEditOpen(true);
+  }
+
+  function closeEditModal() {
+    if (isSavingMetadata) return;
+    setEditOpen(false);
+    setEditError('');
+  }
+
+  async function handleSaveMetadata() {
+    const trimmedTitle = editTitle.trim();
+    if (!trimmedTitle || editDateTooLate) return;
+
+    const payload = {};
+    if (trimmedTitle !== audio.filename) payload.title = trimmedTitle;
+    const currentDate = toDateInputValue(audio.recorded_at || audio.uploaded_at);
+    if (editDate !== currentDate) payload.recordedAt = editDate || null;
+
+    if (!payload.title && payload.recordedAt === undefined) {
+      closeEditModal();
+      return;
+    }
+
+    setIsSavingMetadata(true);
+    setEditError('');
+    try {
+      await audioApi.updateAudioMetadata(audio.id, payload);
+      setEditOpen(false);
+      if (onMetadataUpdated) onMetadataUpdated();
+      toast.success('Данные аудиозаписи обновлены');
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      setEditError(typeof detail === 'string' ? detail : 'Не удалось сохранить изменения');
+    } finally {
+      setIsSavingMetadata(false);
     }
   }
 }

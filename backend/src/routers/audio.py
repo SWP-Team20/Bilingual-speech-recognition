@@ -404,6 +404,80 @@ async def upload_audio(
     return db_audio
 
 
+@router.patch("/audio/{audio_id}", response_model=schemas.AudioFileResponse)
+async def update_audio_metadata(
+    audio_id: UUID,
+    payload: schemas.UpdateAudioMetadataRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="Укажите название и/или дату записи")
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    if "title" in updates:
+        new_title = updates["title"].strip()
+        if not new_title:
+            raise HTTPException(status_code=400, detail="Название не может быть пустым")
+        existing = (
+            db.query(models.AudioFile)
+            .filter(
+                func.lower(models.AudioFile.filename) == new_title.lower(),
+                models.AudioFile.id != audio_id,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Аудиозапись с таким названием уже существует",
+            )
+        audio.filename = new_title
+
+    if "recorded_at" in updates:
+        raw_date = updates["recorded_at"]
+        if raw_date is None or not str(raw_date).strip():
+            audio.recorded_at = None
+        else:
+            try:
+                recorded_at_dt = datetime.fromisoformat(str(raw_date).strip())
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Некорректный формат даты записи (ожидается ISO YYYY-MM-DD)",
+                )
+            if recorded_at_dt.date() > datetime.now().date():
+                raise HTTPException(status_code=400, detail="Дата записи не может быть позже сегодняшней")
+            audio.recorded_at = recorded_at_dt
+
+    db.commit()
+    db.refresh(audio)
+
+    json_path = os.path.join(audio.folder_path, "transcription.json")
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, encoding="utf-8") as f:
+                transcription = json.load(f)
+            transcription["filename"] = audio.filename
+            if audio.recorded_at is not None:
+                transcription["recorded_at"] = audio.recorded_at.isoformat()
+            elif "recorded_at" in updates:
+                transcription.pop("recorded_at", None)
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(transcription, f, ensure_ascii=False, indent=2)
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning("Could not sync transcription.json for audio %s: %s", audio_id, e)
+
+    return audio
+
+
 @router.patch("/audio/{audio_id}/processed", response_model=schemas.AudioFileResponse)
 async def update_processed_audio(
     audio_id: UUID,

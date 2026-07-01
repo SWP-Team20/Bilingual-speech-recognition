@@ -118,5 +118,14 @@ export const audioApi = {
   deleteAudio: async (audioId) => {
     const response = await apiClient.delete(`/api/v1/audio/${audioId}`);
     return response.data;
-  }
+  },
+
+  // Matches PATCH /api/v1/audio/{audio_id}
+  updateAudioMetadata: async (audioId, { title, recordedAt } = {}) => {
+    const body = {};
+    if (title !== undefined) body.title = title;
+    if (recordedAt !== undefined) body.recorded_at = recordedAt || null;
+    const response = await apiClient.patch(`/api/v1/audio/${audioId}`, body);
+    return response.data;
+  },
 };
