@@ -8,7 +8,24 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { isTerminal } from '../constants/status';
 
-const EMPTY_FILTERS = { word: '', lang: '', speaker: '', status: '', dateFrom: '', dateTo: '' };
+const EMPTY_FILTERS = { words: '', langs: [], speaker: '', status: '', dateFrom: '', dateTo: '' };
+
+const LANG_FILTER_OPTIONS = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'tt', label: 'Татарский' },
+  { value: 'unknown', label: 'Другой' },
+];
+
+function countActiveFilters(filters) {
+  let count = 0;
+  if (filters.words?.trim()) count += 1;
+  if (filters.langs?.length) count += 1;
+  if (filters.speaker?.trim()) count += 1;
+  if (filters.status) count += 1;
+  if (filters.dateFrom) count += 1;
+  if (filters.dateTo) count += 1;
+  return count;
+}
 
 function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' }) {
   const [audioList, setAudioList] = useState([]);
@@ -81,7 +98,7 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
     loadTotalStorage();
   };
 
-  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const activeFilterCount = countActiveFilters(filters);
 
   const openFilters = () => {
     setDraftFilters(filters);
@@ -145,6 +162,10 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
     setSelectedTranscriptionWords([]);
     loadAudioList();
     toast.success('Аудиозапись удалена');
+  };
+
+  const handleMetadataUpdated = () => {
+    loadAudioList();
   };
 
   const handleTranscribeClick = async (audioId) => {
@@ -231,29 +252,54 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
                 }}
               >
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Слово в транскрипции</label>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Слова в транскрипции</label>
                   <input
                     type="text"
-                    value={draftFilters.word}
-                    placeholder="Например: әни"
-                    onChange={(e) => setDraftFilters((f) => ({ ...f, word: e.target.value }))}
+                    value={draftFilters.words}
+                    placeholder="Например: привет, җиңү"
+                    onChange={(e) => setDraftFilters((f) => ({ ...f, words: e.target.value }))}
                     onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
                     style={filterFieldStyle}
                   />
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
+                    Несколько слов через запятую. Запись должна содержать все указанные слова.
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Язык</label>
-                  <select
-                    value={draftFilters.lang}
-                    onChange={(e) => setDraftFilters((f) => ({ ...f, lang: e.target.value }))}
-                    style={filterSelectStyle}
-                  >
-                    <option value="">Все языки</option>
-                    <option value="ru">Русский</option>
-                    <option value="tt">Татарский</option>
-                    <option value="unknown">Другой</option>
-                  </select>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Языки в записи</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {LANG_FILTER_OPTIONS.map(({ value, label }) => {
+                      const checked = draftFilters.langs.includes(value);
+                      return (
+                        <label
+                          key={value}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            fontSize: '14px', color: colors.text, cursor: 'pointer', userSelect: 'none',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setDraftFilters((f) => ({
+                                ...f,
+                                langs: checked
+                                  ? f.langs.filter((lang) => lang !== value)
+                                  : [...f.langs, value],
+                              }));
+                            }}
+                            style={{ width: '16px', height: '16px', accentColor: colors.primary, cursor: 'pointer' }}
+                          />
+                          {label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
+                    Запись должна содержать слова на всех выбранных языках.
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: '14px' }}>
@@ -355,6 +401,7 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
                   isSelected={selectedAudioId === audio.id}
                   onTranscribeToggle={handleTranscribeClick}
                   onDeleteSuccess={handleDeleteSuccess}
+                  onMetadataUpdated={handleMetadataUpdated}
                   userRole={userRole}
                 />
               ))

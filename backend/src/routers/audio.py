@@ -1,5 +1,6 @@
 import json
 import os
+import glob
 import shutil
 import logging
 from uuid import UUID, uuid4
@@ -15,13 +16,33 @@ from backend.src.database import get_db, SessionLocal
 from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
-from backend.src.services.audio_filter import CorpusFilters, filter_audio_files, filter_word_hits
+from backend.src.services.audio_filter import CorpusFilters, filter_audio_files, filter_word_hits, parse_multi_values
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 BASE_STORAGE_DIR = "./storage"
 os.makedirs(BASE_STORAGE_DIR, exist_ok=True)
+
+
+def resolve_original_path(folder_path: str, fallback_ext: str) -> str:
+    """Return the path to the stored original audio file.
+
+    The extension used when saving comes from the uploaded file, while the DB
+    `filename` holds a display title that may carry a different (or no)
+    extension. Guessing the extension from the title breaks downloads (e.g. a
+    Russian title like "Кухня" has no extension and wrongly resolves to
+    original.mp3). So we resolve the real file on disk, preferring an exact
+    extension match and otherwise taking any original.* (excluding original_16k).
+    """
+    preferred = os.path.join(folder_path, f"original{fallback_ext}")
+    matches = [
+        p for p in glob.glob(os.path.join(folder_path, "original.*"))
+        if not os.path.basename(p).startswith("original_16k")
+    ]
+    if os.path.exists(preferred):
+        return preferred
+    return matches[0] if matches else preferred
 
 
 # --- BACKGROUND TASKS ---
@@ -77,16 +98,16 @@ def get_folder_size(folder_path: str) -> int:
 # --- ALL ROLES (ADMIN, MANAGER, USER) ---
 
 def get_corpus_filters(
-    q: Optional[str] = Query(None, description="Слово (точное совпадение нормализованного text)"),
-    lang: Optional[str] = Query(None, description="Язык слова: ru / tt / unknown"),
+    q: Optional[List[str]] = Query(None, description="Слова (точное совпадение нормализованного text); можно повторять или через запятую"),
+    lang: Optional[List[str]] = Query(None, description="Языки слов в записи: ru / tt / unknown; запись должна содержать все выбранные"),
     speaker: Optional[str] = Query(None, description="Метка говорящего (мама / папа / …)"),
     date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
     status: Optional[str] = Query(None, description="Статус обработки: done / processing / error / …"),
 ) -> CorpusFilters:
     return CorpusFilters(
-        word=q,
-        lang=lang,
+        words=parse_multi_values(q),
+        langs=parse_multi_values(lang),
         speaker=speaker,
         date_from=date_from,
         date_to=date_to,
@@ -146,7 +167,7 @@ async def get_audio_by_id(
     file_ext = os.path.splitext(audio.filename)[1] or ".mp3"
 
     if type == "original":
-        file_path = os.path.join(audio.folder_path, f"original{file_ext}")
+        file_path = resolve_original_path(audio.folder_path, file_ext)
         media_type = audio.content_type
 
     elif type == "processed":
@@ -171,6 +192,12 @@ async def get_audio_by_id(
         raise HTTPException(status_code=404, detail="Файл отсутствует на сервере")
 
     download_name = f"{type}_{audio.filename}"
+    # The display title may lack an extension (e.g. a Russian name); make sure
+    # the downloaded file keeps the real extension so it opens correctly.
+    if not os.path.splitext(download_name)[1]:
+        actual_ext = os.path.splitext(file_path)[1]
+        if actual_ext:
+            download_name += actual_ext
 
     return FileResponse(path=file_path, media_type=media_type, filename=download_name)
 
@@ -193,7 +220,7 @@ async def get_audio_element_sizes(
     file_ext = os.path.splitext(audio.filename)[1] or ".mp3"
 
     paths = {
-        "original": os.path.join(folder, f"original{file_ext}"),
+        "original": resolve_original_path(folder, file_ext),
         "original_16k": os.path.join(folder, "original_16k.wav"),
         "processed": os.path.join(folder, "processed.wav"),
         "transcription_txt": os.path.join(folder, "transcription.txt"),
@@ -394,6 +421,80 @@ async def upload_audio(
     )
 
     return db_audio
+
+
+@router.patch("/audio/{audio_id}", response_model=schemas.AudioFileResponse)
+async def update_audio_metadata(
+    audio_id: UUID,
+    payload: schemas.UpdateAudioMetadataRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="Укажите название и/или дату записи")
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    if "title" in updates:
+        new_title = updates["title"].strip()
+        if not new_title:
+            raise HTTPException(status_code=400, detail="Название не может быть пустым")
+        existing = (
+            db.query(models.AudioFile)
+            .filter(
+                func.lower(models.AudioFile.filename) == new_title.lower(),
+                models.AudioFile.id != audio_id,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Аудиозапись с таким названием уже существует",
+            )
+        audio.filename = new_title
+
+    if "recorded_at" in updates:
+        raw_date = updates["recorded_at"]
+        if raw_date is None or not str(raw_date).strip():
+            audio.recorded_at = None
+        else:
+            try:
+                recorded_at_dt = datetime.fromisoformat(str(raw_date).strip())
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Некорректный формат даты записи (ожидается ISO YYYY-MM-DD)",
+                )
+            if recorded_at_dt.date() > datetime.now().date():
+                raise HTTPException(status_code=400, detail="Дата записи не может быть позже сегодняшней")
+            audio.recorded_at = recorded_at_dt
+
+    db.commit()
+    db.refresh(audio)
+
+    json_path = os.path.join(audio.folder_path, "transcription.json")
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, encoding="utf-8") as f:
+                transcription = json.load(f)
+            transcription["filename"] = audio.filename
+            if audio.recorded_at is not None:
+                transcription["recorded_at"] = audio.recorded_at.isoformat()
+            elif "recorded_at" in updates:
+                transcription.pop("recorded_at", None)
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(transcription, f, ensure_ascii=False, indent=2)
+        except (OSError, json.JSONDecodeError) as e:
+            logger.warning("Could not sync transcription.json for audio %s: %s", audio_id, e)
+
+    return audio
 
 
 @router.patch("/audio/{audio_id}/processed", response_model=schemas.AudioFileResponse)
