@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import profileIcon from '../assets/profile-icon.svg';
 
-function ProfileDropdown({ onLogout, onNavigateToSecurity }) {
+function ProfileDropdown({ onLogout, onNavigateToSecurity, size = 48 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -22,7 +22,7 @@ function ProfileDropdown({ onLogout, onNavigateToSecurity }) {
         position: 'relative', 
         display: 'flex',
         alignItems: 'center',
-        height: '48px'
+        height: `${size}px`
       }}
     >
       {/* Profile Trigger Button */}
@@ -35,8 +35,8 @@ function ProfileDropdown({ onLogout, onNavigateToSecurity }) {
         onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 0 0 4px rgba(0,0,0,0.07)'}
         onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
         style={{
-          width: '48px',
-          height: '48px',
+          width: `${size}px`,
+          height: `${size}px`,
           cursor: 'pointer',
           userSelect: 'none',
           display: 'flex',

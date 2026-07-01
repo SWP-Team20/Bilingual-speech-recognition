@@ -1,4 +1,4 @@
-function TabButton({ active, onClick, children }) {
+function TabButton({ active, onClick, children, compact = false }) {
   return (
     <button
       onClick={onClick}
@@ -16,9 +16,9 @@ function TabButton({ active, onClick, children }) {
       }}
       style={{
         borderRadius: '8px',
-        padding: '14px',
+        padding: compact ? '10px 8px' : '14px',
         textAlign: 'center',
-        fontSize: '20px',
+        fontSize: compact ? '15px' : '20px',
         fontWeight: 'bold',
         width: '100%',
         boxSizing: 'border-box',
