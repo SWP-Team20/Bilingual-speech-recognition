@@ -24,7 +24,7 @@ Bilingual Speech Recognition is a web-based application designed to support the 
 
 **Sprint Scope Summary:** All core and additional features related to audio page is finished, statistics remained.
 
-**Total Sprint Size:** 13
+**Total Sprint Size:** 19
 
 ![Sprint Milestone](...) [INSERT SCREENSHOT]
 
@@ -70,7 +70,7 @@ Feedback not addressed:
 
 - [SemVer Release](...) [INSERT LINK]
 - [Changelog](/CHANGELOG.md)
-- [Deployed Product](https://10.93.26.206:5173/)
+- [Deployed Product](https://10.93.26.206:5173)
 - [Demo Video of Release](...) [INSERT LINK]
 - [Access Instructions](/README.md)
 - [Deployment Insctructions](/deployment.md)
@@ -116,7 +116,7 @@ Feedback not addressed:
 
 ### Project Workflow View
 
-![Project Workflow View](...) [INSERT LINK]
+![Project Workflow View](...) [INSERT SCREENSHOT]
 
 ### Links
 
@@ -155,23 +155,23 @@ Feedback not addressed:
 
 | Team Member   | Issues       | PRs          | Reviews      |
 | ------------- | ------------ | ------------ | ------------ |
-| AaalekseevP | — | — | — |
-| StreetSraker | — | — | — |
-| ProPupok | — | — | — |
+| AaalekseevP | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/6 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/16 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/17 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/106 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/132 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/161 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/164 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/171 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/173 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/176 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/192 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/198 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/200 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/201 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/203 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/209 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/211 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/223 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/229 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/172 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/174 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/177 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/193 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/202 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/204 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/205 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/208 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/210 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/212 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/215 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/216 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/224 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/228 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/230 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/195 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/196 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/197 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/213 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/217 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/222 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/226 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/227 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/231 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/232 |
+| StreetSraker | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/6 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/16 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/17 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/106 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/132 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/164 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/194 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/198 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/200 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/201 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/195 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/196 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/197 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/213 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/172 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/174 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/177 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/193 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/202 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/204 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/208 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/210 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/212 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/218 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/219 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/220 |
+| ProPupok | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/178 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/186 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/189 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/221 https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/225 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/217 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/218 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/219 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/220 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/222 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/226 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/227 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/231 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/232 | https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/224 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/228 https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/230 |
 | lohmo111 | — | — | — |
 | anakin-shitcoder | — | — | — |
 
 ### Example Reviewed Issue-Linked PR
 
-![PR Example](...) [INSERT SCREENSHOT]
+![PR Example](images/pr-example.png)
 
 ### Hosted Documentation Site
 
-![Hosted Docs Site](...) [INSERT SCREENSHOT]
+![Hosted Docs Site](images/hosted-docs-site.png)
 
 ### Links
 
-- [Hosted Documentation Site](...) [INSERT LINK]
-- [Development Process](...) [INSERT LINK]
+- [Hosted Documentation Site](https://swp-team20.github.io/Bilingual-speech-recognition)
+- [Development Process](/docs/development-process.md)
 - [Reflection](...) [INSERT LINK]
 - [Retrospective](...) [INSERT LINK]
