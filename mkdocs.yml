@@ -29,13 +29,13 @@ markdown_extensions:
 # Site structure
 nav:
   - Home: index.md
-  - Development : deployment.md
+  - Setup & Deployment : deployment.md
+  - Changelog : CHANGELOG.md
   - Development Process: development-process.md
+  - Roadmap : roadmap.md
   - Definition of Done: definition-of-done.md
+  - User Stories : user-stories.md
+  - Testing : testing.md
   - Quality Requirements : quality-requirements.md
   - Quality Requirements Tests : quality-requirements-tests.md
-  - Roadmap : roadmap.md
-  - Testing : testing.md
   - User Acceptance Tests: user-acceptance-tests.md
-  - User Stories : user-stories.md
-  - Changelog : CHANGELOG.md
