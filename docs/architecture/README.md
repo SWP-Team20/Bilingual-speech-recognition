@@ -34,3 +34,21 @@ This scenario represents the core proposition of our MVP v2. It demonstrates the
 ### Architecture Decisions, Integration Boundaries, and Quality Requirements
 - **Modularity and Integration Boundaries:** The diagram highlights the separation of concerns. The API Gateway handles state, while the Audio Preprocessor is isolated service. This makes the integration boundaries clear via standard API calls
 - **Maintainability:** By decoupling the audio processing logic from the transcription logic, we can update or swap the model without affecting the preprocessing steps or the client-facing API
+
+## Deployment View
+
+The deployment view illustrates how the system is deployed and how runtime infrastructure elements communicate. We use a [Deployment Diagram](deployment-view/deployment.md) to show the browser, frontend server, backend server, PostgreSQL database, local file storage, and machine-learning runtime dependencies.
+
+### Scenario: Local MVP Deployment
+
+This deployment diagram represents the current deployment model of the application: the user accesses the React/Vite frontend through a browser, the frontend communicates with the FastAPI backend, the backend connects to PostgreSQL for metadata, and audio/transcript artifacts are stored in local file storage.
+
+### Why this scenario is important
+
+This scenario is important because it shows the runtime environment required for the current delivered product. It explains which parts of the system must be running, where data is stored, and which deployment boundaries exist between the frontend, backend, database, and local processing environment.
+
+### Architecture Decisions, Integration Boundaries, and Quality Requirements
+
+- **Deployment Boundaries:** The diagram highlights the separation between the browser, frontend server, backend server, database container, local file storage, and ML/runtime dependencies. This makes it clear where communication happens and which parts belong to the local deployment environment.
+- **Maintainability:** The deployment model is simple and suitable for the current MVP because each runtime element has a clear purpose. The frontend serves the user interface, the backend exposes API endpoints, PostgreSQL stores metadata, and local storage keeps audio and transcript artifacts.
+- **Quality Requirements:** This deployment supports MVP development and testing, but it constrains scalability and availability because the system currently depends on local file storage, a local database setup, and backend-side processing. These constraints should be revisited before production-scale deployment.
