@@ -9,6 +9,13 @@ theme:
     - navigation.sections
     - toc.integrate
 
+# Plugin to ignore files in extra/
+plugins:
+  - search
+  - exclude:
+      glob:
+        - extra/*
+
 # Makes Mermaid more readable
 markdown_extensions:
   - pymdownx.superfences:
@@ -25,12 +32,9 @@ nav:
   - Development : deployment.md
   - Development Process: development-process.md
   - Definition of Done: definition-of-done.md
-  - DB Scheme for team : db_schema_for_team.md
   - Quality Requirements : quality-requirements.md
   - Quality Requirements Tests : quality-requirements-tests.md
   - Roadmap : roadmap.md
-  - RU/TT pipeline : ru_tt_pipeline.md
-  - Storage and Search : storage_and_search.md
   - Testing : testing.md
   - User Acceptance Tests: user-acceptance-tests.md
   - User Stories : user-stories.md
