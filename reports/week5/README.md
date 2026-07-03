@@ -104,15 +104,15 @@ Feedback not addressed:
 
 ### Summary of the Architecture
 
-[INSERT DESCRIPTION]
+The system follows a modular client-server architecture designed for Bilingual Speech Recognition. The frontend application interacts with a backend API that operates audio processing, user authentication, and secure media storage. The infrastructure relies on centralized authorization middleware using JSON Web Tokens (JWT) to secure endpoints. The development and deployment lifecycle is supported by a strict CI/CD pipeline integrated via GitHub Actions, which automates static analysis, application builds, and integration testing to maintain repository health.
 
 ### How It Supports the Current Product
 
-[INSERT DESCRIPTION]
+Architecture directly supports the objectives of MVP v2 by prioritizing stability, security, and traceability. The decoupled nature of the frontend and backend allows for parallel development across the team. The implementation of strict CI/CD gates prevents broken builds from reaching the production branch, reducing integration bugs. Furthermore, the centralized JWT authorization mechanism ensures that the core product assets - audio files are delivered securely.
 
 ### How Quality Requirements Are Linked to the Architecture Decisions
 
-[INSERT DESCRIPTION]
+Every major structural choice is documented in Architecture Decision Records and explicitly mapped to measurable Quality Requirements. ADR-001 mandates backend JWT validation to directly satisfy the confidentiality constraints of QR-001. ADR-002 enforces automated CI pipeline checks to ensure repository health, fulfilling QR-002. ADR-003 automates metadata parsing for PRs to meet the maintainability and traceability standards of QR-003. These architectural constraints are continuously verified in the pipeline using automated Quality Requirement Tests.
 
 ### Project Workflow View
 

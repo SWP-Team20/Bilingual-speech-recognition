@@ -13,7 +13,7 @@ Team follows an iterative development process organized into 1-week sprints. All
 
 ## 2. Definition of Done (DoD)
 
-A task is considered "Done" only when it strictly adheres to the requirements defined in our [Definition of Done](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/bea5414ffe15b2f3cf08aae0ba68b67b86723780/docs/definition-of-done.md)
+A task is considered "Done" only when it strictly adheres to the requirements defined in our [Definition of Done](/docs/definition-of-done.md)
 
 ## 3. Configuration Management
 
