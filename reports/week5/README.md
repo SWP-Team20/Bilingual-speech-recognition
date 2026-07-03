@@ -120,11 +120,11 @@ Feedback not addressed:
 
 ### Links
 
-- [Architecture Artifact](...) [INSERT LINK]
-- [Static View](...) [INSERT LINK]
-- [Dynamic View](...) [INSERT LINK]
-- [Deployment View](...) [INSERT LINK]
-- [ADR Directory](...) [INSERT LINK]
+- [Architecture Artifact](/docs/architecture/README.md)
+- [Static View](/docs/architecture/static-view/static.md)
+- [Dynamic View](/docs/architecture/dynamic-view/dynamic.md)
+- [Deployment View](/docs/architecture/deployment-view/deployment.md)
+- [ADR Directory](/docs/architecture/adr)
 
 ---
 
