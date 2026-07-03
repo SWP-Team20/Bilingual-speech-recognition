@@ -24,7 +24,8 @@ class FakeQuery:
 class FakeDB:
     def __init__(self, speakers=None):
         self.speakers = speakers or []
-        self._next_id = 1
+        # id новых спикеров идёт за максимальным уже существующим (как autoincrement в БД)
+        self._next_id = max((s.id for s in self.speakers), default=0) + 1
         self.added = []
 
     def query(self, target):
@@ -95,3 +96,39 @@ def test_resolve_speakers_without_embedding_always_creates_new():
     assert result["Говорящий 1"] == 2
     assert len(db.added) == 1
     assert db.added[0].label == "Говорящий 2"
+
+
+def test_two_local_voices_never_merge_into_one_speaker():
+    """Два разных голоса ОДНОГО аудио, оба близких к единственному глобальному
+    спикеру, не должны схлопнуться в него — иначе диаризация (2 человека)
+    противоречила бы БД (1 человек)."""
+    existing = FakeSpeaker(1, "Говорящий 1", _normalize([1.0, 0.0, 0.0]))
+    db = FakeDB([existing])
+    words = [{"speaker": "Говорящий 1"}, {"speaker": "Говорящий 2"}]
+    embeddings = {
+        "Говорящий 1": _normalize([0.99, 0.14, 0.0]),   # оба близки к existing (cos ~0.99)
+        "Говорящий 2": _normalize([0.99, 0.0, 0.14]),
+    }
+
+    result = _resolve_speakers(db, words, embeddings)
+
+    # разные глобальные id — голоса не слились
+    assert result["Говорящий 1"] != result["Говорящий 2"]
+    # один занял существующего спикера, второй завёл нового
+    assert set(result.values()) == {1, 2}
+    assert len(db.added) == 1
+
+
+def test_two_distinct_new_voices_get_two_speakers():
+    """Пустой корпус: два непохожих голоса -> два новых глобальных спикера."""
+    db = FakeDB([])
+    words = [{"speaker": "Говорящий 1"}, {"speaker": "Говорящий 2"}]
+    embeddings = {
+        "Говорящий 1": _normalize([1.0, 0.0, 0.0]),
+        "Говорящий 2": _normalize([0.0, 1.0, 0.0]),
+    }
+
+    result = _resolve_speakers(db, words, embeddings)
+
+    assert result["Говорящий 1"] != result["Говорящий 2"]
+    assert len(db.added) == 2

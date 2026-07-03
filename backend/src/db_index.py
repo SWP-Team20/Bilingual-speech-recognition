@@ -42,39 +42,69 @@ def _allocate_speaker_label(db):
     return f"Говорящий {max(nums, default=0) + 1}"
 
 
-def _find_best_speaker_match(db, emb):
+def _find_best_speaker_match(db, emb, exclude_ids=None):
+    """Ближайший глобальный спикер по косинусу (>= порога). exclude_ids — спикеры,
+    уже занятые другой локальной меткой этого же аудио (нельзя переиспользовать).
+    Возвращает (Speaker|None, similarity)."""
+    exclude_ids = exclude_ids or set()
     emb = _normalize(emb)
     best_sp = None
     best_sim = -1.0
     for sp in db.query(models.Speaker).filter(models.Speaker.embedding.isnot(None)).all():
+        if sp.id in exclude_ids:
+            continue
         sim = _cosine_sim(emb, sp.embedding)
         if sim > best_sim:
             best_sim = sim
             best_sp = sp
     if best_sp is not None and best_sim >= MATCH_THRESHOLD:
-        return best_sp
-    return None
+        return best_sp, best_sim
+    return None, best_sim
 
 
 def _resolve_speakers(db, words, speaker_embeddings=None):
-    """Сопоставляет локальные метки диаризации с глобальными спикерами в БД по голосу."""
+    """Сопоставляет локальные метки диаризации с глобальными спикерами в БД по голосу.
+
+    Гарантия: два РАЗНЫХ локальных голоса одного аудио никогда не схлопываются в
+    одного глобального спикера — каждый глобальный спикер занимается максимум одной
+    меткой за вызов (жадно, сначала самое сильное совпадение). Метки без эмбеддинга
+    всегда создают нового спикера."""
     speaker_embeddings = speaker_embeddings or {}
-    labels = {w.get("speaker") for w in words if w.get("speaker")}
+    labels = sorted({w.get("speaker") for w in words if w.get("speaker")})
     out = {}
+    claimed = set()                       # id глобальных спикеров, занятых в ЭТОМ аудио
 
-    for label in labels:
-        emb = speaker_embeddings.get(label)
-        if emb:
-            matched = _find_best_speaker_match(db, emb)
-            if matched is not None:
-                out[label] = matched.id
-                matched.embedding = _blend_embedding(matched.embedding, emb)
-                continue
+    pending = [(lbl, speaker_embeddings[lbl]) for lbl in labels if speaker_embeddings.get(lbl)]
+    without_emb = [lbl for lbl in labels if not speaker_embeddings.get(lbl)]
 
-        sp = models.Speaker(label=_allocate_speaker_label(db), embedding=_normalize(emb) if emb else None)
+    # Жадное назначение: на каждом шаге берём пару (метка, спикер) с макс. сходством
+    # среди ещё не занятых спикеров, фиксируем её и убираем спикера из доступных.
+    while pending:
+        best = None                       # (sim, idx, label, emb, speaker)
+        for idx, (lbl, emb) in enumerate(pending):
+            matched, sim = _find_best_speaker_match(db, emb, exclude_ids=claimed)
+            if matched is not None and (best is None or sim > best[0]):
+                best = (sim, idx, lbl, emb, matched)
+        if best is None:
+            break                         # оставшимся меткам не с кем сопоставиться
+        _sim, idx, lbl, emb, matched = best
+        out[lbl] = matched.id
+        matched.embedding = _blend_embedding(matched.embedding, emb)
+        claimed.add(matched.id)
+        pending.pop(idx)
+
+    # Метки без приемлемого совпадения (и без эмбеддинга) -> новые глобальные спикеры
+    for lbl, emb in pending:
+        sp = models.Speaker(label=_allocate_speaker_label(db), embedding=_normalize(emb))
         db.add(sp)
         db.flush()
-        out[label] = sp.id
+        out[lbl] = sp.id
+        claimed.add(sp.id)
+    for lbl in without_emb:
+        sp = models.Speaker(label=_allocate_speaker_label(db), embedding=None)
+        db.add(sp)
+        db.flush()
+        out[lbl] = sp.id
 
     return out
 
