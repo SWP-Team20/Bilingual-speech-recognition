@@ -222,6 +222,11 @@ def save_transcription(db, audio_id, words, segments, stats, speaker_embeddings=
             trim_start=s["trim_start"], trim_end=s["trim_end"],
         ))
 
+    # ВАЖНО: материализуем слова ДО чистки сирот. Сессия создаётся с autoflush=False,
+    # поэтому без явного flush слова остаются pending, и только что созданный спикер
+    # выглядит «сиротой без слов» -> cleanup_orphan_speakers его удалит, а commit затем
+    # вставит слова с уже несуществующим speaker_id (ForeignKeyViolation).
+    db.flush()
     cleanup_orphan_speakers(db)
     db.commit()
 
