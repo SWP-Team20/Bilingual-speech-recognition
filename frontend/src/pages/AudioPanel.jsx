@@ -7,6 +7,7 @@ import { useToast } from '../components/ui/toastContext';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { isTerminal } from '../constants/status';
+import { canManageCorpus } from '../constants/roleTranslations';
 
 const EMPTY_FILTERS = { words: '', langs: [], speaker: '', status: '', dateFrom: '', dateTo: '' };
 
@@ -423,6 +424,9 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
                 transcriptionWords={selectedTranscriptionWords}
                 isLoading={isTranscribing}
                 audioName={currentAudioName}
+                audioId={selectedAudioId}
+                canEdit={canManageCorpus(userRole)}
+                onWordsChanged={setSelectedTranscriptionWords}
               />
             </div>
           ) : (

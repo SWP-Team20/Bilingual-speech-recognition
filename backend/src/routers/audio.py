@@ -17,6 +17,7 @@ from backend.src.models import User, UserRole
 from backend.src.dependencies import get_current_user
 import backend.src.pipeline as pipeline
 from backend.src.services.audio_filter import CorpusFilters, filter_audio_files, filter_word_hits, parse_multi_values
+from backend.src.services import transcript_edit
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -550,6 +551,82 @@ async def update_transcription(
         "filename": audio.filename,
         "transcription_text": payload.transcription_text
     }
+
+
+# --- Пословная правка транскрипции (US-010): текст + языковой тег ---
+
+def _require_editor(current_user: User):
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+
+def _get_audio_or_404(db: Session, audio_id: UUID) -> models.AudioFile:
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+    return audio
+
+
+def _run_transcript_edit(db, action):
+    """Общая обёртка: маппинг ошибок сервиса правки на HTTP + откат сессии."""
+    try:
+        return action()
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
+    except IndexError:
+        raise HTTPException(status_code=404, detail="Слово не найдено")
+    except HTTPException:
+        raise
+    except Exception:
+        db.rollback()
+        logger.exception("Transcript word edit failed")
+        raise HTTPException(status_code=500, detail="Не удалось изменить транскрипцию")
+
+
+@router.patch("/transcriptions/{audio_id}/words/{position}")
+async def edit_transcription_word(
+    audio_id: UUID,
+    position: int,
+    payload: schemas.WordEditRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Изменить слово по индексу: написание (raw/text) и/или языковой тег.
+    Возвращает обновлённые words, sentences и пересчитанную статистику."""
+    _require_editor(current_user)
+    audio = _get_audio_or_404(db, audio_id)
+    return _run_transcript_edit(db, lambda: transcript_edit.edit_word(
+        db, audio, position, raw=payload.raw, text=payload.text, language=payload.language,
+    ))
+
+
+@router.post("/transcriptions/{audio_id}/words", status_code=status.HTTP_201_CREATED)
+async def add_transcription_word(
+    audio_id: UUID,
+    payload: schemas.WordInsertRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Добавить новое слово по индексу вставки (спикер наследуется от соседа)."""
+    _require_editor(current_user)
+    audio = _get_audio_or_404(db, audio_id)
+    return _run_transcript_edit(db, lambda: transcript_edit.insert_word(
+        db, audio, payload.position, payload.raw, payload.language,
+    ))
+
+
+@router.delete("/transcriptions/{audio_id}/words/{position}")
+async def delete_transcription_word(
+    audio_id: UUID,
+    position: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Удалить слово по индексу."""
+    _require_editor(current_user)
+    audio = _get_audio_or_404(db, audio_id)
+    return _run_transcript_edit(db, lambda: transcript_edit.delete_word(db, audio, position))
+
 
 @router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_audio(
