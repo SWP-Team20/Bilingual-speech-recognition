@@ -23,9 +23,11 @@ from backend.src import models, db_index
 
 
 def _db_up():
-    s = socket.socket(); s.settimeout(1.5)
+    s = socket.socket()
+    s.settimeout(1.5)
     try:
-        s.connect((engine.url.host, engine.url.port or 5432)); return True
+        s.connect((engine.url.host, engine.url.port or 5432))
+        return True
     except Exception:
         return False
     finally:
@@ -50,7 +52,8 @@ def test_two_voices_persist_as_distinct_speakers():
     try:
         speaker_ids = []
         for emb in (_emb(1), _emb(2)):                 # ортогональные -> разные люди
-            aid = uuid4(); made.append(aid)
+            aid = uuid4()
+            made.append(aid)
             db.add(models.AudioFile(id=aid, filename=f"pytest-spk-{aid}", content_type="audio/wav",
                                     folder_path="/tmp/pytest", duration_sec=10.0, status="done"))
             db.commit()
