@@ -114,10 +114,6 @@ Architecture directly supports the objectives of MVP v2 by prioritizing stabilit
 
 Every major structural choice is documented in Architecture Decision Records and explicitly mapped to measurable Quality Requirements. ADR-001 mandates backend JWT validation to directly satisfy the confidentiality constraints of QR-001. ADR-002 enforces automated CI pipeline checks to ensure repository health, fulfilling QR-002. ADR-003 automates metadata parsing for PRs to meet the maintainability and traceability standards of QR-003. These architectural constraints are continuously verified in the pipeline using automated Quality Requirement Tests.
 
-### Project Workflow View
-
-![Project Workflow View](...) [INSERT SCREENSHOT]
-
 ### Links
 
 - [Architecture Artifact](/docs/architecture/README.md)
@@ -168,6 +164,10 @@ Every major structural choice is documented in Architecture Decision Records and
 ### Hosted Documentation Site
 
 ![Hosted Docs Site](images/hosted-docs-site.png)
+
+### Project Workflow View
+
+![Project Workflow View](images/workflow.png)
 
 ### Links
 
