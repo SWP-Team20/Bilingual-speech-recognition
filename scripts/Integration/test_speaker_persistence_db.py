@@ -21,6 +21,8 @@ from sqlalchemy import text
 from backend.src.database import engine, SessionLocal, Base
 from backend.src import models, db_index
 
+pytestmark = pytest.mark.integration
+
 
 def _db_up():
     s = socket.socket()
@@ -34,7 +36,10 @@ def _db_up():
         s.close()
 
 
-pytestmark = pytest.mark.skipif(not _db_up(), reason="Postgres не поднят (docker start pg-container)")
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(not _db_up(), reason="Postgres is not reachable on 127.0.0.1:15432"),
+]
 
 
 def _emb(seed):

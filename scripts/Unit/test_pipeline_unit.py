@@ -2,6 +2,8 @@
 import pytest
 from backend.src.pipeline import build_sentences
 
+pytestmark = pytest.mark.unit
+
 
 def test_build_sentences_empty():
     assert build_sentences([]) == []

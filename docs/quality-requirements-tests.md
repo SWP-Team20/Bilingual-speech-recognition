@@ -5,11 +5,11 @@
 
 **Verification method:** Automated integration API test.
 
-**Test data, setup, or environment:** CI testing environment containing at least one protected audio file resource with a known endpoint.
+**Test data, setup, or environment:** CI testing environment with Postgres initialized via `init_db.py` and the FastAPI application importable through `TestClient`.
 
-**Automated command or CI check:** `pytest scripts/QualityRequirements/test_security.py` (executed during the `backend-quality-tests` job within the `quality-requirements-tests.yml` workflow).
+**Automated command or CI check:** `pytest scripts/QualityRequirements/test_security.py -m qrt` (executed during the `backend-quality-tests` job within the `quality-requirements-tests.yml` workflow).
 
-**Expected measurable result:** The test suite exits with code 0 if the server explicitly rejects unauthenticated requests with an HTTP 401 status.
+**Expected measurable result:** The test suite exits with code 0 if unauthenticated requests to protected routes are rejected with HTTP 401, including at minimum: `GET /api/v1/audio`, `POST /api/v1/audio`, `GET /api/v1/auth/me`, `GET /api/v1/speakers`, and `GET /api/v1/users/`.
 
 **Evidence location:** GitHub CI job log for the `backend-quality-tests` runner on the default branch.
 
@@ -38,3 +38,16 @@
 **Expected measurable result:** The validation script completes execution with exit code 0, confirming that the default template placeholders are completely overwritten, a valid tracking issue reference (`Closes #<id>`) is explicitly declared, all base task checkboxes are marked as completed (`- [x]`), and exactly one single option is selected under the Changelog section.
 
 **Evidence location:** GitHub Actions check runs interface and log history execution data for the `Check PR Tasks and Issue Linking` workflow.
+
+## QRT-004: Role-Based Endpoint Authorization
+**Linked quality requirement:** QR-004
+
+**Verification method:** Automated integration API test with seeded users (`admin`, `pytest_viewer` with role `user`).
+
+**Test data, setup, or environment:** Same CI backend job as QRT-001; Postgres available; users created in `scripts/conftest.py`.
+
+**Automated command or CI check:** `pytest scripts/QualityRequirements/test_authorization.py -m qrt` (executed during the `backend-quality-tests` job within the `quality-requirements-tests.yml` workflow).
+
+**Expected measurable result:** The test suite exits with code 0 when an admin JWT receives HTTP 200 on `GET /api/v1/users/`, a user JWT receives HTTP 403 on `GET /api/v1/users/` and on transcript edit, and a user JWT receives HTTP 200 on `GET /api/v1/auth/me`.
+
+**Evidence location:** GitHub CI job log for the `backend-quality-tests` runner on the default branch.

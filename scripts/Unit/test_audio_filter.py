@@ -1,16 +1,21 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
+from unittest.mock import MagicMock
 
 import pytest
 
 from backend.src.services.audio_filter import (
     CorpusFilters,
+    filter_audio_files,
+    filter_word_hits,
     normalize_word,
     normalized_words,
     parse_date_from,
     parse_date_to_exclusive,
     parse_multi_values,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_normalize_word():
@@ -55,3 +60,27 @@ def test_corpus_filters_defaults():
     assert filters.words == []
     assert filters.langs == []
     assert filters.speaker is None
+    assert filters.status is None
+
+
+def test_filter_audio_files_applies_status_filter():
+    query = MagicMock()
+    query.filter.return_value = query
+    query.order_by.return_value = query
+
+    filter_audio_files(query, CorpusFilters(status="done"))
+
+    query.filter.assert_called()
+    query.order_by.assert_called_once()
+
+
+def test_filter_word_hits_applies_language_filter_when_no_words():
+    query = MagicMock()
+    query.filter.return_value = query
+    query.join.return_value = query
+    query.order_by.return_value = query
+
+    filter_word_hits(query, CorpusFilters(langs=["tt"]))
+
+    assert query.filter.call_count >= 1
+    query.order_by.assert_called_once()

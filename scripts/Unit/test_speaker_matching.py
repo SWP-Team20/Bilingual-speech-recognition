@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
+import pytest
+
 from backend.src.db_index import _cosine_sim, _normalize, _resolve_speakers
 from backend.src import models
+
+pytestmark = pytest.mark.unit
 
 
 class FakeSpeaker:
