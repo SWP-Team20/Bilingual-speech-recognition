@@ -118,3 +118,16 @@ class SearchHitResponse(BaseModel):
     confidence: float | None = None
     speaker: str | None = None
     recorded_at: datetime | None = None
+
+
+class SpeakerResponse(BaseModel):
+    id: int
+    label: str
+    created_at: datetime
+    audio_count: int = 0
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class UpdateSpeakerRequest(BaseModel):
+    label: str = Field(..., min_length=1, max_length=100, description="Новая метка говорящего")

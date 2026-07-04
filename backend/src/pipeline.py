@@ -83,12 +83,15 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
 
     # 2a. диаризация: кто говорит -> метка говорящего на каждый VAD-сегмент.
     seg_speakers = [None] * len(proc["segments"])
+    speaker_embeddings = {}
     if os.environ.get("ASR_DIARIZE", "1") == "1":
         try:
             print("[Pipeline] Launching speaker diarization step...")
             from backend.src import diarize
-            idx = diarize.assign_speakers(proc["original_wav"], proc["segments"])
+            idx, cluster_centroids = diarize.assign_speakers(proc["original_wav"], proc["segments"])
             seg_speakers = [f"Говорящий {k + 1}" if k is not None else None for k in idx]
+            for cluster_id, centroid in cluster_centroids.items():
+                speaker_embeddings[f"Говорящий {cluster_id + 1}"] = centroid
             print(f"[Pipeline] Diarization complete. Assigned labels: {seg_speakers}")
         except Exception as diarize_err:
             # Crucial: Log the actual error stack trace to your terminal/logs!
@@ -133,6 +136,7 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
         "engine": "VAD + MMS-LID + Whisper-large-v3(ru) / Whisper-TT(tt)",
         "stats": proc["stats"],
         "segment_map": proc["segments"],
+        "speaker_embeddings": speaker_embeddings,
         "sentences": build_sentences(words),
         "words": words,
     }
@@ -150,7 +154,9 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
     if db is not None:
         from backend.src import db_index
         try:
-            db_index.save_transcription(db, audio_id, words, proc["segments"], proc["stats"])
+            db_index.save_transcription(
+                db, audio_id, words, proc["segments"], proc["stats"], speaker_embeddings
+            )
             
             # --- MOVE THE DONE UPDATE HERE ---
             from backend.src import models
