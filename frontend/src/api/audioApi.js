@@ -122,6 +122,32 @@ export const audioApi = {
     return response.data;
   },
 
+  // Matches PATCH /api/v1/transcriptions/{audio_id}/words/{position}
+  // Edit an existing word's spelling and/or language tag. Returns { words, sentences, stats }.
+  editTranscriptionWord: async (audioId, position, { raw, text, language } = {}) => {
+    const body = {};
+    if (raw !== undefined) body.raw = raw;
+    if (text !== undefined) body.text = text;
+    if (language !== undefined) body.language = language;
+    const response = await apiClient.patch(`/api/v1/transcriptions/${audioId}/words/${position}`, body);
+    return response.data;
+  },
+
+  // Matches POST /api/v1/transcriptions/{audio_id}/words
+  // Insert a new word at the given index. Returns { words, sentences, stats }.
+  addTranscriptionWord: async (audioId, { position, raw, language = 'unknown' }) => {
+    const response = await apiClient.post(`/api/v1/transcriptions/${audioId}/words`, {
+      position, raw, language,
+    });
+    return response.data;
+  },
+
+  // Matches DELETE /api/v1/transcriptions/{audio_id}/words/{position}
+  deleteTranscriptionWord: async (audioId, position) => {
+    const response = await apiClient.delete(`/api/v1/transcriptions/${audioId}/words/${position}`);
+    return response.data;
+  },
+
   // Matches DELETE /api/v1/audio/{audio_id}
   deleteAudio: async (audioId) => {
     const response = await apiClient.delete(`/api/v1/audio/${audioId}`);

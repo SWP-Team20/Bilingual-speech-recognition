@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Audio tags, such as title and date, now are visible in audio list and can be assigned to audio before upload in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/208
 - Download button on each audio row (managers/admins): choose Original or Processed audio in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/212
 - Search bar, where user can find audios by the title in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/213
+- Manual correction of the transcription (US-010): click a word to fix its spelling or change its language tag, and add or delete words; word counts update in real time (#13)
 
 ### Changed
 - Accent color changed from brown to green, and the profile/upload icons are now black in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206

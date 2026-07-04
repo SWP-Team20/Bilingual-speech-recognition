@@ -29,6 +29,37 @@ class UpdateTranscriptionRequest(BaseModel):
     transcription_text: str
 
 
+_VALID_LANGS = ("ru", "tt", "unknown")
+
+
+class WordEditRequest(BaseModel):
+    """Правка одного слова: видимая форма (raw), нормализованная (text) и/или язык."""
+    raw: str | None = Field(default=None, description="Видимое слово (как показывается)")
+    text: str | None = Field(default=None, description="Нормализованная форма для поиска; по умолчанию выводится из raw")
+    language: str | None = Field(default=None, description="Языковой тег: ru / tt / unknown")
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.raw is None and self.text is None and self.language is None:
+            raise ValueError("Укажите raw, text или language")
+        if self.language is not None and self.language not in _VALID_LANGS:
+            raise ValueError("language должен быть ru / tt / unknown")
+        return self
+
+
+class WordInsertRequest(BaseModel):
+    """Добавление нового слова по индексу вставки."""
+    position: int = Field(..., ge=0, description="Индекс вставки (0..N)")
+    raw: str = Field(..., min_length=1, description="Слово")
+    language: str = Field(default="unknown", description="Языковой тег: ru / tt / unknown")
+
+    @model_validator(mode="after")
+    def _check(self):
+        if self.language not in _VALID_LANGS:
+            raise ValueError("language должен быть ru / tt / unknown")
+        return self
+
+
 class UpdateAudioMetadataRequest(BaseModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     recorded_at: str | None = None
