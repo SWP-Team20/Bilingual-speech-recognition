@@ -37,11 +37,11 @@ Detailed file-level inventory: [`scripts/README.md`](../scripts/README.md).
 
 | Gate or check | Required for Done? | Latest protected-branch status | Evidence |
 | :--- | :--- | :--- | :--- |
-| Linting | Yes | Passing | [CI Run (Ruff & ESLint)](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| Formatting or type checking | Yes | Passing | [CI Run (Black & FE Toolchain)](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| Additional QA check | Yes | Passing | [Check Report (pip-audit & npm audit)](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
+| Linting | Yes | Passing | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
+| Formatting or type checking | Yes | Passing | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
+| Additional QA check | Yes | Passing | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 | Backend unit, integration, and QRT tests | Yes | Passing | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| PR compliance (QRT-003) | Yes (PRs to `main`) | Passing | [`check-tasks.yml`](../.github/workflows/check-tasks.yml) |
+| PR compliance (QRT-003) | Yes (PRs to `main`) | Passing | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 
 ---
 
