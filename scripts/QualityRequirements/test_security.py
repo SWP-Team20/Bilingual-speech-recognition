@@ -13,7 +13,7 @@ def test_unauthorized_get_audio_list_is_blocked(api_client):
 
 def test_unauthorized_post_audio_upload_is_blocked(api_client):
     response = api_client.post(
-        "/api/v1/audio",
+        "/api/v1/upload-audio/",
         files={"file": ("sample.wav", b"dummy", "audio/wav")},
     )
     assert response.status_code == 401

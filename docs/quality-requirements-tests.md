@@ -9,7 +9,7 @@
 
 **Automated command or CI check:** `pytest scripts/QualityRequirements/test_security.py -m qrt` (executed during the `backend-quality-tests` job within the `quality-requirements-tests.yml` workflow).
 
-**Expected measurable result:** The test suite exits with code 0 if unauthenticated requests to protected routes are rejected with HTTP 401, including at minimum: `GET /api/v1/audio`, `POST /api/v1/audio`, `GET /api/v1/auth/me`, `GET /api/v1/speakers`, and `GET /api/v1/users/`.
+**Expected measurable result:** The test suite exits with code 0 if unauthenticated requests to protected routes are rejected with HTTP 401, including at minimum: `GET /api/v1/audio`, `POST /api/v1/upload-audio/`, `GET /api/v1/auth/me`, `GET /api/v1/speakers`, and `GET /api/v1/users/`.
 
 **Evidence location:** GitHub CI job log for the `backend-quality-tests` runner on the default branch.
 
