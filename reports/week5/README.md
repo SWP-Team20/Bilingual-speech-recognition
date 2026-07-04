@@ -82,8 +82,7 @@ Redesigned the page to more user-friendly style and be more informative to the u
 
 ### Testing and CI Status Summary
 
-[INSERT DESCRIPTION]
-
+Assignment 4 gates remain active. CI runs backend lint/format/audit and **68 pytest tests** (**55%** coverage); frontend lint/build (QRT-002); PR checks (QRT-003). Suite: **55 unit**, **3 integration**, **9 pytest cases** for QRT-001/004 plus login latency.
 ### Latest Protected-Default-Branch CI Run (right before uploading this README)
 
 ![Latest CI Run](...) [INSERT SCREENSHOT]

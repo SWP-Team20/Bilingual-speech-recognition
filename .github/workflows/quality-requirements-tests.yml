@@ -24,6 +24,11 @@ jobs:
               - 'backend/**'
               - 'scripts/**'
               - 'init_db.py'
+              - 'pytest.ini'
+              - 'docs/testing.md'
+              - 'docs/quality-requirements.md'
+              - 'docs/quality-requirements-tests.md'
+              - 'docs/definition-of-done.md'
               - '.github/workflows/quality-requirements-tests.yml'
             frontend:
               - 'frontend/**'
@@ -100,9 +105,24 @@ jobs:
           done
           echo "FastAPI is ready!"
 
-      - name: Run All Automated Tests with Line Coverage (Unit, Integration, QRT)
+      - name: Run Unit Tests
         run: |
-          pytest --cov=backend/src scripts/ --cov-report=term-missing
+          pytest scripts/Unit/ -m unit -q --cov=backend/src --cov-report=term-missing
+
+      - name: Run Integration and Quality Requirement Tests
+        run: |
+          pytest scripts/Integration/ scripts/QualityRequirements/ \
+            -m "integration or qrt" -q \
+            --cov=backend/src --cov-append --cov-report=term-missing
+
+      - name: Publish test summary
+        if: always()
+        run: |
+          echo "### Backend test summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Unit: \`pytest scripts/Unit/ -m unit\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Integration + QRT: \`pytest scripts/Integration/ scripts/QualityRequirements/ -m 'integration or qrt'\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- QRT-001 security, QRT-004 authorization, supplementary auth perf" >> "$GITHUB_STEP_SUMMARY"
+          echo "See docs/testing.md and docs/quality-requirements-tests.md" >> "$GITHUB_STEP_SUMMARY"
 
   frontend-quality-check:
     needs: changes

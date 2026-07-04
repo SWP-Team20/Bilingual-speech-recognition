@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 """Юнит-тесты чистой логики пословной правки транскрипции (US-010, issue #13).
 Покрывают mutate_* и compute_stats без БД и без тяжёлого ASR-пайплайна."""
+import pytest
+
 from backend.src.services.transcript_edit import (
     normalize_word, mutate_edit, mutate_insert, mutate_delete, compute_stats,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def _word(raw, text, lang, speaker="Говорящий 1", start=0.0, end=1.0, conf=0.9):

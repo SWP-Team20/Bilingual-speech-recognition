@@ -5,6 +5,8 @@ import pytest
 
 from backend.src.services.audio_filter import CorpusFilters, apply_audio_corpus_filters
 
+pytestmark = pytest.mark.unit
+
 
 def test_apply_word_corpus_filters_skips_blank_speaker():
     query = MagicMock()
