@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Responsive layout that stacks the panels on narrow screens in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
 - Audio filtration by specific words, languages, speaker, dates, or load status in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/208
 - Audio tags, such as title and date, now are visible in audio list and can be assigned to audio before upload in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/208
+- Download button on each audio row (managers/admins): choose Original or Processed audio in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/212
 - Search bar, where user can find audios by the title in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/213
 
 ### Changed
@@ -28,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Security page background now matches the rest of the application in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
 - UI is now flexible and representable on mobiles or narrow screens in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/213
+- Cross-audio speaker matching no longer collapses two distinct voices of the same recording into one speaker; each global speaker is claimed by at most one voice per audio (#207)
+- Saving a transcription with a newly created speaker no longer fails with a foreign-key error: words are now flushed before orphan-speaker cleanup, so the fresh speaker is not deleted mid-transaction (#207)
 
 ## [0.2.0] - 28.06.2026
 
