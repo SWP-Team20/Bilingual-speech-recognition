@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 05.07.2026
+
 ### Added
 - New admin panel for users with role admin (user maintenance and control) in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/202
 - Storage size of each audio shown next to it, and total storage usage shown next to the "Audios" heading in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/206
@@ -59,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Uploaded audio transcription feature in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/49
 - Color coding Russian and Tatar words in transcription in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/52
 
-[unreleased]: https://github.com/SWP-Team20/Bilingual-speech-recognition/compare/v0.2.0...main
+[unreleased]: https://github.com/SWP-Team20/Bilingual-speech-recognition/compare/v0.3.0...main
+[0.3.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.1.0
