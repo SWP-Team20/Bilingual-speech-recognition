@@ -73,7 +73,7 @@ Redesigned the page to more user-friendly style and be more informative to the u
 - [Demo Video of Release](https://drive.google.com/file/d/16tRFkfn8YA76mVzsU-al2bu3Ei327UMB/view?usp=sharing)
 - [Access Instructions](/README.md)
 - [Deployment Insctructions](/deployment.md)
-- [LLM Report](...) [INSERT LINK]
+- [LLM Report](llm-report.md)
 
 ---
 
@@ -179,4 +179,4 @@ All core features except of statistics are developed. ASR is still not trained t
 - [Hosted Documentation Site](https://swp-team20.github.io/Bilingual-speech-recognition)
 - [Development Process](/docs/development-process.md)
 - [Reflection](...) [INSERT LINK]
-- [Retrospective](...) [INSERT LINK]
+- [Retrospective](retrospective.md)
