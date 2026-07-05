@@ -7,7 +7,7 @@
 
 ## What did not go well
 
-- The team failed to complete all the necessary tasks by the deadline, which led to a rescheduled meeting with the client
+- The team did not receive relevant for work audio files with transcription
 
 ## What we changed compared to the previous Sprint based on the previous Sprint Retrospective
 
