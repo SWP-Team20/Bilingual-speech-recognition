@@ -131,12 +131,12 @@ Every major structural choice is documented in Architecture Decision Records and
 
 ### UAT Results Summary
 
-[INSERT DESCRIPTION]
+[ABSENT DUE TO CUSTOMER UNAVAILABILITY]
 
 ### Links
 
-- [Customer Review Transcript](...) [INSERT LINK]
-- [Customer Review Summary](...) [INSERT LINK]
+- [Customer Review Transcript](...) [ABSENT DUE TO CUSTOMER UNAVAILABILITY]
+- [Customer Review Summary](...) [ABSENT DUE TO CUSTOMER UNAVAILABILITY]
 
 ---
 
