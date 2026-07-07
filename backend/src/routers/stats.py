@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
@@ -13,6 +13,16 @@ from backend.src.services.audio_filter import StatsFilters, parse_multi_values
 from backend.src.services import word_stats
 
 router = APIRouter(prefix="/stats", tags=["Statistics"])
+
+
+def _parse_audio_ids(audio_id: Optional[list[str]]) -> List[UUID]:
+    audio_ids: List[UUID] = []
+    for raw_id in parse_multi_values(audio_id):
+        try:
+            audio_ids.append(UUID(raw_id))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=f"Некорректный audio_id: {raw_id}") from exc
+    return audio_ids
 
 
 @router.get("/words/frequent", response_model=schemas.FrequentWordsResponse)
@@ -41,6 +51,40 @@ async def get_frequent_words(
         ],
         total_words=result.total_words,
         unique_words=result.unique_words,
+        limit=result.limit,
+    )
+
+
+@router.get("/speakers/words", response_model=schemas.SpeakerWordsResponse)
+async def get_speaker_word_stats(
+    lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),
+    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
+    limit: int = Query(20, ge=1, le=500, description="Максимальное число говорящих в ответе"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Количество слов по говорящим. Фильтры: язык, дата, аудиозаписи."""
+    filters = StatsFilters(
+        langs=parse_multi_values(lang),
+        date_from=date_from,
+        date_to=date_to,
+        audio_ids=_parse_audio_ids(audio_id),
+        status="done",
+    )
+    result = word_stats.compute_speaker_word_counts(db, filters, limit=limit)
+    return schemas.SpeakerWordsResponse(
+        items=[
+            schemas.SpeakerWordCountItem(
+                speaker_id=item.speaker_id,
+                label=item.label,
+                count=item.count,
+            )
+            for item in result.items
+        ],
+        total_words=result.total_words,
+        total_speakers=result.total_speakers,
         limit=result.limit,
     )
 

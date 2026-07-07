@@ -28,6 +28,21 @@ class FrequentWordsResult:
     limit: int
 
 
+@dataclass
+class SpeakerWordCount:
+    speaker_id: Optional[int]
+    label: str
+    count: int
+
+
+@dataclass
+class SpeakerWordsResult:
+    items: List[SpeakerWordCount]
+    total_words: int
+    total_speakers: int
+    limit: int
+
+
 def compute_frequent_words(db: Session, filters: StatsFilters, limit: int = 50) -> FrequentWordsResult:
     """Top-N most frequent normalized words for the filtered corpus."""
     limit = max(1, min(limit, 500))
@@ -56,6 +71,44 @@ def compute_frequent_words(db: Session, filters: StatsFilters, limit: int = 50) 
         items=items,
         total_words=total_words,
         unique_words=unique_words,
+        limit=limit,
+    )
+
+
+def compute_speaker_word_counts(db: Session, filters: StatsFilters, limit: int = 20) -> SpeakerWordsResult:
+    """Word counts grouped by speaker for the filtered corpus."""
+    limit = max(1, min(limit, 500))
+
+    base_query = apply_stats_filters(db.query(models.Word), filters)
+
+    total_words = base_query.with_entities(func.count(models.Word.id)).scalar() or 0
+    total_speakers = (
+        base_query.with_entities(func.count(func.distinct(models.Word.speaker_id))).scalar() or 0
+    )
+
+    label_expr = func.coalesce(models.Speaker.label, "Без говорящего").label("label")
+
+    rows = (
+        base_query.outerjoin(models.Speaker, models.Speaker.id == models.Word.speaker_id)
+        .with_entities(
+            models.Word.speaker_id,
+            label_expr,
+            func.count(models.Word.id).label("count"),
+        )
+        .group_by(models.Word.speaker_id, models.Speaker.label)
+        .order_by(func.count(models.Word.id).desc(), label_expr)
+        .limit(limit)
+        .all()
+    )
+
+    items = [
+        SpeakerWordCount(speaker_id=speaker_id, label=label, count=count)
+        for speaker_id, label, count in rows
+    ]
+    return SpeakerWordsResult(
+        items=items,
+        total_words=total_words,
+        total_speakers=total_speakers,
         limit=limit,
     )
 

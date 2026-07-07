@@ -1,4 +1,5 @@
 import FrequentWordsSection from '../components/stats/FrequentWordsSection';
+import SpeakerStatsSection from '../components/stats/SpeakerStatsSection';
 import StatsSection from '../components/stats/StatsSection';
 import { colors, radius, MOBILE_BREAKPOINT } from '../theme';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -48,11 +49,7 @@ function StatisticsPanel() {
           placeholder="Раздел в разработке"
         />
 
-        <StatsSection
-          title="Статистика по говорящим"
-          description="Доля речи и активность каждого говорящего."
-          placeholder="Раздел в разработке"
-        />
+        <SpeakerStatsSection />
       </div>
     </div>
   );

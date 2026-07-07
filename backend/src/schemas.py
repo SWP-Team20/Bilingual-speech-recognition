@@ -147,6 +147,19 @@ class FrequentWordsResponse(BaseModel):
     limit: int
 
 
+class SpeakerWordCountItem(BaseModel):
+    speaker_id: int | None
+    label: str
+    count: int
+
+
+class SpeakerWordsResponse(BaseModel):
+    items: List[SpeakerWordCountItem]
+    total_words: int
+    total_speakers: int
+    limit: int
+
+
 class StatsRebuildResponse(BaseModel):
     processed: int
     from_json: bool

@@ -2,7 +2,12 @@
 """Юнит-тесты сервиса корпусной статистики слов."""
 import pytest
 
-from backend.src.services.word_stats import WordFrequency, FrequentWordsResult
+from backend.src.services.word_stats import (
+    WordFrequency,
+    FrequentWordsResult,
+    SpeakerWordCount,
+    SpeakerWordsResult,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -16,3 +21,14 @@ def test_frequent_words_result_dataclass():
     assert len(result.items) == 2
     assert result.total_words == 20
     assert result.items[0].count == 12
+
+
+def test_speaker_words_result_dataclass():
+    items = [
+        SpeakerWordCount(speaker_id=1, label="мама", count=120),
+        SpeakerWordCount(speaker_id=2, label="папа", count=80),
+    ]
+    result = SpeakerWordsResult(items=items, total_words=200, total_speakers=2, limit=20)
+    assert len(result.items) == 2
+    assert result.total_words == 200
+    assert result.items[0].label == "мама"
