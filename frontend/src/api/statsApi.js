@@ -25,4 +25,18 @@ export const statsApi = {
     });
     return response.data;
   },
+
+  fetchSpeakerWordStats: async (filters = {}) => {
+    const params = new URLSearchParams();
+    params.set('limit', String(clampLimit(filters.limit ?? 20)));
+    appendListParams(params, 'lang', filters.langs);
+    appendListParams(params, 'audio_id', filters.audioIds);
+    if (filters.dateFrom) params.set('date_from', filters.dateFrom);
+    if (filters.dateTo) params.set('date_to', filters.dateTo);
+
+    const response = await apiClient.get('/api/v1/stats/speakers/words', {
+      params,
+    });
+    return response.data;
+  },
 };

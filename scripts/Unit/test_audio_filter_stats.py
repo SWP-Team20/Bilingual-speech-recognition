@@ -22,3 +22,11 @@ def test_stats_filters_only_speaker_date_lang():
     assert filters.speakers == ["мама"]
     assert filters.date_from == "2025-01-01"
     assert not hasattr(filters, "words")
+
+
+def test_stats_filters_audio_ids():
+    from uuid import UUID
+
+    audio_id = UUID("12345678-1234-5678-1234-567812345678")
+    filters = StatsFilters(audio_ids=[audio_id])
+    assert filters.audio_ids == [audio_id]

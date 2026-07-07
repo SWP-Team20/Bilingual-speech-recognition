@@ -19,6 +19,7 @@ class StatsFilters:
     date_from: Optional[str] = None
     date_to: Optional[str] = None
     status: Optional[str] = None
+    audio_ids: List[UUID] = field(default_factory=list)
 
 
 @dataclass
@@ -216,9 +217,12 @@ def _apply_stats_language_filter(query: Query, langs: List[str]) -> Query:
 
 
 def apply_stats_filters(query: Query, filters: StatsFilters) -> Query:
-    """Restrict a Word query for statistics: speaker, date, language only."""
+    """Restrict a Word query for statistics: speaker, date, language, audio."""
     query = query.join(models.AudioFile, models.AudioFile.id == models.Word.audio_id)
     query = apply_date_filters(query, filters)
+
+    if filters.audio_ids:
+        query = query.filter(models.AudioFile.id.in_(filters.audio_ids))
 
     if filters.status:
         query = query.filter(models.AudioFile.status == filters.status)
