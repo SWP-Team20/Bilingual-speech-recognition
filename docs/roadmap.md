@@ -50,3 +50,20 @@
   -  [US-024: Audio search](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/201)
   -  [Speakers list endpoint](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/207)
   -  [US-025: Original audio download](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/211)
+
+  ## Sprint 4
+
+- **Sprint name or number:** 4
+- **Link to the corresponding Sprint milestone:** [Sprint 4](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/4)
+- **Sprint start and finish dates:** 06.07.2026-12.07.2026
+- **Sprint Goal:** Develop early statistics and fix ocurred bugs
+- **Short focus or expected outcome statement:** Statistics tab, design improvements
+- **Linked planned items for that Sprint, such as user stories and supporting PBIs:**
+  -  [US-001: Words count](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/5)
+  -  [Speakers dropdown filter](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/247)
+  -  [Replace alerts with modals](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/249)
+  -  [US-026: Per-speaker statistics](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/254)
+  -  [US-027: Per-language statistics](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/255)
+  -  [US-028: Per-date statistics](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/256)
+  -  [US-030: Speakers labeling](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/261)
+  -  [US-031: Transcription download](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/263)
