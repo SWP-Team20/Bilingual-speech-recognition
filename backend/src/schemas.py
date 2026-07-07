@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -131,3 +132,21 @@ class SpeakerResponse(BaseModel):
 
 class UpdateSpeakerRequest(BaseModel):
     label: str = Field(..., min_length=1, max_length=100, description="Новая метка говорящего")
+
+
+class WordFrequencyItem(BaseModel):
+    text: str
+    language: str
+    count: int
+
+
+class FrequentWordsResponse(BaseModel):
+    items: List[WordFrequencyItem]
+    total_words: int
+    unique_words: int
+    limit: int
+
+
+class StatsRebuildResponse(BaseModel):
+    processed: int
+    from_json: bool
