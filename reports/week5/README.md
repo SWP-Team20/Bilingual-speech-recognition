@@ -72,7 +72,7 @@ Redesigned the page to more user-friendly style and be more informative to the u
 - [Deployed Product](https://10.93.26.206:5173)
 - [Demo Video of Release](https://drive.google.com/file/d/16tRFkfn8YA76mVzsU-al2bu3Ei327UMB/view?usp=sharing)
 - [Access Instructions](/README.md)
-- [Deployment Insctructions](/deployment.md)
+- [Deployment Insctructions](/docs/deployment.md)
 - [LLM Report](llm-report.md)
 
 ---
