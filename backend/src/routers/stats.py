@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
@@ -15,30 +15,24 @@ from backend.src.services import word_stats
 router = APIRouter(prefix="/stats", tags=["Statistics"])
 
 
-def get_stats_filters(
-    lang: Optional[list[str]] = Query(None, description="Язык слов: ru / tt / unknown"),
-    speaker: Optional[list[str]] = Query(None, description="Метка говорящего (мама / папа / …)"),
-    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
-    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
-) -> StatsFilters:
-    return StatsFilters(
-        langs=parse_multi_values(lang),
-        speakers=parse_multi_values(speaker),
-        date_from=date_from,
-        date_to=date_to,
-    )
-
-
 @router.get("/words/frequent", response_model=schemas.FrequentWordsResponse)
 async def get_frequent_words(
-    filters: Annotated[StatsFilters, Depends(get_stats_filters)],
+    lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),
+    speaker: Optional[list[str]] = Query(None, description="Говорящий (мама / папа / …)"),
+    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
     limit: int = Query(50, ge=1, le=500, description="Максимальное число слов в ответе"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Самые частые слова в корпусе с фильтрами по говорящему, языку и дате."""
-    if filters.status is None:
-        filters.status = "done"
+    """Самые частые слова. Фильтры: говорящий, язык (ru/tt/unknown), дата."""
+    filters = StatsFilters(
+        langs=parse_multi_values(lang),
+        speakers=parse_multi_values(speaker),
+        date_from=date_from,
+        date_to=date_to,
+        status="done",
+    )
     result = word_stats.compute_frequent_words(db, filters, limit=limit)
     return schemas.FrequentWordsResponse(
         items=[

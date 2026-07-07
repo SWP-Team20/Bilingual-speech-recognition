@@ -421,7 +421,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
             style={{ flex: 1, height: '36px', display: 'flex', alignItems: 'center', gap: '2px', cursor: 'pointer', minWidth: 0, userSelect: 'none', outline: 'none' }}
           >
             {waveform.map((h, i) => {
-              const filled = i / WAVEFORM_BARS <= activeRatio;
+              const filled = (i + 1) / WAVEFORM_BARS <= activeRatio;
               const color = filled ? (isDragging ? colors.waveformScrub : colors.dark) : colors.waveform;
               return (
                 <div

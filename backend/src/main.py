@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import os
 from sqlalchemy import text
 from backend.src.database import engine, Base
 from backend.src.routers import audio, auth, admin, speakers, stats
@@ -19,6 +20,11 @@ origins = [
     "http://127.0.0.1:5173",
     "http://localhost:5173",
 ]
+
+for item in os.environ.get("CORS_ORIGINS", "").split(","):
+    origin = item.strip()
+    if origin and origin not in origins:
+        origins.append(origin)
 
 app.add_middleware(
     CORSMiddleware,

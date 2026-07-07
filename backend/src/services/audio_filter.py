@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import List, Optional, Union
 from uuid import UUID
 
-from sqlalchemy import and_, exists
+from sqlalchemy import and_, exists, or_
 from sqlalchemy.orm import Query
 
 from backend.src import models
@@ -187,6 +187,34 @@ def filter_word_hits(query: Query, filters: CorpusFilters) -> Query:
     )
 
 
+def _unknown_language_clause():
+    """Слова без уверенной классификации ru/tt."""
+    return or_(
+        models.Word.language == "unknown",
+        models.Word.language.is_(None),
+        models.Word.language == "",
+        models.Word.language.notin_(["ru", "tt"]),
+    )
+
+
+def _apply_stats_language_filter(query: Query, langs: List[str]) -> Query:
+    requested = [lang for lang in langs if lang in ("ru", "tt", "unknown")]
+    if not langs:
+        return query
+    if not requested:
+        return query.filter(False)
+
+    clauses = []
+    if "ru" in requested:
+        clauses.append(models.Word.language == "ru")
+    if "tt" in requested:
+        clauses.append(models.Word.language == "tt")
+    if "unknown" in requested:
+        clauses.append(_unknown_language_clause())
+
+    return query.filter(or_(*clauses))
+
+
 def apply_stats_filters(query: Query, filters: StatsFilters) -> Query:
     """Restrict a Word query for statistics: speaker, date, language only."""
     query = query.join(models.AudioFile, models.AudioFile.id == models.Word.audio_id)
@@ -195,9 +223,8 @@ def apply_stats_filters(query: Query, filters: StatsFilters) -> Query:
     if filters.status:
         query = query.filter(models.AudioFile.status == filters.status)
 
-    langs = [lang for lang in filters.langs if lang in ("ru", "tt", "unknown")]
-    if langs:
-        query = query.filter(models.Word.language.in_(langs))
+    if filters.langs:
+        query = _apply_stats_language_filter(query, filters.langs)
 
     speakers = [label.strip() for label in filters.speakers if label.strip()]
     if speakers:
@@ -208,15 +235,3 @@ def apply_stats_filters(query: Query, filters: StatsFilters) -> Query:
             query = query.filter(models.Speaker.label.in_(speakers))
 
     return query
-
-
-def apply_word_stats_filters(query: Query, filters: CorpusFilters) -> Query:
-    """Restrict a Word query by corpus filters for statistics aggregation."""
-    stats_filters = StatsFilters(
-        langs=filters.langs,
-        speakers=resolved_speakers(filters),
-        date_from=filters.date_from,
-        date_to=filters.date_to,
-        status=filters.status,
-    )
-    return apply_stats_filters(query, stats_filters)

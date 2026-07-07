@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// In dev, Vite proxies /api/v1 to the backend — same origin, no CORS issues.
+const API_BASE = import.meta.env.DEV
+  ? ''
+  : (import.meta.env.VITE_API_URL || 'http://localhost:8000');
 
 // Single shared Axios instance for the entire application
 const apiClient = axios.create({
