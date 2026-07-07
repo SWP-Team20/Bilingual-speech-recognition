@@ -107,18 +107,27 @@ def get_folder_size(folder_path: str) -> int:
 def get_corpus_filters(
     q: Optional[List[str]] = Query(None, description="Слова (точное совпадение нормализованного text); можно повторять или через запятую"),
     lang: Optional[List[str]] = Query(None, description="Языки слов в записи: ru / tt / unknown; запись должна содержать все выбранные"),
-    speaker: Optional[str] = Query(None, description="Метка говорящего (мама / папа / …)"),
+    speaker: Optional[List[str]] = Query(None, description="Метка говорящего (мама / папа / …); можно повторять или через запятую"),
     date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
     status: Optional[str] = Query(None, description="Статус обработки: done / processing / error / …"),
+    audio_id: Optional[List[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
 ) -> CorpusFilters:
+    audio_ids: List[UUID] = []
+    for raw_id in parse_multi_values(audio_id):
+        try:
+            audio_ids.append(UUID(raw_id))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=f"Некорректный audio_id: {raw_id}") from exc
+
     return CorpusFilters(
         words=parse_multi_values(q),
         langs=parse_multi_values(lang),
-        speaker=speaker,
+        speakers=parse_multi_values(speaker),
         date_from=date_from,
         date_to=date_to,
         status=status,
+        audio_ids=audio_ids,
     )
 
 

@@ -6,7 +6,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '../', '')
 
   const isHttps = env.VITE_HTTPS === 'true'
-  const backendUrl = env.VITE_API_URL || 'https://192.168.56.1:8000'
+  const backendUrl = env.VITE_API_URL || 'http://127.0.0.1:8000'
 
   return {
     plugins: [react()],
@@ -18,6 +18,11 @@ export default defineConfig(({ mode }) => {
       } : false,
       port: 5173,
       proxy: {
+        '/api/v1': {
+          target: backendUrl,
+          changeOrigin: true,
+          secure: false,
+        },
         '/audio': {
           target: backendUrl,
           changeOrigin: true,

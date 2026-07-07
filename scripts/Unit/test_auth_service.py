@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Unit tests for backend.src.services.auth (password hashing and JWT)."""
 import pytest
-from jose import jwt
+from jwt import decode
 
 from backend.src.services.auth import (
     ALGORITHM,
@@ -27,6 +27,6 @@ def test_verify_password_rejects_wrong_password():
 
 def test_create_access_token_is_decodable_jwt():
     token = create_access_token(data={"sub": "admin"})
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    payload = decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     assert payload["sub"] == "admin"
     assert "exp" in payload

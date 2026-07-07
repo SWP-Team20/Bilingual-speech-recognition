@@ -8,17 +8,25 @@ const __dirname = path.dirname(__filename);
 
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
+  const candidates = [];
+
   for (const name of Object.keys(interfaces)) {
     if (/docker|virtual|vbox|vethernet/i.test(name)) continue;
 
     for (const iface of interfaces[name]) {
       const isIPv4 = iface.family === 'IPv4' || iface.family === 4;
-      if (isIPv4 && !iface.internal) {
-        return iface.address;
-      }
+      if (!isIPv4 || iface.internal) continue;
+
+      const address = iface.address;
+      // 169.254.x.x — служебный адрес Windows без DHCP, часто ломает API/CORS.
+      if (address.startsWith('169.254.')) continue;
+
+      candidates.push(address);
     }
   }
-  return '127.0.0.1';
+
+  const preferred = candidates.find((ip) => ip.startsWith('192.168.') || ip.startsWith('10.'));
+  return preferred || candidates[0] || '127.0.0.1';
 }
 
 const envPath = path.resolve(__dirname, '..', '.env');

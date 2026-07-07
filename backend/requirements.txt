@@ -12,7 +12,7 @@ psycopg[binary]           # драйвер PostgreSQL (postgresql+psycopg)
 # Authentication & Security
 # =====================================================================
 pwdlib[bcrypt]
-python-jose[JWT]
+PyJWT>=2.10.0
 
 # =====================================================================
 # Audio, ML & ASR Toolchain

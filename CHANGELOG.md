@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New words count statistics with ability to filter by speaker, date and language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/273 
+
 ## [0.3.0] - 05.07.2026
 
 ### Added
