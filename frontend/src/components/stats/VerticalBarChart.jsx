@@ -1,4 +1,9 @@
 import { colors, radius } from '../../theme';
+import {
+  formatChartLabel,
+  formatChartTitle,
+  getChartDisplayValue,
+} from './chartDisplay';
 
 const CHART_HEIGHT = 220;
 const BAR_WIDTH = 44;
@@ -23,7 +28,7 @@ const LANG_STYLES = {
   },
 };
 
-function VerticalBarChart({ items = [] }) {
+function VerticalBarChart({ items = [], displayMode = 'count', total = 0 }) {
   if (!items.length) {
     return (
       <div style={{ padding: '36px 16px', textAlign: 'center', color: colors.textFaint, fontSize: '14px' }}>
@@ -32,7 +37,10 @@ function VerticalBarChart({ items = [] }) {
     );
   }
 
-  const maxCount = Math.max(...items.map((item) => item.count), 1);
+  const maxValue = Math.max(
+    ...items.map((item) => getChartDisplayValue(item.count, displayMode, total)),
+    displayMode === 'percent' ? 0.1 : 1,
+  );
   const chartInnerWidth = Math.max(MIN_CHART_WIDTH, items.length * (BAR_WIDTH + COLUMN_GAP) + 24);
 
   return (
@@ -101,13 +109,14 @@ function VerticalBarChart({ items = [] }) {
             }}
           >
             {items.map((item, index) => {
-              const heightPct = Math.max(6, Math.round((item.count / maxCount) * 100));
+              const displayValue = getChartDisplayValue(item.count, displayMode, total);
+              const heightPct = Math.max(6, Math.round((displayValue / maxValue) * 100));
               const langStyle = LANG_STYLES[item.language] || LANG_STYLES.unknown;
 
               return (
                 <div
                   key={`${item.text}-${item.language}-${index}`}
-                  title={`${item.text} · ${langStyle.label} · ${item.count}`}
+                  title={formatChartTitle(`${item.text} · ${langStyle.label}`, item.count, displayMode, total)}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -125,7 +134,7 @@ function VerticalBarChart({ items = [] }) {
                       lineHeight: 1,
                     }}
                   >
-                    {item.count}
+                    {formatChartLabel(item.count, displayMode, total)}
                   </span>
 
                   <div

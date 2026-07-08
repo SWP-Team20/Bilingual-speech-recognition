@@ -1,4 +1,9 @@
 import { colors, radius } from '../../theme';
+import {
+  formatChartLabel,
+  formatChartTitle,
+  getChartDisplayValue,
+} from './chartDisplay';
 
 const CHART_HEIGHT = 220;
 const BAR_WIDTH = 44;
@@ -7,7 +12,7 @@ const MIN_CHART_WIDTH = 320;
 
 const BAR_GRADIENT = 'linear-gradient(180deg, #7eb6ff 0%, #4f8fd9 100%)';
 
-function SpeakerBarChart({ items = [] }) {
+function SpeakerBarChart({ items = [], displayMode = 'count', total = 0 }) {
   if (!items.length) {
     return (
       <div style={{ padding: '36px 16px', textAlign: 'center', color: colors.textFaint, fontSize: '14px' }}>
@@ -16,7 +21,10 @@ function SpeakerBarChart({ items = [] }) {
     );
   }
 
-  const maxCount = Math.max(...items.map((item) => item.count), 1);
+  const maxValue = Math.max(
+    ...items.map((item) => getChartDisplayValue(item.count, displayMode, total)),
+    displayMode === 'percent' ? 0.1 : 1,
+  );
   const chartInnerWidth = Math.max(MIN_CHART_WIDTH, items.length * (BAR_WIDTH + COLUMN_GAP) + 24);
 
   return (
@@ -66,12 +74,13 @@ function SpeakerBarChart({ items = [] }) {
             }}
           >
             {items.map((item, index) => {
-              const heightPct = Math.max(6, Math.round((item.count / maxCount) * 100));
+              const displayValue = getChartDisplayValue(item.count, displayMode, total);
+              const heightPct = Math.max(6, Math.round((displayValue / maxValue) * 100));
 
               return (
                 <div
                   key={`${item.speaker_id ?? 'none'}-${item.label}-${index}`}
-                  title={`${item.label} · ${item.count} слов`}
+                  title={formatChartTitle(item.label, item.count, displayMode, total)}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -89,7 +98,7 @@ function SpeakerBarChart({ items = [] }) {
                       lineHeight: 1,
                     }}
                   >
-                    {item.count}
+                    {formatChartLabel(item.count, displayMode, total)}
                   </span>
 
                   <div

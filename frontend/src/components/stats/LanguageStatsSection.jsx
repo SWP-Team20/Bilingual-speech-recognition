@@ -6,6 +6,7 @@ import { Skeleton } from '../ui/Skeleton';
 import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../../theme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import StatsSection from './StatsSection';
+import StatsDisplayModeToggle from './StatsDisplayModeToggle';
 import VerticalBarChart from './VerticalBarChart';
 
 const EMPTY_FILTERS = { speaker: '', dateFrom: '', dateTo: '', audioIds: [] };
@@ -55,6 +56,7 @@ function LanguageStatsSection() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [displayMode, setDisplayMode] = useState('count');
   const [audioOptions, setAudioOptions] = useState([]);
   const [audioOptionsLoading, setAudioOptionsLoading] = useState(false);
   const [audioSearchQuery, setAudioSearchQuery] = useState('');
@@ -135,11 +137,13 @@ function LanguageStatsSection() {
     ? audioOptions.filter((audio) => matchesAudioSearch(audio, audioSearchQuery)).length
     : audioOptions.length;
 
-  const chartItems = (data?.items || []).map((item) => ({
-    text: item.label,
-    language: item.language,
-    count: item.count,
-  }));
+  const chartItems = (data?.items || [])
+    .filter((item) => item.count > 0)
+    .map((item) => ({
+      text: item.label,
+      language: item.language,
+      count: item.count,
+    }));
 
   const filterFieldStyle = {
     width: '100%',
@@ -185,7 +189,10 @@ function LanguageStatsSection() {
           )}
         </div>
 
-        <div ref={filterWrapRef} style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
+          <StatsDisplayModeToggle mode={displayMode} onChange={setDisplayMode} />
+
+          <div ref={filterWrapRef} style={{ position: 'relative', flexShrink: 0 }}>
           <button
             type="button"
             onClick={openFilters}
@@ -328,6 +335,7 @@ function LanguageStatsSection() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -342,7 +350,11 @@ function LanguageStatsSection() {
           ))}
         </div>
       ) : (
-        <VerticalBarChart items={chartItems} />
+        <VerticalBarChart
+          items={chartItems}
+          displayMode={displayMode}
+          total={data?.total_words ?? 0}
+        />
       )}
     </StatsSection>
   );
