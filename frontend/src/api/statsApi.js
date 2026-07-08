@@ -39,4 +39,17 @@ export const statsApi = {
     });
     return response.data;
   },
+
+  fetchLanguageWordStats: async (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.speaker?.trim()) params.set('speaker', filters.speaker.trim());
+    appendListParams(params, 'audio_id', filters.audioIds);
+    if (filters.dateFrom) params.set('date_from', filters.dateFrom);
+    if (filters.dateTo) params.set('date_to', filters.dateTo);
+
+    const response = await apiClient.get('/api/v1/stats/languages/words', {
+      params,
+    });
+    return response.data;
+  },
 };

@@ -7,31 +7,13 @@ import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../../theme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import StatsSection from './StatsSection';
 import StatsDisplayModeToggle from './StatsDisplayModeToggle';
-import SpeakerBarChart from './SpeakerBarChart';
+import VerticalBarChart from './VerticalBarChart';
 
-const LIMIT_MIN = 1;
-const LIMIT_MAX = 500;
-const LIMIT_DEFAULT = 20;
-
-const EMPTY_FILTERS = { langs: [], dateFrom: '', dateTo: '', audioIds: [], limit: LIMIT_DEFAULT };
-
-const LANG_OPTIONS = [
-  { value: 'ru', label: 'Русский' },
-  { value: 'tt', label: 'Татарский' },
-  { value: 'unknown', label: 'Другие' },
-];
-
-const LANG_LABELS = Object.fromEntries(LANG_OPTIONS.map(({ value, label }) => [value, label]));
-
-function clampLimit(value) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return LIMIT_DEFAULT;
-  return Math.max(LIMIT_MIN, Math.min(LIMIT_MAX, Math.round(parsed)));
-}
+const EMPTY_FILTERS = { speaker: '', dateFrom: '', dateTo: '', audioIds: [] };
 
 function countActiveFilters(filters) {
   let count = 0;
-  if (filters.langs?.length) count += 1;
+  if (filters.speaker?.trim()) count += 1;
   if (filters.dateFrom) count += 1;
   if (filters.dateTo) count += 1;
   if (filters.audioIds?.length) count += 1;
@@ -68,7 +50,7 @@ function getVisibleAudioOptions(options, query, selectedIds) {
   ];
 }
 
-function SpeakerStatsSection() {
+function LanguageStatsSection() {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -114,11 +96,11 @@ function SpeakerStatsSection() {
   const loadData = async (activeFilters) => {
     setLoading(true);
     try {
-      const result = await statsApi.fetchSpeakerWordStats(activeFilters);
+      const result = await statsApi.fetchLanguageWordStats(activeFilters);
       setData(result);
     } catch (error) {
-      console.error('Ошибка загрузки статистики говорящих:', error);
-      toast.error('Не удалось загрузить статистику говорящих');
+      console.error('Ошибка загрузки статистики по языкам:', error);
+      toast.error('Не удалось загрузить статистику по языкам');
       setData(null);
     } finally {
       setLoading(false);
@@ -133,11 +115,9 @@ function SpeakerStatsSection() {
   };
 
   const applyFilters = () => {
-    const normalized = { ...draftFilters, limit: clampLimit(draftFilters.limit) };
-    setDraftFilters(normalized);
-    setFilters(normalized);
+    setFilters(draftFilters);
     setFiltersOpen(false);
-    loadData(normalized);
+    loadData(draftFilters);
   };
 
   const resetFilters = () => {
@@ -156,6 +136,14 @@ function SpeakerStatsSection() {
   const matchedAudioCount = audioSearchQuery.trim()
     ? audioOptions.filter((audio) => matchesAudioSearch(audio, audioSearchQuery)).length
     : audioOptions.length;
+
+  const chartItems = (data?.items || [])
+    .filter((item) => item.count > 0)
+    .map((item) => ({
+      text: item.label,
+      language: item.language,
+      count: item.count,
+    }));
 
   const filterFieldStyle = {
     width: '100%',
@@ -181,35 +169,17 @@ function SpeakerStatsSection() {
 
   return (
     <StatsSection
-      title="Статистика по говорящим"
-      description="Количество слов, произнесённых каждым говорящим. Листайте график в сторону, если говорящих много."
+      title="Статистика по языкам"
+      description="Количество слов на каждом языке: русский, татарский и прочие."
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: colors.textMuted, alignItems: 'center' }}>
           {data && !loading && (
-            <>
-              <span>Всего слов: <b style={{ color: colors.text }}>{data.total_words}</b></span>
-              <span>Говорящих: <b style={{ color: colors.text }}>{data.total_speakers}</b></span>
-            </>
+            <span>Всего слов: <b style={{ color: colors.text }}>{data.total_words}</b></span>
           )}
-          {filters.langs.length > 0 && (
-            <span style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap' }}>
-              Язык:
-              {filters.langs.map((lang) => (
-                <span
-                  key={lang}
-                  style={{
-                    backgroundColor: colors.primarySoft,
-                    color: colors.primaryDeep,
-                    padding: '2px 8px',
-                    borderRadius: radius.pill,
-                    fontSize: '12px',
-                    fontWeight: 600,
-                  }}
-                >
-                  {LANG_LABELS[lang] || lang}
-                </span>
-              ))}
+          {filters.speaker?.trim() && (
+            <span>
+              Говорящий: <b style={{ color: colors.text }}>{filters.speaker.trim()}</b>
             </span>
           )}
           {filters.audioIds.length > 0 && (
@@ -255,7 +225,7 @@ function SpeakerStatsSection() {
           {filtersOpen && (
             <div
               role="dialog"
-              aria-label="Фильтры статистики говорящих"
+              aria-label="Фильтры статистики по языкам"
               style={{
                 position: 'absolute',
                 top: 'calc(100% + 8px)',
@@ -273,30 +243,16 @@ function SpeakerStatsSection() {
               }}
             >
               <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Язык</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {LANG_OPTIONS.map(({ value, label }) => {
-                    const checked = draftFilters.langs.includes(value);
-                    return (
-                      <label key={value} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            setDraftFilters((f) => ({
-                              ...f,
-                              langs: checked ? f.langs.filter((lang) => lang !== value) : [...f.langs, value],
-                            }));
-                          }}
-                          style={{ width: '16px', height: '16px', accentColor: colors.primary }}
-                        />
-                        {label}
-                      </label>
-                    );
-                  })}
-                </div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящий</label>
+                <input
+                  type="text"
+                  value={draftFilters.speaker}
+                  onChange={(e) => setDraftFilters((f) => ({ ...f, speaker: e.target.value }))}
+                  placeholder="Например: мама"
+                  style={filterFieldStyle}
+                />
                 <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
-                  Если ничего не выбрано — все языки.
+                  Поиск по метке говорящего. Пустое поле — все говорящие.
                 </div>
               </div>
 
@@ -311,7 +267,7 @@ function SpeakerStatsSection() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '14px' }}>
+              <div style={{ marginBottom: '18px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Аудиозаписи</label>
                 {audioOptionsLoading ? (
                   <div style={{ fontSize: '13px', color: colors.textFaint }}>Загрузка…</div>
@@ -369,23 +325,6 @@ function SpeakerStatsSection() {
                 </div>
               </div>
 
-              <div style={{ marginBottom: '18px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Количество говорящих на графике</label>
-                <input
-                  type="number"
-                  min={LIMIT_MIN}
-                  max={LIMIT_MAX}
-                  value={draftFilters.limit}
-                  onChange={(e) => setDraftFilters((f) => ({ ...f, limit: e.target.value }))}
-                  onBlur={(e) => setDraftFilters((f) => ({ ...f, limit: clampLimit(e.target.value) }))}
-                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
-                  style={filterFieldStyle}
-                />
-                <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint }}>
-                  От {LIMIT_MIN} до {LIMIT_MAX}
-                </div>
-              </div>
-
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                 <button type="button" onClick={resetFilters} style={{ backgroundColor: colors.page, color: '#333', border: `1px solid ${colors.borderStrong}`, padding: '8px 14px', borderRadius: radius.sm, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
                   Сбросить
@@ -401,18 +340,18 @@ function SpeakerStatsSection() {
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', gap: '12px', overflow: 'hidden', padding: '12px 0' }}>
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div style={{ display: 'flex', gap: '12px', overflow: 'hidden', padding: '12px 0', justifyContent: 'center' }}>
+          {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '44px', flexShrink: 0 }}>
               <Skeleton height="14px" width="24px" style={{ marginBottom: '8px' }} />
-              <Skeleton height={`${80 + (i % 4) * 28}px`} width="44px" />
+              <Skeleton height={`${80 + i * 28}px`} width="44px" />
               <Skeleton height="12px" width="36px" style={{ marginTop: '10px' }} />
             </div>
           ))}
         </div>
       ) : (
-        <SpeakerBarChart
-          items={data?.items || []}
+        <VerticalBarChart
+          items={chartItems}
           displayMode={displayMode}
           total={data?.total_words ?? 0}
         />
@@ -421,4 +360,4 @@ function SpeakerStatsSection() {
   );
 }
 
-export default SpeakerStatsSection;
+export default LanguageStatsSection;

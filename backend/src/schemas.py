@@ -160,6 +160,17 @@ class SpeakerWordsResponse(BaseModel):
     limit: int
 
 
+class LanguageWordCountItem(BaseModel):
+    language: str
+    label: str
+    count: int
+
+
+class LanguageWordsResponse(BaseModel):
+    items: List[LanguageWordCountItem]
+    total_words: int
+
+
 class StatsRebuildResponse(BaseModel):
     processed: int
     from_json: bool

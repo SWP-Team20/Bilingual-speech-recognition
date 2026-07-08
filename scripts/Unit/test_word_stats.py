@@ -7,6 +7,8 @@ from backend.src.services.word_stats import (
     FrequentWordsResult,
     SpeakerWordCount,
     SpeakerWordsResult,
+    LanguageWordCount,
+    LanguageWordsResult,
 )
 
 pytestmark = pytest.mark.unit
@@ -32,3 +34,15 @@ def test_speaker_words_result_dataclass():
     assert len(result.items) == 2
     assert result.total_words == 200
     assert result.items[0].label == "мама"
+
+
+def test_language_words_result_dataclass():
+    items = [
+        LanguageWordCount(language="ru", label="Русский", count=150),
+        LanguageWordCount(language="tt", label="Татарский", count=90),
+        LanguageWordCount(language="unknown", label="Другие", count=10),
+    ]
+    result = LanguageWordsResult(items=items, total_words=250)
+    assert len(result.items) == 3
+    assert result.total_words == 250
+    assert result.items[2].count == 10
