@@ -55,6 +55,37 @@ async def get_frequent_words(
     )
 
 
+@router.get("/languages/words", response_model=schemas.LanguageWordsResponse)
+async def get_language_word_stats(
+    speaker: Optional[list[str]] = Query(None, description="Говорящий (мама / папа / …)"),
+    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Количество слов по языкам. Фильтры: говорящий, дата, аудиозаписи."""
+    filters = StatsFilters(
+        speakers=parse_multi_values(speaker),
+        date_from=date_from,
+        date_to=date_to,
+        audio_ids=_parse_audio_ids(audio_id),
+        status="done",
+    )
+    result = word_stats.compute_language_word_counts(db, filters)
+    return schemas.LanguageWordsResponse(
+        items=[
+            schemas.LanguageWordCountItem(
+                language=item.language,
+                label=item.label,
+                count=item.count,
+            )
+            for item in result.items
+        ],
+        total_words=result.total_words,
+    )
+
+
 @router.get("/speakers/words", response_model=schemas.SpeakerWordsResponse)
 async def get_speaker_word_stats(
     lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),

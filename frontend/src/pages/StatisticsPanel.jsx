@@ -1,4 +1,5 @@
 import FrequentWordsSection from '../components/stats/FrequentWordsSection';
+import LanguageStatsSection from '../components/stats/LanguageStatsSection';
 import SpeakerStatsSection from '../components/stats/SpeakerStatsSection';
 import StatsSection from '../components/stats/StatsSection';
 import { colors, radius, MOBILE_BREAKPOINT } from '../theme';
@@ -25,7 +26,7 @@ function StatisticsPanel() {
           Статистика
         </h2>
         <p style={{ margin: '8px 0 0', fontSize: '14px', color: colors.textMuted, lineHeight: 1.45 }}>
-          Разделы идут последовательно: слова, затем по датам и говорящим.
+          Разделы идут последовательно: слова, языки, даты и говорящие.
         </p>
       </div>
 
@@ -42,6 +43,8 @@ function StatisticsPanel() {
         }}
       >
         <FrequentWordsSection />
+
+        <LanguageStatsSection />
 
         <StatsSection
           title="Статистика по датам"

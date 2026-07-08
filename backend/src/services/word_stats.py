@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import List, Optional
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from backend.src import db_index, models
@@ -41,6 +41,26 @@ class SpeakerWordsResult:
     total_words: int
     total_speakers: int
     limit: int
+
+
+@dataclass
+class LanguageWordCount:
+    language: str
+    label: str
+    count: int
+
+
+@dataclass
+class LanguageWordsResult:
+    items: List[LanguageWordCount]
+    total_words: int
+
+
+_LANGUAGE_BUCKETS = (
+    ("ru", "Русский"),
+    ("tt", "Татарский"),
+    ("unknown", "Другие"),
+)
 
 
 def compute_frequent_words(db: Session, filters: StatsFilters, limit: int = 50) -> FrequentWordsResult:
@@ -111,6 +131,47 @@ def compute_speaker_word_counts(db: Session, filters: StatsFilters, limit: int =
         total_speakers=total_speakers,
         limit=limit,
     )
+
+
+def compute_language_word_counts(db: Session, filters: StatsFilters) -> LanguageWordsResult:
+    """Word counts grouped by language bucket (ru / tt / unknown) for the filtered corpus."""
+    effective_filters = StatsFilters(
+        speakers=filters.speakers,
+        date_from=filters.date_from,
+        date_to=filters.date_to,
+        audio_ids=filters.audio_ids,
+        status=filters.status,
+    )
+
+    base_query = apply_stats_filters(db.query(models.Word), effective_filters)
+
+    total_words = base_query.with_entities(func.count(models.Word.id)).scalar() or 0
+
+    lang_bucket = case(
+        (models.Word.language == "ru", "ru"),
+        (models.Word.language == "tt", "tt"),
+        else_="unknown",
+    ).label("lang_bucket")
+
+    rows = (
+        base_query.with_entities(
+            lang_bucket,
+            func.count(models.Word.id).label("count"),
+        )
+        .group_by(lang_bucket)
+        .all()
+    )
+
+    counts_by_lang = {language: count for language, count in rows}
+    items = [
+        LanguageWordCount(
+            language=language,
+            label=label,
+            count=counts_by_lang.get(language, 0),
+        )
+        for language, label in _LANGUAGE_BUCKETS
+    ]
+    return LanguageWordsResult(items=items, total_words=total_words)
 
 
 def _words_from_db_rows(rows: List[models.Word]) -> List[dict]:
