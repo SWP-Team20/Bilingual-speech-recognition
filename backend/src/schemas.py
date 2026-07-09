@@ -134,6 +134,24 @@ class UpdateSpeakerRequest(BaseModel):
     label: str = Field(..., min_length=1, max_length=100, description="Новая метка говорящего")
 
 
+class RelabelSpeakerInAudioRequest(BaseModel):
+    """Смена метки говорящего только в одной записи (US-030).
+
+    Укажите либо speaker_id (выбрать существующего из корпуса),
+    либо new_label (новая метка / найти по имени).
+    """
+    current_label: str = Field(..., min_length=1, max_length=100, description="Текущая метка в JSON этой записи")
+    new_label: str | None = Field(default=None, min_length=1, max_length=100, description="Новая метка")
+    speaker_id: int | None = Field(default=None, description="ID существующего говорящего")
+
+    @model_validator(mode="after")
+    def _check(self):
+        has_label = self.new_label is not None and bool(str(self.new_label).strip())
+        if self.speaker_id is None and not has_label:
+            raise ValueError("Укажите new_label или speaker_id")
+        return self
+
+
 class WordFrequencyItem(BaseModel):
     text: str
     language: str

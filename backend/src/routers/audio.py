@@ -675,6 +675,38 @@ async def delete_transcription_word(
     return _run_transcript_edit(db, lambda: transcript_edit.delete_word(db, audio, position))
 
 
+@router.patch("/transcriptions/{audio_id}/speakers")
+async def relabel_speaker_in_transcription(
+    audio_id: UUID,
+    payload: schemas.RelabelSpeakerInAudioRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Сменить метку говорящего только в этой записи (JSON + TXT + Word.speaker_id).
+
+    Другие аудио не затрагиваются. Можно выбрать существующего спикера (speaker_id)
+    или задать новую метку (new_label).
+    """
+    _require_editor(current_user)
+    audio = _get_audio_or_404(db, audio_id)
+
+    def _action():
+        try:
+            return transcript_edit.relabel_speaker_in_audio(
+                db,
+                audio,
+                current_label=payload.current_label,
+                new_label=payload.new_label,
+                speaker_id=payload.speaker_id,
+            )
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    return _run_transcript_edit(db, _action)
+
+
 @router.post("/audio/{audio_id}/reindex-db", status_code=status.HTTP_204_NO_CONTENT)
 async def reindex_audio_db(
     audio_id: UUID,

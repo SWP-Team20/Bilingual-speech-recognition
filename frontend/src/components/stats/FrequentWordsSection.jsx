@@ -6,6 +6,7 @@ import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../../theme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import StatsSection from './StatsSection';
 import StatsDisplayModeToggle from './StatsDisplayModeToggle';
+import SpeakerFilterSelect from './SpeakerFilterSelect';
 import VerticalBarChart from './VerticalBarChart';
 
 const LIMIT_MIN = 1;
@@ -237,12 +238,9 @@ function FrequentWordsSection() {
 
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящий</label>
-                <input
-                  type="text"
+                <SpeakerFilterSelect
                   value={draftFilters.speaker}
-                  placeholder="Например: мама"
-                  onChange={(e) => setDraftFilters((f) => ({ ...f, speaker: e.target.value }))}
-                  onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
+                  onChange={(speaker) => setDraftFilters((f) => ({ ...f, speaker }))}
                   style={filterFieldStyle}
                 />
               </div>

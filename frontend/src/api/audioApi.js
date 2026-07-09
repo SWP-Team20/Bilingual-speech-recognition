@@ -168,6 +168,16 @@ export const audioApi = {
     return response.data;
   },
 
+  // Matches PATCH /api/v1/transcriptions/{audio_id}/speakers
+  // Relabel a speaker only in this audio (JSON + TXT). Pass speakerId OR newLabel.
+  relabelSpeaker: async (audioId, { currentLabel, newLabel, speakerId } = {}) => {
+    const body = { current_label: currentLabel };
+    if (speakerId != null) body.speaker_id = speakerId;
+    if (newLabel != null && String(newLabel).trim()) body.new_label = String(newLabel).trim();
+    const response = await apiClient.patch(`/api/v1/transcriptions/${audioId}/speakers`, body);
+    return response.data;
+  },
+
   // Matches DELETE /api/v1/audio/{audio_id}
   deleteAudio: async (audioId) => {
     const response = await apiClient.delete(`/api/v1/audio/${audioId}`);

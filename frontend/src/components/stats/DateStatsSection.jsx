@@ -8,6 +8,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import StatsSection from './StatsSection';
 import StatsDisplayModeToggle from './StatsDisplayModeToggle';
 import SpeakerBarChart from './SpeakerBarChart';
+import SpeakerFilterSelect from './SpeakerFilterSelect';
 
 const LIMIT_MIN = 1;
 const LIMIT_MAX = 500;
@@ -312,17 +313,11 @@ function DateStatsSection() {
 
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящий</label>
-                  <input
-                    type="text"
+                  <SpeakerFilterSelect
                     value={draftFilters.speaker}
-                    placeholder="Например: мама"
-                    onChange={(e) => setDraftFilters((f) => ({ ...f, speaker: e.target.value }))}
-                    onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
+                    onChange={(speaker) => setDraftFilters((f) => ({ ...f, speaker }))}
                     style={filterFieldStyle}
                   />
-                  <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
-                    Поиск по метке говорящего. Пустое поле — все говорящие.
-                  </div>
                 </div>
 
                 <div style={{ marginBottom: '14px' }}>

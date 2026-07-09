@@ -8,6 +8,7 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { isTerminal } from '../constants/status';
 import { canManageCorpus } from '../constants/roleTranslations';
+import SpeakerFilterSelect from '../components/stats/SpeakerFilterSelect';
 
 const EMPTY_FILTERS = { words: '', langs: [], speaker: '', status: '', dateFrom: '', dateTo: '' };
 
@@ -305,13 +306,10 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
 
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящий</label>
-                  <input
-                    type="text"
+                  <SpeakerFilterSelect
                     value={draftFilters.speaker}
-                    placeholder="Например: мама"
-                    onChange={(e) => setDraftFilters((f) => ({ ...f, speaker: e.target.value }))}
-                    onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
-                    style={filterFieldStyle}
+                    onChange={(speaker) => setDraftFilters((f) => ({ ...f, speaker }))}
+                    style={filterSelectStyle}
                   />
                 </div>
 

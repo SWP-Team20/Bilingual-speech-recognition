@@ -47,7 +47,7 @@ function ConfirmDialog({
       {requireInput && (
         <div style={{ marginBottom: '20px' }}>
           {inputLabel && (
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>{inputLabel}</label>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px', color: '#333' }}>{inputLabel}</label>
           )}
           <input
             type={inputType}
@@ -58,7 +58,7 @@ function ConfirmDialog({
             onKeyDown={(e) => { if (e.key === 'Enter') handleConfirm(); }}
             onFocus={(e) => { e.currentTarget.style.borderColor = colors.primary; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = colors.borderStrong; e.currentTarget.style.boxShadow = 'none'; }}
-            style={{ width: '100%', padding: '10px', borderRadius: radius.sm, border: `1px solid ${colors.borderStrong}`, boxSizing: 'border-box', outline: 'none', fontSize: '14px', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }}
+            style={{ width: '100%', padding: '10px', borderRadius: radius.sm, border: `1px solid ${colors.borderStrong}`, boxSizing: 'border-box', outline: 'none', fontSize: '14px', color: '#333', backgroundColor: '#fff', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }}
           />
         </div>
       )}

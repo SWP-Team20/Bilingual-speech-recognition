@@ -7,6 +7,7 @@ import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../../theme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import StatsSection from './StatsSection';
 import StatsDisplayModeToggle from './StatsDisplayModeToggle';
+import SpeakerFilterSelect from './SpeakerFilterSelect';
 import VerticalBarChart from './VerticalBarChart';
 
 const EMPTY_FILTERS = { speaker: '', dateFrom: '', dateTo: '', audioIds: [] };
@@ -244,16 +245,11 @@ function LanguageStatsSection() {
             >
               <div style={{ marginBottom: '14px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящий</label>
-                <input
-                  type="text"
+                <SpeakerFilterSelect
                   value={draftFilters.speaker}
-                  onChange={(e) => setDraftFilters((f) => ({ ...f, speaker: e.target.value }))}
-                  placeholder="Например: мама"
+                  onChange={(speaker) => setDraftFilters((f) => ({ ...f, speaker }))}
                   style={filterFieldStyle}
                 />
-                <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
-                  Поиск по метке говорящего. Пустое поле — все говорящие.
-                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '14px', minWidth: 0 }}>

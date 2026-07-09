@@ -4,9 +4,10 @@
 
 Держит в синхроне три вещи:
   1) transcription.json (words + пересобранные sentences) — источник для показа;
-  2) строки Word в БД (для поиска/фильтров) — точечно, СОХРАНЯЯ speaker_id по позиции
-     (правка текста/языка не меняет, кто это сказал);
-  3) производную статистику (WordCount + метрики аудио) — пересчёт «в реальном времени».
+  2) transcription.txt — текстовый экспорт «Спикер: текст»;
+  3) строки Word в БД (для поиска/фильтров) — точечно, СОХРАНЯЯ speaker_id по позиции
+     (правка текста/языка не меняет, кто это сказал; смена метки — см. relabel_speaker_in_audio);
+  4) производную статистику (WordCount + метрики аудио) — пересчёт «в реальном времени».
 
 Идентификатор слова = его индекс (position) в массиве words == Word.position в БД.
 
@@ -114,12 +115,24 @@ def _json_path(audio):
     return os.path.join(audio.folder_path, "transcription.json")
 
 
+def _txt_path(audio):
+    return os.path.join(audio.folder_path, "transcription.txt")
+
+
 def _load(audio):
     path = _json_path(audio)
     if not os.path.exists(path):
         raise FileNotFoundError("transcription.json not found")
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _write_txt(audio, sentences):
+    """Перезаписывает transcription.txt в формате «Спикер: текст»."""
+    with open(_txt_path(audio), "w", encoding="utf-8") as f:
+        for s in sentences:
+            prefix = f"{s['speaker']}: " if s.get("speaker") else ""
+            f.write(prefix + s.get("text", "") + "\n")
 
 
 def _word_row(db, audio_id, position):
@@ -153,7 +166,7 @@ def _recompute_stats(db, audio, words):
 
 
 def _finalize(db, audio, data, words):
-    """Пересобирает sentences, пересчитывает статистику, коммитит БД и пишет JSON.
+    """Пересобирает sentences, пересчитывает статистику, коммитит БД и пишет JSON+TXT.
     Возвращает полезную нагрузку для фронта (words + sentences + stats)."""
     from backend.src.pipeline import build_sentences   # ленивый импорт (тяжёлый пайплайн)
 
@@ -163,6 +176,7 @@ def _finalize(db, audio, data, words):
     db.commit()
     with open(_json_path(audio), "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+    _write_txt(audio, data["sentences"])
     return {
         "id": str(audio.id),
         "filename": audio.filename,
@@ -170,6 +184,123 @@ def _finalize(db, audio, data, words):
         "sentences": data["sentences"],
         "stats": stats,
     }
+
+
+def _speaker_used_outside_audio(db, speaker_id, audio_id) -> bool:
+    """True, если у спикера есть слова в других записях."""
+    aid = UUID(str(audio_id))
+    return (
+        db.query(models.Word.id)
+        .filter(models.Word.speaker_id == speaker_id, models.Word.audio_id != aid)
+        .first()
+        is not None
+    )
+
+
+def _find_speaker_by_label(db, label: str):
+    from sqlalchemy import func
+
+    return (
+        db.query(models.Speaker)
+        .filter(func.lower(models.Speaker.label) == label.lower())
+        .first()
+    )
+
+
+# Как на фронте: пустой/null speaker в JSON показывается как «Говорящий».
+_DEFAULT_SPEAKER_LABEL = "Говорящий"
+
+
+def _display_speaker_label(raw) -> str:
+    label = (raw or "").strip() if isinstance(raw, str) else (raw or "")
+    return label if label else _DEFAULT_SPEAKER_LABEL
+
+
+def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, speaker_id=None):
+    """Меняет метку говорящего ТОЛЬКО в этой записи.
+
+    - JSON words[].speaker + sentences обновляются;
+    - transcription.txt перезаписывается;
+    - Word.speaker_id в БД переназначается только для слов этого audio_id;
+    - другие аудио не затрагиваются (при необходимости создаётся отдельный Speaker).
+
+    Можно задать либо speaker_id (выбрать существующего), либо new_label
+    (новая метка / найти по имени).
+    """
+    current_label = (current_label or "").strip()
+    if not current_label:
+        raise ValueError("current_label is required")
+
+    if speaker_id is None and not (new_label and str(new_label).strip()):
+        raise ValueError("Укажите new_label или speaker_id")
+
+    data = _load(audio)
+    words = data.get("words") or []
+    # Совпадает с отображением на фронте: null/"" → «Говорящий»
+    matched_positions = [
+        i for i, w in enumerate(words)
+        if _display_speaker_label(w.get("speaker")) == current_label
+    ]
+    if not matched_positions:
+        raise LookupError("Говорящий с такой меткой не найден в этой записи")
+
+    # Текущий speaker_id берём из БД по первой совпавшей позиции
+    old_row = _word_row(db, audio.id, matched_positions[0])
+    old_speaker_id = old_row.speaker_id if old_row is not None else None
+    old_speaker = (
+        db.query(models.Speaker).filter(models.Speaker.id == old_speaker_id).first()
+        if old_speaker_id is not None
+        else None
+    )
+
+    target = None
+    if speaker_id is not None:
+        target = db.query(models.Speaker).filter(models.Speaker.id == speaker_id).first()
+        if target is None:
+            raise LookupError("Говорящий не найден")
+    else:
+        label = str(new_label).strip()
+        existing = _find_speaker_by_label(db, label)
+        if existing is not None:
+            target = existing
+        elif old_speaker is not None and not _speaker_used_outside_audio(db, old_speaker.id, audio.id):
+            # Спикер только в этом аудио — просто переименовываем запись
+            old_speaker.label = label
+            target = old_speaker
+        else:
+            # Спикер общий или отсутствует — создаём отдельную запись для этого аудио
+            target = models.Speaker(
+                label=label,
+                embedding=list(old_speaker.embedding) if old_speaker and old_speaker.embedding else None,
+            )
+            db.add(target)
+            db.flush()
+
+    display_label = target.label
+
+    # Обновляем JSON-метки только в этом файле
+    for i in matched_positions:
+        words[i]["speaker"] = display_label
+
+    # Переназначаем speaker_id только у слов этой записи с данной меткой
+    for pos in matched_positions:
+        row = _word_row(db, audio.id, pos)
+        if row is not None:
+            row.speaker_id = target.id
+
+    # Если старый спикер остался без слов — убираем сироту
+    if old_speaker_id is not None and old_speaker_id != target.id:
+        still_used = (
+            db.query(models.Word.id)
+            .filter(models.Word.speaker_id == old_speaker_id)
+            .first()
+        )
+        if still_used is None:
+            db.query(models.Speaker).filter(models.Speaker.id == old_speaker_id).delete(
+                synchronize_session=False
+            )
+
+    return _finalize(db, audio, data, words)
 
 
 def edit_word(db, audio, position, raw=None, text=None, language=None):

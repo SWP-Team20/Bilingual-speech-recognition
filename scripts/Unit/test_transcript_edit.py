@@ -78,6 +78,14 @@ def test_insert_clamps_position():
     assert pos == 1 and len(words) == 2
 
 
+def test_display_speaker_label_treats_null_as_default():
+    from backend.src.services.transcript_edit import _display_speaker_label
+
+    assert _display_speaker_label(None) == "Говорящий"
+    assert _display_speaker_label("") == "Говорящий"
+    assert _display_speaker_label("мама") == "мама"
+
+
 def test_delete_removes_word():
     words = [_word("а", "а", "ru"), _word("б", "б", "tt")]
     removed = mutate_delete(words, 0)
