@@ -14,7 +14,7 @@ const LIMIT_MIN = 1;
 const LIMIT_MAX = 500;
 const LIMIT_DEFAULT = 30;
 
-const EMPTY_FILTERS = { langs: [], speaker: '', audioIds: [], limit: LIMIT_DEFAULT };
+const EMPTY_FILTERS = { langs: [], speakers: [], audioIds: [], limit: LIMIT_DEFAULT };
 
 const LANG_OPTIONS = [
   { value: 'ru', label: 'Русский' },
@@ -33,7 +33,7 @@ function clampLimit(value) {
 function countActiveFilters(filters) {
   let count = 0;
   if (filters.langs?.length) count += 1;
-  if (filters.speaker?.trim()) count += 1;
+  if (filters.speakers?.length) count += 1;
   if (filters.audioIds?.length) count += 1;
   return count;
 }
@@ -185,10 +185,189 @@ function DateStatsSection() {
     minWidth: 0,
   };
 
+  const chartToolbar = (
+    <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
+      <StatsDisplayModeToggle mode={displayMode} onChange={setDisplayMode} />
+
+      <div ref={filterWrapRef} style={{ position: 'relative', flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={openFilters}
+          aria-expanded={filtersOpen}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ececec'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = activeFilterCount > 0 ? colors.primarySoft : colors.surface; }}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: activeFilterCount > 0 ? colors.primarySoft : colors.surface,
+            color: colors.text,
+            border: `1px solid ${activeFilterCount > 0 ? colors.primarySoftBorder : colors.borderStrong}`,
+            borderRadius: radius.sm,
+            padding: '8px 12px',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: shadow.sm,
+          }}
+        >
+          Фильтры
+          {activeFilterCount > 0 && (
+            <span style={{ minWidth: '18px', height: '18px', padding: '0 5px', borderRadius: radius.pill, backgroundColor: colors.primary, color: '#fff', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {filtersOpen && (
+          <div
+            role="dialog"
+            aria-label="Фильтры статистики по датам"
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 8px)',
+              right: 0,
+              zIndex: 10050,
+              width: isNarrow ? 'min(320px, calc(100vw - 32px))' : '320px',
+              maxHeight: 'min(70vh, 520px)',
+              overflowY: 'auto',
+              backgroundColor: colors.surface,
+              border: `1px solid ${colors.border}`,
+              borderRadius: radius.lg,
+              boxShadow: shadow.lg,
+              padding: '18px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Язык</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {LANG_OPTIONS.map(({ value, label }) => {
+                  const checked = draftFilters.langs.includes(value);
+                  return (
+                    <label key={value} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setDraftFilters((f) => ({
+                            ...f,
+                            langs: checked ? f.langs.filter((lang) => lang !== value) : [...f.langs, value],
+                          }));
+                        }}
+                        style={{ width: '16px', height: '16px', accentColor: colors.primary }}
+                      />
+                      {label}
+                    </label>
+                  );
+                })}
+              </div>
+              <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
+                Если ничего не выбрано — все языки.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящие</label>
+              <SpeakerFilterSelect
+                value={draftFilters.speakers}
+                onChange={(speakers) => setDraftFilters((f) => ({ ...f, speakers }))}
+              />
+            </div>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Аудиозаписи</label>
+              {audioOptionsLoading ? (
+                <div style={{ fontSize: '13px', color: colors.textFaint }}>Загрузка…</div>
+              ) : audioOptions.length === 0 ? (
+                <div style={{ fontSize: '13px', color: colors.textFaint }}>Нет готовых записей</div>
+              ) : (
+                <>
+                  <input
+                    type="search"
+                    value={audioSearchQuery}
+                    onChange={(e) => setAudioSearchQuery(e.target.value)}
+                    placeholder="Поиск по названию, дате или ID"
+                    aria-label="Поиск аудиозаписей"
+                    style={{ ...filterFieldStyle, marginBottom: '8px' }}
+                  />
+                  {audioSearchQuery.trim() && (
+                    <div style={{ marginBottom: '8px', fontSize: '12px', color: colors.textFaint }}>
+                      Найдено: {matchedAudioCount} из {audioOptions.length}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {visibleAudioOptions.length === 0 ? (
+                      <div style={{ fontSize: '13px', color: colors.textFaint, padding: '4px 0' }}>
+                        Ничего не найдено
+                      </div>
+                    ) : (
+                      visibleAudioOptions.map((audio) => {
+                        const audioId = String(audio.id);
+                        const checked = draftFilters.audioIds.includes(audioId);
+                        return (
+                          <label key={audioId} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer', lineHeight: 1.35 }}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setDraftFilters((f) => ({
+                                  ...f,
+                                  audioIds: checked
+                                    ? f.audioIds.filter((id) => id !== audioId)
+                                    : [...f.audioIds, audioId],
+                                }));
+                              }}
+                              style={{ width: '16px', height: '16px', marginTop: '2px', flexShrink: 0, accentColor: colors.primary }}
+                            />
+                            <span style={{ wordBreak: 'break-word' }}>{formatAudioLabel(audio)}</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+              <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
+                Если ничего не выбрано — все записи. Выбранные записи остаются в списке при поиске.
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Количество дат на графике</label>
+              <input
+                type="number"
+                min={LIMIT_MIN}
+                max={LIMIT_MAX}
+                value={draftFilters.limit}
+                onChange={(e) => setDraftFilters((f) => ({ ...f, limit: e.target.value }))}
+                onBlur={(e) => setDraftFilters((f) => ({ ...f, limit: clampLimit(e.target.value) }))}
+                onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
+                style={filterFieldStyle}
+              />
+              <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint }}>
+                От {LIMIT_MIN} до {LIMIT_MAX}. Показываются последние даты с данными.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button type="button" onClick={resetFilters} style={{ backgroundColor: colors.page, color: '#333', border: `1px solid ${colors.borderStrong}`, padding: '8px 14px', borderRadius: radius.sm, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
+                Сбросить
+              </button>
+              <button type="button" onClick={applyFilters} style={{ backgroundColor: colors.primary, color: '#fff', border: 'none', padding: '8px 14px', borderRadius: radius.sm, fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+                Применить
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <StatsSection
       title="Статистика по датам"
-      description="Сколько слов было произнесено в каждый день записи. Листайте график в сторону, если дат много."
+      description="Сколько слов было произнесено в каждый день записи. На странице — превью, полный список открывается по кнопке."
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: colors.textMuted, alignItems: 'center' }}>
@@ -218,9 +397,9 @@ function DateStatsSection() {
               ))}
             </span>
           )}
-          {filters.speaker?.trim() && (
+          {filters.speakers?.length > 0 && (
             <span>
-              Говорящий: <b style={{ color: colors.text }}>{filters.speaker.trim()}</b>
+              Говорящие: <b style={{ color: colors.text }}>{filters.speakers.join(', ')}</b>
             </span>
           )}
           {filters.audioIds.length > 0 && (
@@ -229,193 +408,16 @@ function DateStatsSection() {
             </span>
           )}
         </div>
-
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
-          <StatsDisplayModeToggle mode={displayMode} onChange={setDisplayMode} />
-
-          <div ref={filterWrapRef} style={{ position: 'relative', flexShrink: 0 }}>
-            <button
-              type="button"
-              onClick={openFilters}
-              aria-expanded={filtersOpen}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ececec'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = activeFilterCount > 0 ? colors.primarySoft : colors.surface; }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: activeFilterCount > 0 ? colors.primarySoft : colors.surface,
-                color: colors.text,
-                border: `1px solid ${activeFilterCount > 0 ? colors.primarySoftBorder : colors.borderStrong}`,
-                borderRadius: radius.sm,
-                padding: '8px 12px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                boxShadow: shadow.sm,
-              }}
-            >
-              Фильтры
-              {activeFilterCount > 0 && (
-                <span style={{ minWidth: '18px', height: '18px', padding: '0 5px', borderRadius: radius.pill, backgroundColor: colors.primary, color: '#fff', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-
-            {filtersOpen && (
-              <div
-                role="dialog"
-                aria-label="Фильтры статистики по датам"
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 8px)',
-                  right: 0,
-                  zIndex: 50,
-                  width: isNarrow ? 'min(320px, calc(100vw - 32px))' : '320px',
-                  maxHeight: 'min(70vh, 520px)',
-                  overflowY: 'auto',
-                  backgroundColor: colors.surface,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: radius.lg,
-                  boxShadow: shadow.lg,
-                  padding: '18px',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Язык</label>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {LANG_OPTIONS.map(({ value, label }) => {
-                      const checked = draftFilters.langs.includes(value);
-                      return (
-                        <label key={value} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() => {
-                              setDraftFilters((f) => ({
-                                ...f,
-                                langs: checked ? f.langs.filter((lang) => lang !== value) : [...f.langs, value],
-                              }));
-                            }}
-                            style={{ width: '16px', height: '16px', accentColor: colors.primary }}
-                          />
-                          {label}
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
-                    Если ничего не выбрано — все языки.
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящий</label>
-                  <SpeakerFilterSelect
-                    value={draftFilters.speaker}
-                    onChange={(speaker) => setDraftFilters((f) => ({ ...f, speaker }))}
-                    style={filterFieldStyle}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Аудиозаписи</label>
-                  {audioOptionsLoading ? (
-                    <div style={{ fontSize: '13px', color: colors.textFaint }}>Загрузка…</div>
-                  ) : audioOptions.length === 0 ? (
-                    <div style={{ fontSize: '13px', color: colors.textFaint }}>Нет готовых записей</div>
-                  ) : (
-                    <>
-                      <input
-                        type="search"
-                        value={audioSearchQuery}
-                        onChange={(e) => setAudioSearchQuery(e.target.value)}
-                        placeholder="Поиск по названию, дате или ID"
-                        aria-label="Поиск аудиозаписей"
-                        style={{ ...filterFieldStyle, marginBottom: '8px' }}
-                      />
-                      {audioSearchQuery.trim() && (
-                        <div style={{ marginBottom: '8px', fontSize: '12px', color: colors.textFaint }}>
-                          Найдено: {matchedAudioCount} из {audioOptions.length}
-                        </div>
-                      )}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
-                        {visibleAudioOptions.length === 0 ? (
-                          <div style={{ fontSize: '13px', color: colors.textFaint, padding: '4px 0' }}>
-                            Ничего не найдено
-                          </div>
-                        ) : (
-                          visibleAudioOptions.map((audio) => {
-                            const audioId = String(audio.id);
-                            const checked = draftFilters.audioIds.includes(audioId);
-                            return (
-                              <label key={audioId} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer', lineHeight: 1.35 }}>
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={() => {
-                                    setDraftFilters((f) => ({
-                                      ...f,
-                                      audioIds: checked
-                                        ? f.audioIds.filter((id) => id !== audioId)
-                                        : [...f.audioIds, audioId],
-                                    }));
-                                  }}
-                                  style={{ width: '16px', height: '16px', marginTop: '2px', flexShrink: 0, accentColor: colors.primary }}
-                                />
-                                <span style={{ wordBreak: 'break-word' }}>{formatAudioLabel(audio)}</span>
-                              </label>
-                            );
-                          })
-                        )}
-                      </div>
-                    </>
-                  )}
-                  <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
-                    Если ничего не выбрано — все записи. Выбранные записи остаются в списке при поиске.
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '18px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Количество дат на графике</label>
-                  <input
-                    type="number"
-                    min={LIMIT_MIN}
-                    max={LIMIT_MAX}
-                    value={draftFilters.limit}
-                    onChange={(e) => setDraftFilters((f) => ({ ...f, limit: e.target.value }))}
-                    onBlur={(e) => setDraftFilters((f) => ({ ...f, limit: clampLimit(e.target.value) }))}
-                    onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
-                    style={filterFieldStyle}
-                  />
-                  <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint }}>
-                    От {LIMIT_MIN} до {LIMIT_MAX}. Показываются последние даты с данными.
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                  <button type="button" onClick={resetFilters} style={{ backgroundColor: colors.page, color: '#333', border: `1px solid ${colors.borderStrong}`, padding: '8px 14px', borderRadius: radius.sm, fontWeight: 600, fontSize: '14px', cursor: 'pointer' }}>
-                    Сбросить
-                  </button>
-                  <button type="button" onClick={applyFilters} style={{ backgroundColor: colors.primary, color: '#fff', border: 'none', padding: '8px 14px', borderRadius: radius.sm, fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
-                    Применить
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        {loading && chartToolbar}
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', gap: '12px', overflow: 'hidden', padding: '12px 0' }}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '44px', flexShrink: 0 }}>
-              <Skeleton height="14px" width="24px" style={{ marginBottom: '8px' }} />
-              <Skeleton height={`${80 + (i % 4) * 28}px`} width="44px" />
-              <Skeleton height="12px" width="36px" style={{ marginTop: '10px' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px minmax(0, 1fr) 48px', gap: '10px', alignItems: 'center' }}>
+              <Skeleton height="14px" width="90px" style={{ justifySelf: 'end' }} />
+              <Skeleton height="18px" width={`${40 + (i % 4) * 15}%`} />
+              <Skeleton height="14px" width="28px" style={{ justifySelf: 'end' }} />
             </div>
           ))}
         </div>
@@ -424,6 +426,8 @@ function DateStatsSection() {
           items={chartItems}
           displayMode={displayMode}
           total={data?.total_words ?? 0}
+          title="Статистика по датам"
+          toolbar={chartToolbar}
         />
       )}
     </StatsSection>

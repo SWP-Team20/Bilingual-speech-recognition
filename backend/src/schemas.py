@@ -140,20 +140,34 @@ class UpdateSpeakerRequest(BaseModel):
 
 
 class RelabelSpeakerInAudioRequest(BaseModel):
-    """Смена метки говорящего только в одной записи (US-030).
+    """Смена метки говорящего в одной записи (US-030).
 
     Укажите либо speaker_id (выбрать существующего из корпуса),
     либо new_label (новая метка / найти по имени).
+
+    scope=audio — все вхождения метки в этой записи;
+    scope=paragraph — только слова указанных позиций (одно предложение/реплика).
     """
     current_label: str = Field(..., min_length=1, max_length=100, description="Текущая метка в JSON этой записи")
     new_label: str | None = Field(default=None, min_length=1, max_length=100, description="Новая метка")
     speaker_id: int | None = Field(default=None, description="ID существующего говорящего")
+    scope: str = Field(default="audio", description="audio | paragraph")
+    word_positions: list[int] | None = Field(
+        default=None,
+        description="Индексы слов для scope=paragraph",
+    )
 
     @model_validator(mode="after")
     def _check(self):
         has_label = self.new_label is not None and bool(str(self.new_label).strip())
         if self.speaker_id is None and not has_label:
             raise ValueError("Укажите new_label или speaker_id")
+        scope = (self.scope or "audio").strip().lower()
+        if scope not in ("audio", "paragraph"):
+            raise ValueError("scope должен быть audio или paragraph")
+        self.scope = scope
+        if scope == "paragraph" and not self.word_positions:
+            raise ValueError("Для scope=paragraph укажите word_positions")
         return self
 
 

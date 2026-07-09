@@ -248,12 +248,23 @@ def _find_speaker_by_label(db, label: str):
     )
 
 
-def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, speaker_id=None):
-    """Меняет метку говорящего ТОЛЬКО в этой записи.
+def relabel_speaker_in_audio(
+    db,
+    audio,
+    current_label: str,
+    new_label=None,
+    speaker_id=None,
+    scope="audio",
+    word_positions=None,
+):
+    """Меняет метку говорящего в этой записи.
+
+    scope=audio — все слова с current_label в этом аудио;
+    scope=paragraph — только word_positions (одна реплика/предложение).
 
     - JSON words[].speaker + sentences обновляются;
     - transcription.txt перезаписывается;
-    - Word.speaker_id в БД переназначается только для слов этого audio_id;
+    - Word.speaker_id в БД переназначается только для затронутых слов;
     - другие аудио не затрагиваются (при необходимости создаётся отдельный Speaker).
 
     Можно задать либо speaker_id (выбрать существующего), либо new_label
@@ -266,15 +277,29 @@ def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, spea
     if speaker_id is None and not (new_label and str(new_label).strip()):
         raise ValueError("Укажите new_label или speaker_id")
 
+    scope = (scope or "audio").strip().lower()
+    if scope not in ("audio", "paragraph"):
+        raise ValueError("scope должен быть audio или paragraph")
+
     data = _load(audio)
     words = data.get("words") or []
     # Совпадает с отображением на фронте: null/"" → «Говорящий»
-    matched_positions = [
+    label_positions = [
         i for i, w in enumerate(words)
         if _display_speaker_label(w.get("speaker")) == current_label
     ]
-    if not matched_positions:
+    if not label_positions:
         raise LookupError("Говорящий с такой меткой не найден в этой записи")
+
+    if scope == "paragraph":
+        if not word_positions:
+            raise ValueError("Для scope=paragraph укажите word_positions")
+        wanted = {int(p) for p in word_positions}
+        matched_positions = [i for i in label_positions if i in wanted]
+        if not matched_positions:
+            raise LookupError("В выбранном предложении нет слов с этой меткой")
+    else:
+        matched_positions = label_positions
 
     # Текущий speaker_id берём из БД по первой совпавшей позиции
     old_row = _word_row(db, audio.id, matched_positions[0])
@@ -284,6 +309,22 @@ def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, spea
         if old_speaker_id is not None
         else None
     )
+
+    # Можно ли безопасно переименовать Speaker.label «на месте»:
+    # только если меняем ВСЕ слова этого speaker_id в данном аудио и он не используется вне его.
+    can_rename_in_place = False
+    if old_speaker is not None and not _speaker_used_outside_audio(db, old_speaker.id, audio.id):
+        aid = UUID(str(audio.id))
+        other_in_audio = (
+            db.query(models.Word.position)
+            .filter(
+                models.Word.audio_id == aid,
+                models.Word.speaker_id == old_speaker.id,
+                ~models.Word.position.in_(matched_positions),
+            )
+            .first()
+        )
+        can_rename_in_place = other_in_audio is None
 
     target = None
     if speaker_id is not None:
@@ -295,12 +336,11 @@ def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, spea
         existing = _find_speaker_by_label(db, label)
         if existing is not None:
             target = existing
-        elif old_speaker is not None and not _speaker_used_outside_audio(db, old_speaker.id, audio.id):
-            # Спикер только в этом аудио — просто переименовываем запись
+        elif can_rename_in_place:
             old_speaker.label = label
             target = old_speaker
         else:
-            # Спикер общий или отсутствует — создаём отдельную запись для этого аудио
+            # Часть реплик / общий спикер — создаём отдельную запись
             target = models.Speaker(
                 label=label,
                 embedding=list(old_speaker.embedding) if old_speaker and old_speaker.embedding else None,
@@ -310,11 +350,10 @@ def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, spea
 
     display_label = target.label
 
-    # Обновляем JSON-метки только в этом файле
+    # Обновляем JSON-метки только у выбранных слов
     for i in matched_positions:
         words[i]["speaker"] = display_label
 
-    # Переназначаем speaker_id только у слов этой записи с данной меткой
     for pos in matched_positions:
         row = _word_row(db, audio.id, pos)
         if row is not None:

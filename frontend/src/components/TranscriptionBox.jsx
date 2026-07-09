@@ -104,15 +104,17 @@ function TranscriptionBox({
   const openAddAfter = (index) => setEditor({ mode: 'add', index, raw: '', language: 'unknown' });
   const closeEditor = () => { if (!busy) setEditor(null); };
 
-  const openSpeakerEditor = async (paragraphIdx, currentLabel) => {
+  const openSpeakerEditor = async (paragraphIdx, currentLabel, wordIndices) => {
     if (!canEdit || busy) return;
     setEditor(null);
     setSpeakerEditor({
       paragraphIdx,
       currentLabel,
+      wordPositions: wordIndices || [],
       selectedId: '',
       customLabel: currentLabel,
       mode: 'existing',
+      scope: 'audio',
     });
     try {
       const list = await speakersApi.listSpeakers();
@@ -131,8 +133,15 @@ function TranscriptionBox({
 
   const saveSpeakerLabel = async () => {
     if (!speakerEditor || !audioId) return;
-    const { currentLabel, mode, selectedId, customLabel } = speakerEditor;
-    const payload = { currentLabel };
+    const { currentLabel, mode, selectedId, customLabel, scope, wordPositions } = speakerEditor;
+    const payload = { currentLabel, scope: scope || 'audio' };
+    if (payload.scope === 'paragraph') {
+      payload.wordPositions = wordPositions || [];
+      if (!payload.wordPositions.length) {
+        toast.error('Не удалось определить слова предложения');
+        return;
+      }
+    }
     if (mode === 'existing') {
       if (!selectedId) {
         toast.error('Выберите говорящего из списка');
@@ -145,7 +154,7 @@ function TranscriptionBox({
         toast.error('Метка не может быть пустой');
         return;
       }
-      if (label === currentLabel) {
+      if (label === currentLabel && payload.scope === 'audio') {
         setSpeakerEditor(null);
         return;
       }
@@ -156,7 +165,11 @@ function TranscriptionBox({
     try {
       const data = await audioApi.relabelSpeaker(audioId, payload);
       applyResult(data);
-      toast.success('Метка говорящего обновлена');
+      toast.success(
+        payload.scope === 'paragraph'
+          ? 'Метка обновлена в этом предложении'
+          : 'Метка обновлена во всей записи'
+      );
       setSpeakerEditor(null);
     } catch (e) {
       console.error(e);
@@ -235,10 +248,43 @@ function TranscriptionBox({
           textAlign: 'left', cursor: 'default', fontWeight: 400, color: '#333',
         }}
       >
-        <div style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginBottom: '8px' }}>
-          Метка говорящего (только в этой записи)
+        <div style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginBottom: '10px' }}>
+          Метка говорящего
         </div>
 
+        <div style={{
+          marginBottom: '12px',
+          paddingBottom: '12px',
+          borderBottom: '1px solid #eee',
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '8px' }}>
+            Область изменения
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '6px', cursor: 'pointer', color: '#333' }}>
+            <input
+              type="radio"
+              name={`spk-scope-${paragraphIdx}`}
+              checked={speakerEditor.scope !== 'paragraph'}
+              disabled={busy}
+              onChange={() => setSpeakerEditor((s) => ({ ...s, scope: 'audio' }))}
+            />
+            Во всей этой записи
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', color: '#333' }}>
+            <input
+              type="radio"
+              name={`spk-scope-${paragraphIdx}`}
+              checked={speakerEditor.scope === 'paragraph'}
+              disabled={busy}
+              onChange={() => setSpeakerEditor((s) => ({ ...s, scope: 'paragraph' }))}
+            />
+            Только это предложение
+          </label>
+        </div>
+
+        <div style={{ fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '8px' }}>
+          Новая метка
+        </div>
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '8px', cursor: 'pointer', color: '#333' }}>
           <input
             type="radio"
@@ -492,7 +538,7 @@ function TranscriptionBox({
             <div key={pIdx} style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column' }}>
               <span style={{ position: 'relative', display: 'inline-block', marginBottom: '2px' }}>
                 <span
-                  onClick={() => openSpeakerEditor(pIdx, p.speaker)}
+                  onClick={() => openSpeakerEditor(pIdx, p.speaker, p.items.map(({ gi }) => gi))}
                   title={canEdit ? 'Изменить метку говорящего' : undefined}
                   style={{
                     fontWeight: 'bold', color: '#16a34a', fontSize: '14px',

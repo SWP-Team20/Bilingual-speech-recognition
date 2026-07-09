@@ -36,7 +36,11 @@ export const audioApi = {
     if (words.length) params.q = words;
     if (filters.langs?.length) params.lang = filters.langs;
     if (filters.status) params.status = filters.status;
-    if (filters.speaker && filters.speaker.trim()) params.speaker = filters.speaker.trim();
+    if (Array.isArray(filters.speakers) && filters.speakers.length) {
+      params.speaker = filters.speakers;
+    } else if (filters.speaker && filters.speaker.trim()) {
+      params.speaker = filters.speaker.trim();
+    }
     if (filters.dateFrom) params.date_from = filters.dateFrom;
     if (filters.dateTo) params.date_to = filters.dateTo;
 
@@ -169,11 +173,15 @@ export const audioApi = {
   },
 
   // Matches PATCH /api/v1/transcriptions/{audio_id}/speakers
-  // Relabel a speaker only in this audio (JSON + TXT). Pass speakerId OR newLabel.
-  relabelSpeaker: async (audioId, { currentLabel, newLabel, speakerId } = {}) => {
-    const body = { current_label: currentLabel };
+  // Relabel a speaker in this audio. Pass speakerId OR newLabel.
+  // scope: 'audio' (all occurrences) | 'paragraph' (wordPositions only)
+  relabelSpeaker: async (audioId, { currentLabel, newLabel, speakerId, scope = 'audio', wordPositions } = {}) => {
+    const body = { current_label: currentLabel, scope };
     if (speakerId != null) body.speaker_id = speakerId;
     if (newLabel != null && String(newLabel).trim()) body.new_label = String(newLabel).trim();
+    if (scope === 'paragraph' && Array.isArray(wordPositions)) {
+      body.word_positions = wordPositions;
+    }
     const response = await apiClient.patch(`/api/v1/transcriptions/${audioId}/speakers`, body);
     return response.data;
   },

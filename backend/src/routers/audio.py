@@ -713,6 +713,8 @@ async def relabel_speaker_in_transcription(
                 current_label=payload.current_label,
                 new_label=payload.new_label,
                 speaker_id=payload.speaker_id,
+                scope=payload.scope,
+                word_positions=payload.word_positions,
             )
         except LookupError as exc:
             raise HTTPException(status_code=404, detail=str(exc))
