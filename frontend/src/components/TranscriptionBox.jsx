@@ -235,28 +235,30 @@ function TranscriptionBox({
                 {p.speaker}:
               </span>
               <p style={{ margin: 0, fontWeight: '500' }}>
-                {p.items.map(({ w, gi }) => (
-                  <span key={gi} style={{ position: 'relative', display: 'inline-block' }}>
-                    <span
-                      onClick={() => openEditor(gi)}
-                      title={canEdit ? 'Изменить слово' : undefined}
-                      style={{
-                        color: langColor(w.lang),
-                        cursor: canEdit ? 'pointer' : 'default',
-                        borderRadius: '4px',
-                        padding: canEdit ? '1px 3px' : 0,
-                        backgroundColor: editor && editor.index === gi ? '#eafaf1' : 'transparent',
-                        outline: canEdit ? '1px dashed transparent' : 'none',
-                        transition: 'background-color 0.1s ease',
-                      }}
-                      onMouseEnter={(e) => { if (canEdit && !(editor && editor.index === gi)) e.currentTarget.style.backgroundColor = '#f3f3f3'; }}
-                      onMouseLeave={(e) => { if (!(editor && editor.index === gi)) e.currentTarget.style.backgroundColor = 'transparent'; }}
-                    >
-                      {w.raw || w.text}
+                {p.items.map(({ w, gi }, itemIdx) => (
+                  <React.Fragment key={gi}>
+                    {itemIdx > 0 && ' '}
+                    <span style={{ position: 'relative', display: 'inline-block' }}>
+                      <span
+                        onClick={() => openEditor(gi)}
+                        title={canEdit ? 'Изменить слово' : undefined}
+                        style={{
+                          color: langColor(w.lang),
+                          cursor: canEdit ? 'pointer' : 'default',
+                          borderRadius: '4px',
+                          padding: canEdit ? '1px 3px' : 0,
+                          backgroundColor: editor && editor.index === gi ? '#eafaf1' : 'transparent',
+                          outline: canEdit ? '1px dashed transparent' : 'none',
+                          transition: 'background-color 0.1s ease',
+                        }}
+                        onMouseEnter={(e) => { if (canEdit && !(editor && editor.index === gi)) e.currentTarget.style.backgroundColor = '#f3f3f3'; }}
+                        onMouseLeave={(e) => { if (!(editor && editor.index === gi)) e.currentTarget.style.backgroundColor = 'transparent'; }}
+                      >
+                        {w.raw || w.text}
+                      </span>
+                      {renderPopover(gi)}
                     </span>
-                    {renderPopover(gi)}
-                    {' '}
-                  </span>
+                  </React.Fragment>
                 ))}
               </p>
             </div>

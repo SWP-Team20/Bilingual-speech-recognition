@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - All alert messages have been changed to modal windows in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/276
 
+### Fixed
+- Words are now divided by spaces instead of being a plain text for role "user" in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/278
+
 ## [0.3.0] - 05.07.2026
 
 ### Added
