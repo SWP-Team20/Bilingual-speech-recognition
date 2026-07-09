@@ -169,14 +169,19 @@ function TranscriptionBox({
 
   const saveEdit = async () => {
     const raw = editor.raw.trim();
-    if (!raw) { toast.error('Слово не может быть пустым'); return; }
+    // Пустое поле при правке = удаление слова
+    if (!raw) {
+      await doDelete();
+      return;
+    }
     setBusy(true);
     try {
       const data = await audioApi.editTranscriptionWord(audioId, editor.index, {
         raw, language: editor.language,
       });
       applyResult(data);
-      toast.success('Слово обновлено');
+      const parts = raw.split(/\s+/).filter(Boolean);
+      toast.success(parts.length > 1 ? `Сохранено как ${parts.length} слова` : 'Слово обновлено');
       setEditor(null);
     } catch (e) {
       console.error(e);
@@ -208,7 +213,8 @@ function TranscriptionBox({
         position, raw, language: editor.language,
       });
       applyResult(data);
-      toast.success('Слово добавлено');
+      const parts = raw.split(/\s+/).filter(Boolean);
+      toast.success(parts.length > 1 ? `Добавлено слов: ${parts.length}` : 'Слово добавлено');
       setEditor(null);
     } catch (e) {
       console.error(e);
@@ -329,7 +335,7 @@ function TranscriptionBox({
             if (e.key === 'Enter') { isAdd ? doAdd() : saveEdit(); }
             if (e.key === 'Escape') closeEditor();
           }}
-          placeholder="Слово"
+          placeholder={isAdd ? 'Слово или несколько через пробел' : 'Слово (пустое = удалить)'}
           style={{
             width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: '14px',
             border: '1px solid #d0d0d0', borderRadius: '6px', outline: 'none', marginBottom: '8px',
@@ -474,7 +480,8 @@ function TranscriptionBox({
 
       {canEdit && hasWords && (
         <div style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>
-          Нажмите на слово, чтобы изменить его или язык. Нажмите на имя говорящего, чтобы сменить метку.
+          Нажмите на слово, чтобы изменить его или язык. Несколько слов через пробел разбиваются;
+          пустое поле или «Удалить» — убирает слово. Нажмите на имя говорящего, чтобы сменить метку.
         </div>
       )}
 

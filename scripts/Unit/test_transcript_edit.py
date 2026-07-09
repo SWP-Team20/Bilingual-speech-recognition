@@ -4,7 +4,7 @@
 import pytest
 
 from backend.src.services.transcript_edit import (
-    normalize_word, mutate_edit, mutate_insert, mutate_delete, compute_stats,
+    normalize_word, split_input_tokens, mutate_edit, mutate_insert, mutate_delete, compute_stats,
 )
 
 pytestmark = pytest.mark.unit
@@ -20,6 +20,14 @@ def test_normalize_word_strips_punct_and_lowercases():
     assert normalize_word("Привет!") == "привет"
     assert normalize_word("  Дом,") == "дом"
     assert normalize_word("!!!") == ""
+
+
+def test_split_input_tokens():
+    assert split_input_tokens("привет мир") == ["привет", "мир"]
+    assert split_input_tokens("  а   б  ") == ["а", "б"]
+    assert split_input_tokens("") == []
+    assert split_input_tokens(None) == []
+    assert split_input_tokens("одно") == ["одно"]
 
 
 def test_edit_changes_word_and_language():

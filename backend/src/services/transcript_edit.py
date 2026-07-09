@@ -36,6 +36,13 @@ def normalize_lang(lang) -> str:
     return lang if lang in VALID_LANGS else "unknown"
 
 
+def split_input_tokens(raw) -> list:
+    """Разбивает ввод по пробелам на отдельные непустые слова."""
+    if raw is None:
+        return []
+    return [token for token in str(raw).split() if token]
+
+
 def mutate_edit(words, position, raw=None, text=None, language=None):
     """Меняет слово по индексу: видимую форму (raw), нормализованную (text) и/или
     языковой тег. Возвращает изменённое слово."""
@@ -111,12 +118,24 @@ def compute_stats(words, duration_sec):
 
 # --- связка с диском и БД ----------------------------------------------------
 
+# Как на фронте: пустой/null speaker в JSON показывается как «Говорящий».
+_DEFAULT_SPEAKER_LABEL = "Говорящий"
+
+
+def _display_speaker_label(raw) -> str:
+    if isinstance(raw, str):
+        label = raw.strip()
+    else:
+        label = raw or ""
+    return label if label else _DEFAULT_SPEAKER_LABEL
+
+
 def _json_path(audio):
-    return os.path.join(audio.folder_path, "transcription.json")
+    return os.path.abspath(os.path.join(audio.folder_path, "transcription.json"))
 
 
 def _txt_path(audio):
-    return os.path.join(audio.folder_path, "transcription.txt")
+    return os.path.abspath(os.path.join(audio.folder_path, "transcription.txt"))
 
 
 def _load(audio):
@@ -129,10 +148,27 @@ def _load(audio):
 
 def _write_txt(audio, sentences):
     """Перезаписывает transcription.txt в формате «Спикер: текст»."""
-    with open(_txt_path(audio), "w", encoding="utf-8") as f:
-        for s in sentences:
-            prefix = f"{s['speaker']}: " if s.get("speaker") else ""
-            f.write(prefix + s.get("text", "") + "\n")
+    path = _txt_path(audio)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    lines = []
+    for s in sentences or []:
+        prefix = f"{_display_speaker_label(s.get('speaker'))}: "
+        lines.append(prefix + (s.get("text") or "") + "\n")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.writelines(lines)
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def sync_txt_from_json(audio):
+    """Пересобирает transcription.txt из актуального transcription.json (для скачивания)."""
+    from backend.src.pipeline import build_sentences
+
+    data = _load(audio)
+    words = data.get("words") or []
+    sentences = build_sentences(words) if words else (data.get("sentences") or [])
+    _write_txt(audio, sentences)
+    return _txt_path(audio)
 
 
 def _word_row(db, audio_id, position):
@@ -174,8 +210,13 @@ def _finalize(db, audio, data, words):
     data["sentences"] = build_sentences(words)
     stats = _recompute_stats(db, audio, words)
     db.commit()
-    with open(_json_path(audio), "w", encoding="utf-8") as f:
+
+    json_path = _json_path(audio)
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
     _write_txt(audio, data["sentences"])
     return {
         "id": str(audio.id),
@@ -205,15 +246,6 @@ def _find_speaker_by_label(db, label: str):
         .filter(func.lower(models.Speaker.label) == label.lower())
         .first()
     )
-
-
-# Как на фронте: пустой/null speaker в JSON показывается как «Говорящий».
-_DEFAULT_SPEAKER_LABEL = "Говорящий"
-
-
-def _display_speaker_label(raw) -> str:
-    label = (raw or "").strip() if isinstance(raw, str) else (raw or "")
-    return label if label else _DEFAULT_SPEAKER_LABEL
 
 
 def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, speaker_id=None):
@@ -303,11 +335,64 @@ def relabel_speaker_in_audio(db, audio, current_label: str, new_label=None, spea
     return _finalize(db, audio, data, words)
 
 
+def _db_insert_word_at(db, audio_id, pos, new_w, speaker_id):
+    """Сдвигает позиции в БД и добавляет строку Word на индекс pos."""
+    aid = UUID(str(audio_id))
+    db.query(models.Word).filter(models.Word.audio_id == aid, models.Word.position >= pos).update(
+        {models.Word.position: models.Word.position + 1}, synchronize_session=False
+    )
+    db.add(models.Word(
+        audio_id=aid, text=new_w["text"], raw=new_w["raw"],
+        start_sec=new_w["start"], end_sec=new_w["end"], language=new_w["lang"],
+        confidence=None, position=pos, speaker_id=speaker_id,
+    ))
+
+
 def edit_word(db, audio, position, raw=None, text=None, language=None):
-    """Изменить существующее слово (написание и/или языковой тег). speaker_id не трогаем."""
+    """Изменить слово по индексу.
+
+    - пустой raw → удалить слово;
+    - несколько слов через пробел → первое заменяет текущее, остальные вставляются после;
+    - speaker_id сохраняется / наследуется.
+    """
     data = _load(audio)
     words = data.get("words") or []
-    w = mutate_edit(words, position, raw=raw, text=text, language=language)
+    if not 0 <= position < len(words):
+        raise IndexError("position out of range")
+
+    # Пустой ввод при правке = удаление
+    if raw is not None and not str(raw).strip():
+        mutate_delete(words, position)
+        aid = UUID(str(audio.id))
+        row = _word_row(db, audio.id, position)
+        if row is not None:
+            db.delete(row)
+        db.query(models.Word).filter(models.Word.audio_id == aid, models.Word.position > position).update(
+            {models.Word.position: models.Word.position - 1}, synchronize_session=False
+        )
+        return _finalize(db, audio, data, words)
+
+    tokens = split_input_tokens(raw) if raw is not None else None
+    if tokens is not None:
+        old_row = _word_row(db, audio.id, position)
+        speaker_id = old_row.speaker_id if old_row is not None else None
+        insert_lang = language if language is not None else words[position].get("lang", "unknown")
+
+        w = mutate_edit(words, position, raw=tokens[0], language=language)
+        if old_row is not None:
+            old_row.text = w["text"]
+            old_row.raw = w.get("raw")
+            old_row.language = w["lang"]
+
+        for i, token in enumerate(tokens[1:], start=1):
+            pos = position + i
+            new_w, _ = mutate_insert(words, pos, token, insert_lang)
+            _db_insert_word_at(db, audio.id, pos, new_w, speaker_id)
+
+        return _finalize(db, audio, data, words)
+
+    # Только text и/или language без raw
+    w = mutate_edit(words, position, text=text, language=language)
     row = _word_row(db, audio.id, position)
     if row is not None:
         row.text = w["text"]
@@ -317,27 +402,27 @@ def edit_word(db, audio, position, raw=None, text=None, language=None):
 
 
 def insert_word(db, audio, position, raw, language="unknown"):
-    """Добавить новое слово по индексу. speaker_id наследуется от соседа."""
+    """Добавить слово(а) по индексу вставки. Несколько слов через пробел — каждое отдельно.
+    speaker_id наследуется от соседа."""
+    tokens = split_input_tokens(raw)
+    if not tokens:
+        raise ValueError("Слово не может быть пустым")
+
     data = _load(audio)
     words = data.get("words") or []
-    # speaker_id соседа берём ДО сдвига позиций
+    position = max(0, min(position, len(words)))
+
     prev_row = _word_row(db, audio.id, position - 1) if position > 0 else None
     next_row = _word_row(db, audio.id, position)
     speaker_id = prev_row.speaker_id if prev_row is not None else (
         next_row.speaker_id if next_row is not None else None
     )
 
-    new_w, pos = mutate_insert(words, position, raw, language)
+    for i, token in enumerate(tokens):
+        pos = position + i
+        new_w, _ = mutate_insert(words, pos, token, language)
+        _db_insert_word_at(db, audio.id, pos, new_w, speaker_id)
 
-    aid = UUID(str(audio.id))
-    db.query(models.Word).filter(models.Word.audio_id == aid, models.Word.position >= pos).update(
-        {models.Word.position: models.Word.position + 1}, synchronize_session=False
-    )
-    db.add(models.Word(
-        audio_id=aid, text=new_w["text"], raw=new_w["raw"],
-        start_sec=new_w["start"], end_sec=new_w["end"], language=new_w["lang"],
-        confidence=None, position=pos, speaker_id=speaker_id,
-    ))
     return _finalize(db, audio, data, words)
 
 

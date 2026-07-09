@@ -34,8 +34,11 @@ _VALID_LANGS = ("ru", "tt", "unknown")
 
 
 class WordEditRequest(BaseModel):
-    """Правка одного слова: видимая форма (raw), нормализованная (text) и/или язык."""
-    raw: str | None = Field(default=None, description="Видимое слово (как показывается)")
+    """Правка слова: видимая форма (raw), нормализованная (text) и/или язык.
+
+    Пустой raw удаляет слово. Несколько слов через пробел разбиваются на отдельные.
+    """
+    raw: str | None = Field(default=None, description="Видимое слово (как показывается); пустая строка = удалить")
     text: str | None = Field(default=None, description="Нормализованная форма для поиска; по умолчанию выводится из raw")
     language: str | None = Field(default=None, description="Языковой тег: ru / tt / unknown")
 
@@ -49,15 +52,17 @@ class WordEditRequest(BaseModel):
 
 
 class WordInsertRequest(BaseModel):
-    """Добавление нового слова по индексу вставки."""
+    """Добавление слова(ов) по индексу вставки. Несколько слов через пробел — каждое отдельно."""
     position: int = Field(..., ge=0, description="Индекс вставки (0..N)")
-    raw: str = Field(..., min_length=1, description="Слово")
+    raw: str = Field(..., min_length=1, description="Слово или несколько слов через пробел")
     language: str = Field(default="unknown", description="Языковой тег: ru / tt / unknown")
 
     @model_validator(mode="after")
     def _check(self):
         if self.language not in _VALID_LANGS:
             raise ValueError("language должен быть ru / tt / unknown")
+        if not self.raw.strip():
+            raise ValueError("Слово не может быть пустым")
         return self
 
 
