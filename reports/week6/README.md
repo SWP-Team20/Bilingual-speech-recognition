@@ -83,7 +83,7 @@ Feedback not addressed:
 
 ### Updates
 
-[INSERT DESCRIPTION]
+Added authorization tests in [QRT-004](/scripts/QualityRequirements/test_authorization.py).
 
 ### Links
 
