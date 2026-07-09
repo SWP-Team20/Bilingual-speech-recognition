@@ -56,6 +56,21 @@ class LanguageWordsResult:
     total_words: int
 
 
+@dataclass
+class DateWordCount:
+    date: Optional[str]
+    label: str
+    count: int
+
+
+@dataclass
+class DateWordsResult:
+    items: List[DateWordCount]
+    total_words: int
+    total_dates: int
+    limit: int
+
+
 _LANGUAGE_BUCKETS = (
     ("ru", "Русский"),
     ("tt", "Татарский"),
@@ -172,6 +187,52 @@ def compute_language_word_counts(db: Session, filters: StatsFilters) -> Language
         for language, label in _LANGUAGE_BUCKETS
     ]
     return LanguageWordsResult(items=items, total_words=total_words)
+
+
+def compute_date_word_counts(db: Session, filters: StatsFilters, limit: int = 30) -> DateWordsResult:
+    """Word counts grouped by recording date for the filtered corpus."""
+    limit = max(1, min(limit, 500))
+
+    effective_filters = StatsFilters(
+        langs=filters.langs,
+        speakers=filters.speakers,
+        audio_ids=filters.audio_ids,
+        status=filters.status,
+    )
+
+    base_query = apply_stats_filters(db.query(models.Word), effective_filters)
+
+    total_words = base_query.with_entities(func.count(models.Word.id)).scalar() or 0
+
+    date_expr = func.date(models.AudioFile.recorded_at).label("recorded_date")
+    grouped = base_query.with_entities(
+        date_expr,
+        func.count(models.Word.id).label("count"),
+    ).group_by(date_expr)
+
+    date_subquery = grouped.subquery()
+    total_dates = db.query(func.count()).select_from(date_subquery).scalar() or 0
+
+    rows = (
+        grouped.order_by(date_expr.desc().nullslast())
+        .limit(limit)
+        .all()
+    )
+
+    items = []
+    for recorded_date, count in reversed(rows):
+        if recorded_date is None:
+            items.append(DateWordCount(date=None, label="Без даты", count=count))
+        else:
+            date_str = recorded_date.isoformat() if hasattr(recorded_date, "isoformat") else str(recorded_date)
+            items.append(DateWordCount(date=date_str, label=date_str, count=count))
+
+    return DateWordsResult(
+        items=items,
+        total_words=total_words,
+        total_dates=total_dates,
+        limit=limit,
+    )
 
 
 def _words_from_db_rows(rows: List[models.Word]) -> List[dict]:

@@ -86,6 +86,38 @@ async def get_language_word_stats(
     )
 
 
+@router.get("/dates/words", response_model=schemas.DateWordsResponse)
+async def get_date_word_stats(
+    lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),
+    speaker: Optional[list[str]] = Query(None, description="Говорящий (мама / папа / …)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
+    limit: int = Query(30, ge=1, le=500, description="Максимальное число дат на графике"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Количество слов по датам записи. Фильтры: язык, говорящий, аудиозаписи."""
+    filters = StatsFilters(
+        langs=parse_multi_values(lang),
+        speakers=parse_multi_values(speaker),
+        audio_ids=_parse_audio_ids(audio_id),
+        status="done",
+    )
+    result = word_stats.compute_date_word_counts(db, filters, limit=limit)
+    return schemas.DateWordsResponse(
+        items=[
+            schemas.DateWordCountItem(
+                date=item.date,
+                label=item.label,
+                count=item.count,
+            )
+            for item in result.items
+        ],
+        total_words=result.total_words,
+        total_dates=result.total_dates,
+        limit=result.limit,
+    )
+
+
 @router.get("/speakers/words", response_model=schemas.SpeakerWordsResponse)
 async def get_speaker_word_stats(
     lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),

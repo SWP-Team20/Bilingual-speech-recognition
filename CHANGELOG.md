@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - New words count statistics with ability to filter by speaker, date and language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/273 
 - New speaker statistics with ability to filter by audio files, date, language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/274
-- New languagestatistics with ability to filter by audio files, date, speakers in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/275
+- New language statistics with ability to filter by audio files, date, speakers in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/275
+- New per-day statistics with ability to filter by audio files, speakers, language in
 
 ### Changed
 - All alert messages have been changed to modal windows in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/276

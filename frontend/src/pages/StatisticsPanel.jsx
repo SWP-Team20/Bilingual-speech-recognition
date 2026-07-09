@@ -1,7 +1,7 @@
 import FrequentWordsSection from '../components/stats/FrequentWordsSection';
 import LanguageStatsSection from '../components/stats/LanguageStatsSection';
+import DateStatsSection from '../components/stats/DateStatsSection';
 import SpeakerStatsSection from '../components/stats/SpeakerStatsSection';
-import StatsSection from '../components/stats/StatsSection';
 import { colors, radius, MOBILE_BREAKPOINT } from '../theme';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
@@ -46,11 +46,7 @@ function StatisticsPanel() {
 
         <LanguageStatsSection />
 
-        <StatsSection
-          title="Статистика по датам"
-          description="Динамика записей и речи по календарным периодам."
-          placeholder="Раздел в разработке"
-        />
+        <DateStatsSection />
 
         <SpeakerStatsSection />
       </div>
