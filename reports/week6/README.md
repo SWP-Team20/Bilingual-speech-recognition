@@ -148,7 +148,7 @@ Feedback not addressed:
 
 ### Example Reviewed Issue-Linked PR
 
-![PR Example](...) [INSERT LINK]
+![PR Example](images/pr-example.png)
 
 ### Links
 
