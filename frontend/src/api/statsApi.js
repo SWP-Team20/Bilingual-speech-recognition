@@ -52,4 +52,17 @@ export const statsApi = {
     });
     return response.data;
   },
+
+  fetchDateWordStats: async (filters = {}) => {
+    const params = new URLSearchParams();
+    params.set('limit', String(clampLimit(filters.limit ?? 30)));
+    appendListParams(params, 'lang', filters.langs);
+    if (filters.speaker?.trim()) params.set('speaker', filters.speaker.trim());
+    appendListParams(params, 'audio_id', filters.audioIds);
+
+    const response = await apiClient.get('/api/v1/stats/dates/words', {
+      params,
+    });
+    return response.data;
+  },
 };

@@ -171,6 +171,19 @@ class LanguageWordsResponse(BaseModel):
     total_words: int
 
 
+class DateWordCountItem(BaseModel):
+    date: str | None
+    label: str
+    count: int
+
+
+class DateWordsResponse(BaseModel):
+    items: List[DateWordCountItem]
+    total_words: int
+    total_dates: int
+    limit: int
+
+
 class StatsRebuildResponse(BaseModel):
     processed: int
     from_json: bool

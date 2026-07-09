@@ -9,6 +9,8 @@ from backend.src.services.word_stats import (
     SpeakerWordsResult,
     LanguageWordCount,
     LanguageWordsResult,
+    DateWordCount,
+    DateWordsResult,
 )
 
 pytestmark = pytest.mark.unit
@@ -46,3 +48,14 @@ def test_language_words_result_dataclass():
     assert len(result.items) == 3
     assert result.total_words == 250
     assert result.items[2].count == 10
+
+
+def test_date_words_result_dataclass():
+    items = [
+        DateWordCount(date="2024-01-15", label="2024-01-15", count=42),
+        DateWordCount(date="2024-01-20", label="2024-01-20", count=18),
+    ]
+    result = DateWordsResult(items=items, total_words=60, total_dates=2, limit=30)
+    assert len(result.items) == 2
+    assert result.total_dates == 2
+    assert result.items[0].count == 42
