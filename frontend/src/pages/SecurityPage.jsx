@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../api/userApi';
 import { translateRole } from '../constants/roleTranslations';
+import AlertModal from '../components/ui/AlertModal';
+import Modal from '../components/ui/Modal';
+import { colors, radius } from '../theme';
 
 function SecurityPage({ onDeleteAccountConfirm }) {
   const navigate = useNavigate();
@@ -12,7 +15,43 @@ function SecurityPage({ onDeleteAccountConfirm }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [modal, setModal] = useState(null);
+  const [modalAnimate, setModalAnimate] = useState(true);
+
+  const openDeleteModal = () => {
+    setModalAnimate(true);
+    setModal({ type: 'delete-confirm', deleting: false });
+  };
+
+  const showAlert = (message, type = 'info', options = {}) => {
+    setModalAnimate(options.animate !== false);
+    setModal({
+      type: 'alert',
+      message,
+      alertType: type,
+      title: options.title || '',
+      onClose: options.onClose || null,
+    });
+  };
+
+  const closeModal = () => setModal(null);
+
+  const handleModalClose = () => {
+    if (modal?.type === 'delete-confirm' && modal.deleting) return;
+    if (modal?.type === 'alert') {
+      const cb = modal.onClose;
+      closeModal();
+      if (cb) cb();
+      return;
+    }
+    closeModal();
+  };
+
+  const handleAlertClose = () => {
+    const cb = modal?.onClose;
+    closeModal();
+    if (cb) cb();
+  };
 
   useEffect(() => {
     async function loadProfile() {
@@ -36,13 +75,13 @@ function SecurityPage({ onDeleteAccountConfirm }) {
     e.preventDefault();
     
     if (newPassword !== confirmPassword) {
-      alert("Новый пароль и подтверждение не совпадают.");
+      showAlert("Новый пароль и подтверждение не совпадают.", 'error');
       return;
     }
 
     try {
       await userApi.changePassword(currentPassword, newPassword, confirmPassword);
-      alert("Пароль успешно обновлен!");
+      showAlert("Пароль успешно обновлен!", 'success');
       
       setCurrentPassword('');
       setNewPassword('');
@@ -52,27 +91,25 @@ function SecurityPage({ onDeleteAccountConfirm }) {
       const backendMessage = error.response?.data?.detail;
 
       if (backendMessage && typeof backendMessage === 'string') {
-        alert(backendMessage); 
+        showAlert(backendMessage, 'error');
       } else {
-        alert("Не удалось обновить пароль. Убедитесь, что текущий пароль введен верно.");
+        showAlert("Не удалось обновить пароль. Убедитесь, что текущий пароль введен верно.", 'error');
       }
     }
   };
 
-  // ================= ДОБАВЛЕННАЯ ФУНКЦИЯ УДАЛЕНИЯ АККАУНТА =================
   const handleDeleteAccountFinal = async () => {
-    setShowDeleteModal(false);
+    setModal((prev) => (prev?.type === 'delete-confirm' ? { ...prev, deleting: true } : prev));
     try {
       await userApi.deleteAccount();
-      alert("Ваш аккаунт был успешно удален.");
-      
-      if (onDeleteAccountConfirm) {
-        onDeleteAccountConfirm(); // Функция разлогирования из App.jsx (удаление токена)
-      }
+      showAlert("Ваш аккаунт был успешно удален.", 'success', {
+        animate: false,
+        onClose: onDeleteAccountConfirm,
+      });
     } catch (error) {
       console.error("Ошибка при удалении аккаунта:", error);
       const errorMessage = error.response?.data?.detail || "Не удалось удалить аккаунт. Пожалуйста, попробуйте позже.";
-      alert(errorMessage);
+      showAlert(errorMessage, 'error', { animate: false });
     }
   };
 
@@ -186,7 +223,7 @@ function SecurityPage({ onDeleteAccountConfirm }) {
           <button 
             type="button"
             disabled={isLoading}
-            onClick={() => setShowDeleteModal(true)}
+            onClick={openDeleteModal}
             style={{ 
               backgroundColor: 'transparent', color: '#d32f2f', border: '1px solid #d32f2f', 
               padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px',
@@ -202,55 +239,64 @@ function SecurityPage({ onDeleteAccountConfirm }) {
 
       </div>
 
-      {/* Account Deletion Overlay Modal */}
-      {showDeleteModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
-        }}>
-          <div style={{
-            backgroundColor: '#fff', padding: '32px', borderRadius: '14px', maxWidth: '440px', width: '90%',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.25)', boxSizing: 'border-box', textAlign: 'center',
-            animation: 'modalIn 0.16s ease-out'
-          }}>
-            <style>{`@keyframes modalIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
-            <h4 style={{ fontSize: '22px', fontWeight: 'bold', margin: '0 0 12px 0', color: '#d32f2f' }}>
+      <Modal
+        open={modal !== null}
+        onClose={handleModalClose}
+        animate={modalAnimate}
+        closeOnBackdrop={!(modal?.type === 'delete-confirm' && modal.deleting)}
+      >
+        {modal?.type === 'delete-confirm' && (
+          <>
+            <h4 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 12px 0', color: colors.danger }}>
               Удалить аккаунт?
             </h4>
-            <p style={{ fontSize: '15px', color: '#444', lineHeight: '1.5', margin: '0 0 24px 0' }}>
+            <p style={{ fontSize: '15px', color: '#444', lineHeight: 1.5, margin: '0 0 20px 0' }}>
               Вы уверены, что хотите удалить свой аккаунт? Это действие не может быть отменено, и вы потеряете доступ ко всем своим транскрипциям.
             </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-              <button 
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
                 type="button"
-                onClick={() => setShowDeleteModal(false)}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#ececec'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f5f5f5'}
-                style={{ 
-                  backgroundColor: '#f5f5f5', color: '#333', border: '1px solid #ccc', 
-                  padding: '10px 20px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer',
-                  transition: 'background-color 0.15s ease'
+                disabled={modal.deleting}
+                onClick={closeModal}
+                onMouseEnter={(e) => { if (!modal.deleting) e.currentTarget.style.backgroundColor = '#ececec'; }}
+                onMouseLeave={(e) => { if (!modal.deleting) e.currentTarget.style.backgroundColor = colors.page; }}
+                style={{
+                  backgroundColor: colors.page, color: '#333', border: `1px solid ${colors.borderStrong}`,
+                  padding: '10px 18px', borderRadius: radius.sm, fontWeight: 600, cursor: modal.deleting ? 'not-allowed' : 'pointer',
+                  opacity: modal.deleting ? 0.5 : 1, transition: 'background-color 0.15s ease',
                 }}
               >
                 Отмена
               </button>
-              <button 
+              <button
                 type="button"
+                disabled={modal.deleting}
                 onClick={handleDeleteAccountFinal}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b71c1c'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#d32f2f'}
-                style={{ 
-                  backgroundColor: '#d32f2f', color: '#fff', border: 'none', 
-                  padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
-                  transition: 'background-color 0.15s ease'
+                onMouseEnter={(e) => { if (!modal.deleting) e.currentTarget.style.backgroundColor = colors.dangerHover; }}
+                onMouseLeave={(e) => { if (!modal.deleting) e.currentTarget.style.backgroundColor = colors.danger; }}
+                style={{
+                  backgroundColor: colors.danger, color: '#fff', border: 'none',
+                  padding: '10px 18px', borderRadius: radius.sm, fontWeight: 'bold', cursor: modal.deleting ? 'wait' : 'pointer',
+                  opacity: modal.deleting ? 0.7 : 1, transition: 'background-color 0.15s ease',
                 }}
               >
-                Да, удалить перманентно
+                {modal.deleting ? 'Удаление...' : 'Да, удалить перманентно'}
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+
+        {modal?.type === 'alert' && (
+          <AlertModal
+            embedded
+            open
+            title={modal.title}
+            message={modal.message}
+            type={modal.alertType}
+            onClose={handleAlertClose}
+          />
+        )}
+      </Modal>
 
     </div>
     </div>

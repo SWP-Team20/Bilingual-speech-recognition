@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { colors, radius, shadow } from '../../theme';
 
 // Lightweight, accessible-ish modal: closes on Escape and backdrop click.
-function Modal({ open, onClose, children, maxWidth = '440px', closeOnBackdrop = true }) {
+function Modal({ open, onClose, children, maxWidth = '440px', closeOnBackdrop = true, animate = true }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => { if (e.key === 'Escape' && onClose) onClose(); };
@@ -36,7 +36,7 @@ function Modal({ open, onClose, children, maxWidth = '440px', closeOnBackdrop = 
           boxSizing: 'border-box',
           textAlign: 'left',
           fontFamily: 'system-ui, sans-serif',
-          animation: 'modalIn 0.16s ease-out',
+          animation: animate ? 'modalIn 0.16s ease-out' : 'none',
         }}
       >
         {children}
