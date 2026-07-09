@@ -122,6 +122,26 @@ export const audioApi = {
     return response.data;
   },
 
+  // Matches GET /api/v1/transcriptions/{audio_id}/download?format=txt|json
+  downloadTranscription: async (audioId, format, fallbackName) => {
+    const response = await apiClient.get(`/api/v1/transcriptions/${audioId}/download`, {
+      params: { format },
+      responseType: 'blob',
+    });
+
+    const fileName = parseFilename(response.headers['content-disposition'])
+      || `transcription_${fallbackName || audioId}.${format}`;
+
+    const url = URL.createObjectURL(response.data);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  },
+
   // Matches PATCH /api/v1/transcriptions/{audio_id}/words/{position}
   // Edit an existing word's spelling and/or language tag. Returns { words, sentences, stats }.
   editTranscriptionWord: async (audioId, position, { raw, text, language } = {}) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { audioApi } from '../api/audioApi';
 import { useToast } from './ui/toastContext';
 
@@ -47,12 +47,49 @@ function TranscriptionBox({
   onWordsChanged,
 }) {
   const toast = useToast();
+  const downloadMenuRef = useRef(null);
   // editor: { mode: 'edit' | 'add', index, raw, language } | null
   const [editor, setEditor] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+  const [downloadingFormat, setDownloadingFormat] = useState(null);
+
+  const isDownloading = downloadingFormat !== null;
 
   const words = transcriptionWords || [];
   const counts = countLangs(words);
+
+  useEffect(() => {
+    if (!downloadMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (downloadMenuRef.current && !downloadMenuRef.current.contains(e.target)) {
+        setDownloadMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setDownloadMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [downloadMenuOpen]);
+
+  const handleDownload = async (format) => {
+    if (!audioId || isDownloading) return;
+    setDownloadMenuOpen(false);
+    setDownloadingFormat(format);
+    try {
+      await audioApi.downloadTranscription(audioId, format, audioName);
+    } catch (e) {
+      console.error(e);
+      toast.error('Не удалось скачать транскрипцию');
+    } finally {
+      setDownloadingFormat(null);
+    }
+  };
 
   const openEditor = (index) => {
     if (!canEdit || busy) return;
@@ -192,6 +229,7 @@ function TranscriptionBox({
   };
 
   const hasWords = words.length > 0;
+  const hasTranscription = hasWords || (sentences && sentences.length > 0) || Boolean(transcriptionText);
 
   return (
     <div style={{
@@ -210,13 +248,74 @@ function TranscriptionBox({
         )}
       </div>
 
-      {/* ================= AUDIO FILE NAME LABEL ================= */}
+      {/* ================= AUDIO FILE NAME + DOWNLOAD ================= */}
       {audioName && (
         <div style={{
-          fontSize: '15px', fontWeight: '700', color: '#555', textAlign: 'left',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px',
           marginTop: '20px', marginBottom: '16px', paddingBottom: '8px', borderBottom: '1px dashed #eee',
         }}>
-          {audioName}
+          <div style={{ fontSize: '15px', fontWeight: '700', color: '#555', textAlign: 'left', minWidth: 0 }}>
+            {audioName}
+          </div>
+          {audioId && hasTranscription && (
+            <div ref={downloadMenuRef} style={{ position: 'relative', flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => { if (!isDownloading) setDownloadMenuOpen((open) => !open); }}
+                disabled={isDownloading}
+                aria-haspopup="menu"
+                aria-expanded={downloadMenuOpen}
+                aria-label="Скачать транскрипцию"
+                title="Скачать"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 12px', borderRadius: '6px', border: '1px solid #d0d0d0',
+                  backgroundColor: '#fff', color: '#333', fontSize: '13px', fontWeight: 600,
+                  cursor: isDownloading ? 'wait' : 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3v12" />
+                  <path d="M7 10l5 5 5-5" />
+                  <path d="M4 19h16" />
+                </svg>
+                {isDownloading ? 'Скачивание…' : 'Скачать'}
+              </button>
+              {downloadMenuOpen && (
+                <div
+                  role="menu"
+                  style={{
+                    position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50,
+                    minWidth: '200px', backgroundColor: '#fff', border: '1px solid #e0e0e0',
+                    borderRadius: '10px', boxShadow: '0 6px 24px rgba(0,0,0,0.14)', overflow: 'hidden',
+                  }}
+                >
+                  <div style={{ padding: '8px 14px 4px', fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#999' }}>
+                    Формат
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleDownload('txt')}
+                    style={menuItemStyle}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>.txt</span>
+                    <span style={{ fontSize: '12px', color: '#777' }}>Текстовый файл</span>
+                  </button>
+                  <div style={{ height: '1px', backgroundColor: '#eee' }} />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleDownload('json')}
+                    style={menuItemStyle}
+                  >
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#333' }}>.json</span>
+                    <span style={{ fontSize: '12px', color: '#777' }}>Структурированные данные</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -295,5 +394,18 @@ function btnStyle(bg, color, border) {
     cursor: 'pointer', fontFamily: 'inherit',
   };
 }
+
+const menuItemStyle = {
+  width: '100%',
+  padding: '10px 14px',
+  backgroundColor: 'transparent',
+  border: 'none',
+  textAlign: 'left',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2px',
+};
 
 export default TranscriptionBox;
