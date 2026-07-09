@@ -368,6 +368,38 @@ async def get_transcription_by_id(
     }
 
 
+@router.get("/transcriptions/{audio_id}/download")
+async def download_transcription(
+    audio_id: UUID,
+    format: str = Query("txt", description="Формат файла: txt или json"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if format not in ("txt", "json"):
+        raise HTTPException(status_code=400, detail="Используйте format='txt' или format='json'")
+
+    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+    if not audio:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+
+    if format == "txt":
+        file_path = os.path.join(audio.folder_path, "transcription.txt")
+        media_type = "text/plain; charset=utf-8"
+        ext = ".txt"
+    else:
+        file_path = os.path.join(audio.folder_path, "transcription.json")
+        media_type = "application/json"
+        ext = ".json"
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
+
+    base_name = os.path.splitext(audio.filename)[0] or str(audio_id)
+    download_name = f"transcription_{base_name}{ext}"
+
+    return FileResponse(path=file_path, media_type=media_type, filename=download_name)
+
+
 # --- RESTRICTED ROLES (ADMIN & MANAGER ONLY) ---
 
 @router.post("/upload-audio/", response_model=schemas.AudioFileResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -691,24 +723,3 @@ async def delete_audio(
     db.commit()
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-# @router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
-# async def delete_audio(
-#     audio_id: UUID,
-#     db: Session = Depends(get_db),
-#     current_user: User = Depends(get_current_user)
-# ):
-#     if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
-#         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
-#
-#     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
-#     if not audio:
-#         raise HTTPException(status_code=404, detail="Запись не найдена")
-#
-#     if os.path.exists(audio.folder_path):
-#         shutil.rmtree(audio.folder_path)
-#
-#     db.delete(audio)
-#     db.commit()
-#     return Response(status_code=status.HTTP_204_NO_CONTENT)
