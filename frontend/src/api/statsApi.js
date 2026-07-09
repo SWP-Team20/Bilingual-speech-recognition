@@ -11,12 +11,18 @@ function appendListParams(params, key, values) {
   values.forEach((value) => params.append(key, value));
 }
 
+function speakerList(filters) {
+  if (Array.isArray(filters.speakers) && filters.speakers.length) return filters.speakers;
+  if (filters.speaker?.trim()) return [filters.speaker.trim()];
+  return [];
+}
+
 export const statsApi = {
   fetchFrequentWords: async (filters = {}) => {
     const params = new URLSearchParams();
     params.set('limit', String(clampLimit(filters.limit)));
     appendListParams(params, 'lang', filters.langs);
-    if (filters.speaker?.trim()) params.set('speaker', filters.speaker.trim());
+    appendListParams(params, 'speaker', speakerList(filters));
     if (filters.dateFrom) params.set('date_from', filters.dateFrom);
     if (filters.dateTo) params.set('date_to', filters.dateTo);
 
@@ -42,7 +48,7 @@ export const statsApi = {
 
   fetchLanguageWordStats: async (filters = {}) => {
     const params = new URLSearchParams();
-    if (filters.speaker?.trim()) params.set('speaker', filters.speaker.trim());
+    appendListParams(params, 'speaker', speakerList(filters));
     appendListParams(params, 'audio_id', filters.audioIds);
     if (filters.dateFrom) params.set('date_from', filters.dateFrom);
     if (filters.dateTo) params.set('date_to', filters.dateTo);
@@ -57,7 +63,7 @@ export const statsApi = {
     const params = new URLSearchParams();
     params.set('limit', String(clampLimit(filters.limit ?? 30)));
     appendListParams(params, 'lang', filters.langs);
-    if (filters.speaker?.trim()) params.set('speaker', filters.speaker.trim());
+    appendListParams(params, 'speaker', speakerList(filters));
     appendListParams(params, 'audio_id', filters.audioIds);
 
     const response = await apiClient.get('/api/v1/stats/dates/words', {

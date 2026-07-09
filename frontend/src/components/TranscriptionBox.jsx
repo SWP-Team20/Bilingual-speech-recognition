@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { audioApi } from '../api/audioApi';
+import { speakersApi } from '../api/speakersApi';
 import { useToast } from './ui/toastContext';
 
 const LANG_OPTIONS = [
@@ -50,6 +51,9 @@ function TranscriptionBox({
   const downloadMenuRef = useRef(null);
   // editor: { mode: 'edit' | 'add', index, raw, language } | null
   const [editor, setEditor] = useState(null);
+  // speakerEditor: { paragraphIdx, currentLabel, selectedId, customLabel, mode: 'existing' | 'custom' } | null
+  const [speakerEditor, setSpeakerEditor] = useState(null);
+  const [speakers, setSpeakers] = useState([]);
   const [busy, setBusy] = useState(false);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
   const [downloadingFormat, setDownloadingFormat] = useState(null);
@@ -93,26 +97,104 @@ function TranscriptionBox({
 
   const openEditor = (index) => {
     if (!canEdit || busy) return;
+    setSpeakerEditor(null);
     const w = words[index];
     setEditor({ mode: 'edit', index, raw: w.raw ?? w.text ?? '', language: w.lang || 'unknown' });
   };
   const openAddAfter = (index) => setEditor({ mode: 'add', index, raw: '', language: 'unknown' });
   const closeEditor = () => { if (!busy) setEditor(null); };
 
+  const openSpeakerEditor = async (paragraphIdx, currentLabel, wordIndices) => {
+    if (!canEdit || busy) return;
+    setEditor(null);
+    setSpeakerEditor({
+      paragraphIdx,
+      currentLabel,
+      wordPositions: wordIndices || [],
+      selectedId: '',
+      customLabel: currentLabel,
+      mode: 'existing',
+      scope: 'audio',
+    });
+    try {
+      const list = await speakersApi.listSpeakers();
+      setSpeakers(Array.isArray(list) ? list : []);
+    } catch (e) {
+      console.error(e);
+      setSpeakers([]);
+      toast.error('Не удалось загрузить список говорящих');
+    }
+  };
+  const closeSpeakerEditor = () => { if (!busy) setSpeakerEditor(null); };
+
   const applyResult = (data) => {
     if (data && Array.isArray(data.words)) onWordsChanged?.(data.words);
   };
 
+  const saveSpeakerLabel = async () => {
+    if (!speakerEditor || !audioId) return;
+    const { currentLabel, mode, selectedId, customLabel, scope, wordPositions } = speakerEditor;
+    const payload = { currentLabel, scope: scope || 'audio' };
+    if (payload.scope === 'paragraph') {
+      payload.wordPositions = wordPositions || [];
+      if (!payload.wordPositions.length) {
+        toast.error('Не удалось определить слова предложения');
+        return;
+      }
+    }
+    if (mode === 'existing') {
+      if (!selectedId) {
+        toast.error('Выберите говорящего из списка');
+        return;
+      }
+      payload.speakerId = Number(selectedId);
+    } else {
+      const label = (customLabel || '').trim();
+      if (!label) {
+        toast.error('Метка не может быть пустой');
+        return;
+      }
+      if (label === currentLabel && payload.scope === 'audio') {
+        setSpeakerEditor(null);
+        return;
+      }
+      payload.newLabel = label;
+    }
+
+    setBusy(true);
+    try {
+      const data = await audioApi.relabelSpeaker(audioId, payload);
+      applyResult(data);
+      toast.success(
+        payload.scope === 'paragraph'
+          ? 'Метка обновлена в этом предложении'
+          : 'Метка обновлена во всей записи'
+      );
+      setSpeakerEditor(null);
+    } catch (e) {
+      console.error(e);
+      const detail = e?.response?.data?.detail;
+      toast.error(typeof detail === 'string' ? detail : 'Не удалось изменить метку');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const saveEdit = async () => {
     const raw = editor.raw.trim();
-    if (!raw) { toast.error('Слово не может быть пустым'); return; }
+    // Пустое поле при правке = удаление слова
+    if (!raw) {
+      await doDelete();
+      return;
+    }
     setBusy(true);
     try {
       const data = await audioApi.editTranscriptionWord(audioId, editor.index, {
         raw, language: editor.language,
       });
       applyResult(data);
-      toast.success('Слово обновлено');
+      const parts = raw.split(/\s+/).filter(Boolean);
+      toast.success(parts.length > 1 ? `Сохранено как ${parts.length} слова` : 'Слово обновлено');
       setEditor(null);
     } catch (e) {
       console.error(e);
@@ -144,12 +226,133 @@ function TranscriptionBox({
         position, raw, language: editor.language,
       });
       applyResult(data);
-      toast.success('Слово добавлено');
+      const parts = raw.split(/\s+/).filter(Boolean);
+      toast.success(parts.length > 1 ? `Добавлено слов: ${parts.length}` : 'Слово добавлено');
       setEditor(null);
     } catch (e) {
       console.error(e);
       toast.error('Не удалось добавить слово');
     } finally { setBusy(false); }
+  };
+
+  const renderSpeakerPopover = (paragraphIdx, speakerLabel) => {
+    if (!speakerEditor || speakerEditor.paragraphIdx !== paragraphIdx) return null;
+    const otherSpeakers = speakers.filter((s) => s.label !== speakerLabel);
+    return (
+      <div
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute', top: '100%', left: 0, zIndex: 70, marginTop: '6px',
+          minWidth: '260px', backgroundColor: '#fff', border: '1px solid #e0e0e0',
+          borderRadius: '10px', boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: '12px',
+          textAlign: 'left', cursor: 'default', fontWeight: 400, color: '#333',
+        }}
+      >
+        <div style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginBottom: '10px' }}>
+          Метка говорящего
+        </div>
+
+        <div style={{
+          marginBottom: '12px',
+          paddingBottom: '12px',
+          borderBottom: '1px solid #eee',
+        }}>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '8px' }}>
+            Область изменения
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '6px', cursor: 'pointer', color: '#333' }}>
+            <input
+              type="radio"
+              name={`spk-scope-${paragraphIdx}`}
+              checked={speakerEditor.scope !== 'paragraph'}
+              disabled={busy}
+              onChange={() => setSpeakerEditor((s) => ({ ...s, scope: 'audio' }))}
+            />
+            Во всей этой записи
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', color: '#333' }}>
+            <input
+              type="radio"
+              name={`spk-scope-${paragraphIdx}`}
+              checked={speakerEditor.scope === 'paragraph'}
+              disabled={busy}
+              onChange={() => setSpeakerEditor((s) => ({ ...s, scope: 'paragraph' }))}
+            />
+            Только это предложение
+          </label>
+        </div>
+
+        <div style={{ fontSize: '12px', fontWeight: 600, color: '#888', marginBottom: '8px' }}>
+          Новая метка
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '8px', cursor: 'pointer', color: '#333' }}>
+          <input
+            type="radio"
+            name={`spk-mode-${paragraphIdx}`}
+            checked={speakerEditor.mode === 'existing'}
+            disabled={busy}
+            onChange={() => setSpeakerEditor((s) => ({ ...s, mode: 'existing' }))}
+          />
+          Выбрать существующего
+        </label>
+        <select
+          value={speakerEditor.selectedId}
+          disabled={busy || speakerEditor.mode !== 'existing'}
+          onChange={(e) => setSpeakerEditor((s) => ({ ...s, selectedId: e.target.value, mode: 'existing' }))}
+          style={{
+            width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: '14px',
+            border: '1px solid #d0d0d0', borderRadius: '6px', outline: 'none', marginBottom: '10px',
+            backgroundColor: speakerEditor.mode === 'existing' ? '#fff' : '#f7f7f7',
+            color: '#333',
+            cursor: speakerEditor.mode === 'existing' ? 'pointer' : 'default',
+          }}
+        >
+          <option value="">— выберите —</option>
+          {otherSpeakers.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}{s.audio_count ? ` (${s.audio_count})` : ''}
+            </option>
+          ))}
+        </select>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', marginBottom: '8px', cursor: 'pointer', color: '#333' }}>
+          <input
+            type="radio"
+            name={`spk-mode-${paragraphIdx}`}
+            checked={speakerEditor.mode === 'custom'}
+            disabled={busy}
+            onChange={() => setSpeakerEditor((s) => ({ ...s, mode: 'custom' }))}
+          />
+          Новая метка
+        </label>
+        <input
+          type="text"
+          value={speakerEditor.customLabel}
+          disabled={busy || speakerEditor.mode !== 'custom'}
+          onChange={(e) => setSpeakerEditor((s) => ({ ...s, customLabel: e.target.value, mode: 'custom' }))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') saveSpeakerLabel();
+            if (e.key === 'Escape') closeSpeakerEditor();
+          }}
+          placeholder="например, мама"
+          style={{
+            width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: '14px',
+            border: '1px solid #d0d0d0', borderRadius: '6px', outline: 'none', marginBottom: '10px',
+            backgroundColor: speakerEditor.mode === 'custom' ? '#fff' : '#f7f7f7',
+            color: '#333',
+          }}
+        />
+
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          <button type="button" disabled={busy} onClick={saveSpeakerLabel} style={btnStyle('#009a55', '#fff')}>
+            Сохранить
+          </button>
+          <button type="button" disabled={busy} onClick={closeSpeakerEditor} style={btnStyle('#f2f2f2', '#444', '#ddd')}>
+            Отмена
+          </button>
+        </div>
+      </div>
+    );
   };
 
   const renderPopover = (index) => {
@@ -162,7 +365,7 @@ function TranscriptionBox({
           position: 'absolute', top: '100%', left: 0, zIndex: 60, marginTop: '6px',
           minWidth: '230px', backgroundColor: '#fff', border: '1px solid #e0e0e0',
           borderRadius: '10px', boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: '12px',
-          textAlign: 'left', cursor: 'default', fontWeight: 400,
+          textAlign: 'left', cursor: 'default', fontWeight: 400, color: '#333',
         }}
       >
         <div style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginBottom: '6px' }}>
@@ -178,10 +381,11 @@ function TranscriptionBox({
             if (e.key === 'Enter') { isAdd ? doAdd() : saveEdit(); }
             if (e.key === 'Escape') closeEditor();
           }}
-          placeholder="Слово"
+          placeholder={isAdd ? 'Слово или несколько через пробел' : 'Слово (пустое = удалить)'}
           style={{
             width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: '14px',
             border: '1px solid #d0d0d0', borderRadius: '6px', outline: 'none', marginBottom: '8px',
+            color: '#333', backgroundColor: '#fff',
           }}
         />
         <select
@@ -191,7 +395,7 @@ function TranscriptionBox({
           style={{
             width: '100%', boxSizing: 'border-box', padding: '8px 10px', fontSize: '14px',
             border: '1px solid #d0d0d0', borderRadius: '6px', outline: 'none', marginBottom: '10px',
-            backgroundColor: '#fff', cursor: 'pointer',
+            backgroundColor: '#fff', color: '#333', cursor: 'pointer',
           }}
         >
           {LANG_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -235,6 +439,7 @@ function TranscriptionBox({
     <div style={{
       backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e6e6e6',
       height: 'fit-content', boxSizing: 'border-box', width: '100%', boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+      color: '#333',
     }}>
       {/* ================= LANGUAGE BADGES + LIVE COUNTS ================= */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '12px', width: '100%', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -321,7 +526,8 @@ function TranscriptionBox({
 
       {canEdit && hasWords && (
         <div style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>
-          Нажмите на слово, чтобы изменить его или язык.
+          Нажмите на слово, чтобы изменить его или язык. Несколько слов через пробел разбиваются;
+          пустое поле или «Удалить» — убирает слово. Нажмите на имя говорящего, чтобы сменить метку.
         </div>
       )}
 
@@ -330,8 +536,32 @@ function TranscriptionBox({
         {hasWords ? (
           groupBySpeaker(words).map((p, pIdx) => (
             <div key={pIdx} style={{ marginBottom: '14px', display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 'bold', color: '#16a34a', fontSize: '14px', marginBottom: '2px' }}>
-                {p.speaker}:
+              <span style={{ position: 'relative', display: 'inline-block', marginBottom: '2px' }}>
+                <span
+                  onClick={() => openSpeakerEditor(pIdx, p.speaker, p.items.map(({ gi }) => gi))}
+                  title={canEdit ? 'Изменить метку говорящего' : undefined}
+                  style={{
+                    fontWeight: 'bold', color: '#16a34a', fontSize: '14px',
+                    cursor: canEdit ? 'pointer' : 'default',
+                    borderRadius: '4px',
+                    padding: canEdit ? '1px 4px' : 0,
+                    backgroundColor: speakerEditor && speakerEditor.paragraphIdx === pIdx ? '#eafaf1' : 'transparent',
+                    outline: canEdit ? '1px dashed transparent' : 'none',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (canEdit && !(speakerEditor && speakerEditor.paragraphIdx === pIdx)) {
+                      e.currentTarget.style.backgroundColor = '#f3f3f3';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!(speakerEditor && speakerEditor.paragraphIdx === pIdx)) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
+                >
+                  {p.speaker}:
+                </span>
+                {renderSpeakerPopover(pIdx, p.speaker)}
               </span>
               <p style={{ margin: 0, fontWeight: '500' }}>
                 {p.items.map(({ w, gi }, itemIdx) => (

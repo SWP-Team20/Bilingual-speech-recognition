@@ -4,9 +4,10 @@
 
 Держит в синхроне три вещи:
   1) transcription.json (words + пересобранные sentences) — источник для показа;
-  2) строки Word в БД (для поиска/фильтров) — точечно, СОХРАНЯЯ speaker_id по позиции
-     (правка текста/языка не меняет, кто это сказал);
-  3) производную статистику (WordCount + метрики аудио) — пересчёт «в реальном времени».
+  2) transcription.txt — текстовый экспорт «Спикер: текст»;
+  3) строки Word в БД (для поиска/фильтров) — точечно, СОХРАНЯЯ speaker_id по позиции
+     (правка текста/языка не меняет, кто это сказал; смена метки — см. relabel_speaker_in_audio);
+  4) производную статистику (WordCount + метрики аудио) — пересчёт «в реальном времени».
 
 Идентификатор слова = его индекс (position) в массиве words == Word.position в БД.
 
@@ -33,6 +34,13 @@ def normalize_word(raw: str) -> str:
 
 def normalize_lang(lang) -> str:
     return lang if lang in VALID_LANGS else "unknown"
+
+
+def split_input_tokens(raw) -> list:
+    """Разбивает ввод по пробелам на отдельные непустые слова."""
+    if raw is None:
+        return []
+    return [token for token in str(raw).split() if token]
 
 
 def mutate_edit(words, position, raw=None, text=None, language=None):
@@ -110,8 +118,24 @@ def compute_stats(words, duration_sec):
 
 # --- связка с диском и БД ----------------------------------------------------
 
+# Как на фронте: пустой/null speaker в JSON показывается как «Говорящий».
+_DEFAULT_SPEAKER_LABEL = "Говорящий"
+
+
+def _display_speaker_label(raw) -> str:
+    if isinstance(raw, str):
+        label = raw.strip()
+    else:
+        label = raw or ""
+    return label if label else _DEFAULT_SPEAKER_LABEL
+
+
 def _json_path(audio):
-    return os.path.join(audio.folder_path, "transcription.json")
+    return os.path.abspath(os.path.join(audio.folder_path, "transcription.json"))
+
+
+def _txt_path(audio):
+    return os.path.abspath(os.path.join(audio.folder_path, "transcription.txt"))
 
 
 def _load(audio):
@@ -120,6 +144,31 @@ def _load(audio):
         raise FileNotFoundError("transcription.json not found")
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _write_txt(audio, sentences):
+    """Перезаписывает transcription.txt в формате «Спикер: текст»."""
+    path = _txt_path(audio)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    lines = []
+    for s in sentences or []:
+        prefix = f"{_display_speaker_label(s.get('speaker'))}: "
+        lines.append(prefix + (s.get("text") or "") + "\n")
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.writelines(lines)
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def sync_txt_from_json(audio):
+    """Пересобирает transcription.txt из актуального transcription.json (для скачивания)."""
+    from backend.src.pipeline import build_sentences
+
+    data = _load(audio)
+    words = data.get("words") or []
+    sentences = build_sentences(words) if words else (data.get("sentences") or [])
+    _write_txt(audio, sentences)
+    return _txt_path(audio)
 
 
 def _word_row(db, audio_id, position):
@@ -153,7 +202,7 @@ def _recompute_stats(db, audio, words):
 
 
 def _finalize(db, audio, data, words):
-    """Пересобирает sentences, пересчитывает статистику, коммитит БД и пишет JSON.
+    """Пересобирает sentences, пересчитывает статистику, коммитит БД и пишет JSON+TXT.
     Возвращает полезную нагрузку для фронта (words + sentences + stats)."""
     from backend.src.pipeline import build_sentences   # ленивый импорт (тяжёлый пайплайн)
 
@@ -161,8 +210,14 @@ def _finalize(db, audio, data, words):
     data["sentences"] = build_sentences(words)
     stats = _recompute_stats(db, audio, words)
     db.commit()
-    with open(_json_path(audio), "w", encoding="utf-8") as f:
+
+    json_path = _json_path(audio)
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    _write_txt(audio, data["sentences"])
     return {
         "id": str(audio.id),
         "filename": audio.filename,
@@ -172,11 +227,211 @@ def _finalize(db, audio, data, words):
     }
 
 
-def edit_word(db, audio, position, raw=None, text=None, language=None):
-    """Изменить существующее слово (написание и/или языковой тег). speaker_id не трогаем."""
+def _speaker_used_outside_audio(db, speaker_id, audio_id) -> bool:
+    """True, если у спикера есть слова в других записях."""
+    aid = UUID(str(audio_id))
+    return (
+        db.query(models.Word.id)
+        .filter(models.Word.speaker_id == speaker_id, models.Word.audio_id != aid)
+        .first()
+        is not None
+    )
+
+
+def _find_speaker_by_label(db, label: str):
+    from sqlalchemy import func
+
+    return (
+        db.query(models.Speaker)
+        .filter(func.lower(models.Speaker.label) == label.lower())
+        .first()
+    )
+
+
+def relabel_speaker_in_audio(
+    db,
+    audio,
+    current_label: str,
+    new_label=None,
+    speaker_id=None,
+    scope="audio",
+    word_positions=None,
+):
+    """Меняет метку говорящего в этой записи.
+
+    scope=audio — все слова с current_label в этом аудио;
+    scope=paragraph — только word_positions (одна реплика/предложение).
+
+    - JSON words[].speaker + sentences обновляются;
+    - transcription.txt перезаписывается;
+    - Word.speaker_id в БД переназначается только для затронутых слов;
+    - другие аудио не затрагиваются (при необходимости создаётся отдельный Speaker).
+
+    Можно задать либо speaker_id (выбрать существующего), либо new_label
+    (новая метка / найти по имени).
+    """
+    current_label = (current_label or "").strip()
+    if not current_label:
+        raise ValueError("current_label is required")
+
+    if speaker_id is None and not (new_label and str(new_label).strip()):
+        raise ValueError("Укажите new_label или speaker_id")
+
+    scope = (scope or "audio").strip().lower()
+    if scope not in ("audio", "paragraph"):
+        raise ValueError("scope должен быть audio или paragraph")
+
     data = _load(audio)
     words = data.get("words") or []
-    w = mutate_edit(words, position, raw=raw, text=text, language=language)
+    # Совпадает с отображением на фронте: null/"" → «Говорящий»
+    label_positions = [
+        i for i, w in enumerate(words)
+        if _display_speaker_label(w.get("speaker")) == current_label
+    ]
+    if not label_positions:
+        raise LookupError("Говорящий с такой меткой не найден в этой записи")
+
+    if scope == "paragraph":
+        if not word_positions:
+            raise ValueError("Для scope=paragraph укажите word_positions")
+        wanted = {int(p) for p in word_positions}
+        matched_positions = [i for i in label_positions if i in wanted]
+        if not matched_positions:
+            raise LookupError("В выбранном предложении нет слов с этой меткой")
+    else:
+        matched_positions = label_positions
+
+    # Текущий speaker_id берём из БД по первой совпавшей позиции
+    old_row = _word_row(db, audio.id, matched_positions[0])
+    old_speaker_id = old_row.speaker_id if old_row is not None else None
+    old_speaker = (
+        db.query(models.Speaker).filter(models.Speaker.id == old_speaker_id).first()
+        if old_speaker_id is not None
+        else None
+    )
+
+    # Можно ли безопасно переименовать Speaker.label «на месте»:
+    # только если меняем ВСЕ слова этого speaker_id в данном аудио и он не используется вне его.
+    can_rename_in_place = False
+    if old_speaker is not None and not _speaker_used_outside_audio(db, old_speaker.id, audio.id):
+        aid = UUID(str(audio.id))
+        other_in_audio = (
+            db.query(models.Word.position)
+            .filter(
+                models.Word.audio_id == aid,
+                models.Word.speaker_id == old_speaker.id,
+                ~models.Word.position.in_(matched_positions),
+            )
+            .first()
+        )
+        can_rename_in_place = other_in_audio is None
+
+    target = None
+    if speaker_id is not None:
+        target = db.query(models.Speaker).filter(models.Speaker.id == speaker_id).first()
+        if target is None:
+            raise LookupError("Говорящий не найден")
+    else:
+        label = str(new_label).strip()
+        existing = _find_speaker_by_label(db, label)
+        if existing is not None:
+            target = existing
+        elif can_rename_in_place:
+            old_speaker.label = label
+            target = old_speaker
+        else:
+            # Часть реплик / общий спикер — создаём отдельную запись
+            target = models.Speaker(
+                label=label,
+                embedding=list(old_speaker.embedding) if old_speaker and old_speaker.embedding else None,
+            )
+            db.add(target)
+            db.flush()
+
+    display_label = target.label
+
+    # Обновляем JSON-метки только у выбранных слов
+    for i in matched_positions:
+        words[i]["speaker"] = display_label
+
+    for pos in matched_positions:
+        row = _word_row(db, audio.id, pos)
+        if row is not None:
+            row.speaker_id = target.id
+
+    # Если старый спикер остался без слов — убираем сироту
+    if old_speaker_id is not None and old_speaker_id != target.id:
+        still_used = (
+            db.query(models.Word.id)
+            .filter(models.Word.speaker_id == old_speaker_id)
+            .first()
+        )
+        if still_used is None:
+            db.query(models.Speaker).filter(models.Speaker.id == old_speaker_id).delete(
+                synchronize_session=False
+            )
+
+    return _finalize(db, audio, data, words)
+
+
+def _db_insert_word_at(db, audio_id, pos, new_w, speaker_id):
+    """Сдвигает позиции в БД и добавляет строку Word на индекс pos."""
+    aid = UUID(str(audio_id))
+    db.query(models.Word).filter(models.Word.audio_id == aid, models.Word.position >= pos).update(
+        {models.Word.position: models.Word.position + 1}, synchronize_session=False
+    )
+    db.add(models.Word(
+        audio_id=aid, text=new_w["text"], raw=new_w["raw"],
+        start_sec=new_w["start"], end_sec=new_w["end"], language=new_w["lang"],
+        confidence=None, position=pos, speaker_id=speaker_id,
+    ))
+
+
+def edit_word(db, audio, position, raw=None, text=None, language=None):
+    """Изменить слово по индексу.
+
+    - пустой raw → удалить слово;
+    - несколько слов через пробел → первое заменяет текущее, остальные вставляются после;
+    - speaker_id сохраняется / наследуется.
+    """
+    data = _load(audio)
+    words = data.get("words") or []
+    if not 0 <= position < len(words):
+        raise IndexError("position out of range")
+
+    # Пустой ввод при правке = удаление
+    if raw is not None and not str(raw).strip():
+        mutate_delete(words, position)
+        aid = UUID(str(audio.id))
+        row = _word_row(db, audio.id, position)
+        if row is not None:
+            db.delete(row)
+        db.query(models.Word).filter(models.Word.audio_id == aid, models.Word.position > position).update(
+            {models.Word.position: models.Word.position - 1}, synchronize_session=False
+        )
+        return _finalize(db, audio, data, words)
+
+    tokens = split_input_tokens(raw) if raw is not None else None
+    if tokens is not None:
+        old_row = _word_row(db, audio.id, position)
+        speaker_id = old_row.speaker_id if old_row is not None else None
+        insert_lang = language if language is not None else words[position].get("lang", "unknown")
+
+        w = mutate_edit(words, position, raw=tokens[0], language=language)
+        if old_row is not None:
+            old_row.text = w["text"]
+            old_row.raw = w.get("raw")
+            old_row.language = w["lang"]
+
+        for i, token in enumerate(tokens[1:], start=1):
+            pos = position + i
+            new_w, _ = mutate_insert(words, pos, token, insert_lang)
+            _db_insert_word_at(db, audio.id, pos, new_w, speaker_id)
+
+        return _finalize(db, audio, data, words)
+
+    # Только text и/или language без raw
+    w = mutate_edit(words, position, text=text, language=language)
     row = _word_row(db, audio.id, position)
     if row is not None:
         row.text = w["text"]
@@ -186,27 +441,27 @@ def edit_word(db, audio, position, raw=None, text=None, language=None):
 
 
 def insert_word(db, audio, position, raw, language="unknown"):
-    """Добавить новое слово по индексу. speaker_id наследуется от соседа."""
+    """Добавить слово(а) по индексу вставки. Несколько слов через пробел — каждое отдельно.
+    speaker_id наследуется от соседа."""
+    tokens = split_input_tokens(raw)
+    if not tokens:
+        raise ValueError("Слово не может быть пустым")
+
     data = _load(audio)
     words = data.get("words") or []
-    # speaker_id соседа берём ДО сдвига позиций
+    position = max(0, min(position, len(words)))
+
     prev_row = _word_row(db, audio.id, position - 1) if position > 0 else None
     next_row = _word_row(db, audio.id, position)
     speaker_id = prev_row.speaker_id if prev_row is not None else (
         next_row.speaker_id if next_row is not None else None
     )
 
-    new_w, pos = mutate_insert(words, position, raw, language)
+    for i, token in enumerate(tokens):
+        pos = position + i
+        new_w, _ = mutate_insert(words, pos, token, language)
+        _db_insert_word_at(db, audio.id, pos, new_w, speaker_id)
 
-    aid = UUID(str(audio.id))
-    db.query(models.Word).filter(models.Word.audio_id == aid, models.Word.position >= pos).update(
-        {models.Word.position: models.Word.position + 1}, synchronize_session=False
-    )
-    db.add(models.Word(
-        audio_id=aid, text=new_w["text"], raw=new_w["raw"],
-        start_sec=new_w["start"], end_sec=new_w["end"], language=new_w["lang"],
-        confidence=None, position=pos, speaker_id=speaker_id,
-    ))
     return _finalize(db, audio, data, words)
 
 

@@ -4,7 +4,7 @@
 import pytest
 
 from backend.src.services.transcript_edit import (
-    normalize_word, mutate_edit, mutate_insert, mutate_delete, compute_stats,
+    normalize_word, split_input_tokens, mutate_edit, mutate_insert, mutate_delete, compute_stats,
 )
 
 pytestmark = pytest.mark.unit
@@ -20,6 +20,14 @@ def test_normalize_word_strips_punct_and_lowercases():
     assert normalize_word("Привет!") == "привет"
     assert normalize_word("  Дом,") == "дом"
     assert normalize_word("!!!") == ""
+
+
+def test_split_input_tokens():
+    assert split_input_tokens("привет мир") == ["привет", "мир"]
+    assert split_input_tokens("  а   б  ") == ["а", "б"]
+    assert split_input_tokens("") == []
+    assert split_input_tokens(None) == []
+    assert split_input_tokens("одно") == ["одно"]
 
 
 def test_edit_changes_word_and_language():
@@ -76,6 +84,14 @@ def test_insert_clamps_position():
     words = [_word("а", "а", "ru")]
     _, pos = mutate_insert(words, 99, "б", "ru")
     assert pos == 1 and len(words) == 2
+
+
+def test_display_speaker_label_treats_null_as_default():
+    from backend.src.services.transcript_edit import _display_speaker_label
+
+    assert _display_speaker_label(None) == "Говорящий"
+    assert _display_speaker_label("") == "Говорящий"
+    assert _display_speaker_label("мама") == "мама"
 
 
 def test_delete_removes_word():

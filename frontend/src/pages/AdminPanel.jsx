@@ -208,11 +208,11 @@ function AdminPanel() {
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', height: '100%', minHeight: 0, width: '100%' }}>
-          <form onSubmit={handleCreateUser} style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e6e6e6', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+          <form onSubmit={handleCreateUser} style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e6e6e6', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', color: '#333' }}>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', color: '#000' }}>Роль</label>
-              <select value={newUserRole} onChange={e => setNewUserRole(e.target.value)} onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', width: '100%', boxSizing: 'border-box', backgroundColor: '#fff', outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }}>
+              <select value={newUserRole} onChange={e => setNewUserRole(e.target.value)} onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', width: '100%', boxSizing: 'border-box', backgroundColor: '#fff', color: '#333', outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }}>
                 <option value="user">{ROLE_TRANSLATIONS['user']}</option>
                 <option value="manager">{ROLE_TRANSLATIONS['manager']}</option>
                 <option value="admin">{ROLE_TRANSLATIONS['admin']}</option>
@@ -221,12 +221,12 @@ function AdminPanel() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', color: '#000' }}>Имя пользователя</label>
-              <input type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', width: '100%', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }} />
+              <input type="text" value={newUsername} onChange={e => setNewUsername(e.target.value)} onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', width: '100%', boxSizing: 'border-box', outline: 'none', color: '#333', backgroundColor: '#fff', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', color: '#000' }}>Пароль</label>
-              <input type="text" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', width: '100%', boxSizing: 'border-box', outline: 'none', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }} />
+              <input type="text" value={newUserPassword} onChange={e => setNewUserPassword(e.target.value)} onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }} onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }} style={{ padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', width: '100%', boxSizing: 'border-box', outline: 'none', color: '#333', backgroundColor: '#fff', transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }} />
             </div>
 
             {error && (

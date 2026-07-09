@@ -8,8 +8,9 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { isTerminal } from '../constants/status';
 import { canManageCorpus } from '../constants/roleTranslations';
+import SpeakerFilterSelect from '../components/stats/SpeakerFilterSelect';
 
-const EMPTY_FILTERS = { words: '', langs: [], speaker: '', status: '', dateFrom: '', dateTo: '' };
+const EMPTY_FILTERS = { words: '', langs: [], speakers: [], status: '', dateFrom: '', dateTo: '' };
 
 const LANG_FILTER_OPTIONS = [
   { value: 'ru', label: 'Русский' },
@@ -21,7 +22,7 @@ function countActiveFilters(filters) {
   let count = 0;
   if (filters.words?.trim()) count += 1;
   if (filters.langs?.length) count += 1;
-  if (filters.speaker?.trim()) count += 1;
+  if (filters.speakers?.length) count += 1;
   if (filters.status) count += 1;
   if (filters.dateFrom) count += 1;
   if (filters.dateTo) count += 1;
@@ -304,14 +305,10 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
                 </div>
 
                 <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящий</label>
-                  <input
-                    type="text"
-                    value={draftFilters.speaker}
-                    placeholder="Например: мама"
-                    onChange={(e) => setDraftFilters((f) => ({ ...f, speaker: e.target.value }))}
-                    onKeyDown={(e) => { if (e.key === 'Enter') applyFilters(); }}
-                    style={filterFieldStyle}
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Говорящие</label>
+                  <SpeakerFilterSelect
+                    value={draftFilters.speakers}
+                    onChange={(speakers) => setDraftFilters((f) => ({ ...f, speakers }))}
                   />
                 </div>
 

@@ -383,16 +383,25 @@ async def download_transcription(
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
     if format == "txt":
-        file_path = os.path.join(audio.folder_path, "transcription.txt")
+        # Всегда пересобираем TXT из актуального JSON, чтобы скачивание
+        # отражало последние правки слов/меток говорящих.
+        try:
+            file_path = transcript_edit.sync_txt_from_json(audio)
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
+        except Exception:
+            logger.exception("Failed to sync transcription.txt for audio %s", audio_id)
+            file_path = os.path.abspath(os.path.join(audio.folder_path, "transcription.txt"))
+            if not os.path.exists(file_path):
+                raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
         media_type = "text/plain; charset=utf-8"
         ext = ".txt"
     else:
-        file_path = os.path.join(audio.folder_path, "transcription.json")
+        file_path = os.path.abspath(os.path.join(audio.folder_path, "transcription.json"))
         media_type = "application/json"
         ext = ".json"
-
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
 
     base_name = os.path.splitext(audio.filename)[0] or str(audio_id)
     download_name = f"transcription_{base_name}{ext}"
@@ -622,6 +631,8 @@ def _run_transcript_edit(db, action):
         raise HTTPException(status_code=404, detail="Файл транскрипции отсутствует")
     except IndexError:
         raise HTTPException(status_code=404, detail="Слово не найдено")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except HTTPException:
         raise
     except Exception:
@@ -639,7 +650,10 @@ async def edit_transcription_word(
     current_user: User = Depends(get_current_user),
 ):
     """Изменить слово по индексу: написание (raw/text) и/или языковой тег.
-    Возвращает обновлённые words, sentences и пересчитанную статистику."""
+
+    Пустой raw удаляет слово. Несколько слов через пробел разбиваются на отдельные.
+    Возвращает обновлённые words, sentences и пересчитанную статистику.
+    """
     _require_editor(current_user)
     audio = _get_audio_or_404(db, audio_id)
     return _run_transcript_edit(db, lambda: transcript_edit.edit_word(
@@ -654,7 +668,8 @@ async def add_transcription_word(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Добавить новое слово по индексу вставки (спикер наследуется от соседа)."""
+    """Добавить слово(а) по индексу вставки (спикер наследуется от соседа).
+    Несколько слов через пробел вставляются как отдельные токены."""
     _require_editor(current_user)
     audio = _get_audio_or_404(db, audio_id)
     return _run_transcript_edit(db, lambda: transcript_edit.insert_word(
@@ -673,6 +688,40 @@ async def delete_transcription_word(
     _require_editor(current_user)
     audio = _get_audio_or_404(db, audio_id)
     return _run_transcript_edit(db, lambda: transcript_edit.delete_word(db, audio, position))
+
+
+@router.patch("/transcriptions/{audio_id}/speakers")
+async def relabel_speaker_in_transcription(
+    audio_id: UUID,
+    payload: schemas.RelabelSpeakerInAudioRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Сменить метку говорящего только в этой записи (JSON + TXT + Word.speaker_id).
+
+    Другие аудио не затрагиваются. Можно выбрать существующего спикера (speaker_id)
+    или задать новую метку (new_label).
+    """
+    _require_editor(current_user)
+    audio = _get_audio_or_404(db, audio_id)
+
+    def _action():
+        try:
+            return transcript_edit.relabel_speaker_in_audio(
+                db,
+                audio,
+                current_label=payload.current_label,
+                new_label=payload.new_label,
+                speaker_id=payload.speaker_id,
+                scope=payload.scope,
+                word_positions=payload.word_positions,
+            )
+        except LookupError as exc:
+            raise HTTPException(status_code=404, detail=str(exc))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    return _run_transcript_edit(db, _action)
 
 
 @router.post("/audio/{audio_id}/reindex-db", status_code=status.HTTP_204_NO_CONTENT)
