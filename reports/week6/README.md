@@ -83,7 +83,8 @@ Feedback not addressed:
 
 ### Updates
 
-Added authorization tests in [QRT-004](/scripts/QualityRequirements/test_authorization.py).
+- Added authorization tests in [test_authorization.py (QRT-004)](/scripts/QualityRequirements/test_authorization.py)
+- Added filter tests in [test_words_stats.py](/scripts/Unit/test_word_stats.py)
 
 ### Links
 
