@@ -79,7 +79,7 @@ This update adds comprehensive statistical tracking for speakers, words, and lan
 - [Deployed Product](https://10.93.26.206:5173)
 - [Access Instructions (README.md)](/README.md)
 - [Deployment Insctructions](/docs/deployment.md)
-- [LLM Report](...) [INSERT LINK]
+- [LLM Report](llm-report.md)
 
 ---
 
