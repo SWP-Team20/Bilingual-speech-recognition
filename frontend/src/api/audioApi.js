@@ -172,6 +172,19 @@ export const audioApi = {
     return response.data;
   },
 
+  // Matches PATCH /api/v1/transcriptions/{audio_id}/words/bulk
+  bulkEditTranscriptionWords: async (audioId, positions, {
+    language, delete: isDelete = false, speakerId, newLabel,
+  } = {}) => {
+    const body = { positions };
+    if (isDelete) body.delete = true;
+    else if (language !== undefined) body.language = language;
+    else if (speakerId != null) body.speaker_id = speakerId;
+    else if (newLabel != null && String(newLabel).trim()) body.new_label = String(newLabel).trim();
+    const response = await apiClient.patch(`/api/v1/transcriptions/${audioId}/words/bulk`, body);
+    return response.data;
+  },
+
   // Matches PATCH /api/v1/transcriptions/{audio_id}/speakers
   // Relabel a speaker in this audio. Pass speakerId OR newLabel.
   // scope: 'audio' (all occurrences) | 'paragraph' (wordPositions only)
@@ -189,6 +202,18 @@ export const audioApi = {
   // Matches DELETE /api/v1/audio/{audio_id}
   deleteAudio: async (audioId) => {
     const response = await apiClient.delete(`/api/v1/audio/${audioId}`);
+    return response.data;
+  },
+
+  // Matches POST /api/v1/audio/{audio_id}/restore
+  restoreAudio: async (audioId) => {
+    const response = await apiClient.post(`/api/v1/audio/${audioId}/restore`);
+    return response.data;
+  },
+
+  // Matches POST /api/v1/transcriptions/{audio_id}/undo
+  undoTranscriptionDelete: async (audioId) => {
+    const response = await apiClient.post(`/api/v1/transcriptions/${audioId}/undo`);
     return response.data;
   },
 

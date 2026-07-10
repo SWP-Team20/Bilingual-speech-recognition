@@ -8,18 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- New words count statistics with ability to filter by speaker, date and language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/273 
+- New words count statistics with ability to filter by speaker, date and language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/273
 - New speaker statistics with ability to filter by audio files, date, language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/274
 - New language statistics with ability to filter by audio files, date, speakers in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/275
 - New per-day statistics with ability to filter by audio files, speakers, language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/277
 - Transcription download with .txt and .json options in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/282
 - Ability to change speaker's label in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/285
+- Badge for "Other" language added near "Russian and Tatar" in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/291
+- Soft deletion with undo for words in transcription, audios, and users in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/291
+- "Select multiple words" mode in transcription in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/291
+- Selected words in transcription can be reassigned to different speaker/language in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/291
+- Hint for editing a transcription in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/291
+- Ability to change audio name/date from transcription header in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/291
 
 ### Changed
 - All alert messages have been changed to modal windows in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/276
+- Speaker filter is now a dropdown list in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/285
+- Transcription header now present both title of audio and its recording date in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/291
 
 ### Fixed
 - Words are now divided by spaces instead of being a plain text for role "user" in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/278
+- Authentication token is now extended to 24 hours, user no longer gets logged out mid-work in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/291
+- Multi-word insert: space-separated input creates separate tokens (not one word) in https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/291
+- Language selection dropdown menu while patching a word now matches overall design style in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/291
+- No more flickering when opening modal windows in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/291
+- All header, speaker's label, and text are now left-aligned in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/291
 
 ## [0.3.0] - 05.07.2026
 

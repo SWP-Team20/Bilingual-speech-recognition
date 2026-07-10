@@ -1,12 +1,14 @@
+from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from backend.src.database import get_db
 from backend.src.models import User, UserRole
 from backend.src.schemas import UserCreate, UserResponse, Token
-from backend.src.services.auth import hash_password, verify_password, create_access_token
+from backend.src.services.auth import hash_password, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from backend.src.schemas import ChangePasswordRequest
 from backend.src.dependencies import get_current_user, RoleChecker
+from backend.src.services import user_soft_delete
 from backend.src import models, schemas
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -14,16 +16,29 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user_soft_delete.purge_expired_soft_deletes(db)
     user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or user.deleted_at is not None or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверное имя пользователя или пароль",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Automatically creates a long-lived ~1 year access token based on our service update
-    access_token = create_access_token(data={"sub": user.username})
+    access_token = create_access_token(
+        data={"sub": user.username},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_access_token(current_user: User = Depends(get_current_user)):
+    """Issue a fresh access token for an authenticated user (sliding session)."""
+    access_token = create_access_token(
+        data={"sub": current_user.username},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -74,10 +89,14 @@ async def delete_my_account(
     current_user: User = Depends(get_current_user)
 ):
     if current_user.role == UserRole.ADMIN:
-        another_admin_exists = db.query(models.User.id).filter(
-            models.User.role == UserRole.ADMIN,
-            models.User.id != current_user.id
-        ).first()
+        another_admin_exists = (
+            user_soft_delete.active_user_filter(db.query(models.User.id))
+            .filter(
+                models.User.role == UserRole.ADMIN,
+                models.User.id != current_user.id,
+            )
+            .first()
+        )
 
         if not another_admin_exists:
             raise HTTPException(

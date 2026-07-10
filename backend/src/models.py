@@ -23,6 +23,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
     created_at = Column(DateTime, default=datetime.now)
+    deleted_at = Column(DateTime, nullable=True, index=True)   # мягкое удаление (окно отмены)
 
 
 class AudioFile(Base):
@@ -40,6 +41,7 @@ class AudioFile(Base):
 
     primary_language = Column(String, nullable=True)
     status = Column(String, default="processing_audio")        # processing_audio/processing_text/done/error
+    deleted_at = Column(DateTime, nullable=True, index=True)   # мягкое удаление (окно отмены)
 
     duration_sec = Column(Float, nullable=True)
     speech_sec = Column(Float, nullable=True)

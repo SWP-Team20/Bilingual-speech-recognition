@@ -66,4 +66,8 @@
   -  [US-027: Per-language statistics](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/255)
   -  [US-028: Per-date statistics](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/256)
   -  [US-030: Speakers labeling](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/261)
+  -  [Refine transcription patching](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/262)
   -  [US-031: Transcription download](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/263)
+  -  [Silent JWT refresh](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/287)
+  -  [Soft delete with undo](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/288)
+  -  [Edit audio filename and recording date from transcription header](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/289)

@@ -6,7 +6,8 @@ from pwdlib.hashers.bcrypt import BcryptHasher
 
 SECRET_KEY = "SECRET_KEY_MUST_BE_COMPLEX_IN_PRODUCTION"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# Sliding session: frontend refreshes while the tab is open.
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
 password_hash = PasswordHash((BcryptHasher(),))
 
@@ -21,6 +22,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

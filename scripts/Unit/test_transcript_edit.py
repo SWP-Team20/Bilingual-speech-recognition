@@ -4,7 +4,8 @@
 import pytest
 
 from backend.src.services.transcript_edit import (
-    normalize_word, split_input_tokens, mutate_edit, mutate_insert, mutate_delete, compute_stats,
+    normalize_word, split_input_tokens, mutate_edit, mutate_insert, mutate_delete,
+    mutate_bulk_set_language, mutate_bulk_delete, compute_stats,
 )
 
 pytestmark = pytest.mark.unit
@@ -98,6 +99,22 @@ def test_delete_removes_word():
     words = [_word("а", "а", "ru"), _word("б", "б", "tt")]
     removed = mutate_delete(words, 0)
     assert removed["text"] == "а"
+    assert [w["text"] for w in words] == ["б"]
+
+
+def test_bulk_set_language_updates_multiple_words():
+    words = [_word("а", "а", "ru"), _word("б", "б", "ru"), _word("в", "в", "tt")]
+    changed = mutate_bulk_set_language(words, [0, 2], "tt")
+    assert changed == 2
+    assert words[0]["lang"] == "tt"
+    assert words[1]["lang"] == "ru"
+    assert words[2]["lang"] == "tt"
+
+
+def test_bulk_delete_removes_multiple_words():
+    words = [_word("а", "а", "ru"), _word("б", "б", "ru"), _word("в", "в", "tt")]
+    removed = mutate_bulk_delete(words, [0, 2])
+    assert len(removed) == 2
     assert [w["text"] for w in words] == ["б"]
 
 

@@ -9,6 +9,8 @@ Base.metadata.create_all(bind=engine)
 
 with engine.begin() as conn:
     conn.execute(text("ALTER TABLE speakers ADD COLUMN IF NOT EXISTS embedding JSON"))
+    conn.execute(text("ALTER TABLE audio_files ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP"))
+    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP"))
 
 app = FastAPI(title="Bilingual Speech Backend API")
 

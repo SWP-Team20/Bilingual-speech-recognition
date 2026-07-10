@@ -154,6 +154,9 @@ def apply_audio_corpus_filters(query: Query, filters: CorpusFilters) -> Query:
 
 
 def filter_audio_files(query: Query, filters: CorpusFilters) -> Query:
+    from backend.src.services import audio_soft_delete
+
+    query = audio_soft_delete.active_audio_filter(query)
     query = apply_date_filters(query, filters)
     query = apply_audio_id_filters(query, filters)
     if filters.status:
@@ -167,6 +170,9 @@ def filter_audio_files(query: Query, filters: CorpusFilters) -> Query:
 
 
 def filter_word_hits(query: Query, filters: CorpusFilters) -> Query:
+    from backend.src.services import audio_soft_delete
+
+    query = audio_soft_delete.active_audio_filter(query)
     query = apply_date_filters(query, filters)
     query = apply_audio_id_filters(query, filters)
     query = apply_audio_corpus_filters(query, filters)

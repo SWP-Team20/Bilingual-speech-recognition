@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { audioApi } from '../../api/audioApi';
 import { statsApi } from '../../api/statsApi';
 import { useToast } from '../ui/toastContext';
 import { Skeleton } from '../ui/Skeleton';
@@ -13,7 +14,7 @@ const LIMIT_MIN = 1;
 const LIMIT_MAX = 500;
 const LIMIT_DEFAULT = 30;
 
-const EMPTY_FILTERS = { langs: [], speakers: [], dateFrom: '', dateTo: '', limit: LIMIT_DEFAULT };
+const EMPTY_FILTERS = { langs: [], speakers: [], dateFrom: '', dateTo: '', audioIds: [], limit: LIMIT_DEFAULT };
 
 const LANG_OPTIONS = [
   { value: 'ru', label: 'Русский' },
@@ -35,7 +36,38 @@ function countActiveFilters(filters) {
   if (filters.speakers?.length) count += 1;
   if (filters.dateFrom) count += 1;
   if (filters.dateTo) count += 1;
+  if (filters.audioIds?.length) count += 1;
   return count;
+}
+
+function formatAudioLabel(audio) {
+  const date = audio.recorded_at
+    ? new Date(audio.recorded_at).toLocaleDateString('ru-RU')
+    : null;
+  return date ? `${audio.filename} (${date})` : audio.filename;
+}
+
+function matchesAudioSearch(audio, query) {
+  const trimmed = query.trim().toLowerCase();
+  if (!trimmed) return true;
+  return (
+    formatAudioLabel(audio).toLowerCase().includes(trimmed)
+    || String(audio.id).toLowerCase().includes(trimmed)
+  );
+}
+
+function getVisibleAudioOptions(options, query, selectedIds) {
+  if (!query.trim()) return options;
+
+  const selectedSet = new Set(selectedIds);
+  const selected = options.filter((audio) => selectedSet.has(String(audio.id)));
+  const matching = options.filter((audio) => matchesAudioSearch(audio, query));
+  const selectedIdSet = new Set(selected.map((audio) => String(audio.id)));
+
+  return [
+    ...selected,
+    ...matching.filter((audio) => !selectedIdSet.has(String(audio.id))),
+  ];
 }
 
 function FrequentWordsSection() {
@@ -45,6 +77,9 @@ function FrequentWordsSection() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [displayMode, setDisplayMode] = useState('count');
+  const [audioOptions, setAudioOptions] = useState([]);
+  const [audioOptionsLoading, setAudioOptionsLoading] = useState(false);
+  const [audioSearchQuery, setAudioSearchQuery] = useState('');
   const filterWrapRef = useRef(null);
   const toast = useToast();
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
@@ -64,6 +99,20 @@ function FrequentWordsSection() {
     return () => window.removeEventListener('mousedown', onClick);
   }, [filtersOpen]);
 
+  const loadAudioOptions = async () => {
+    if (audioOptions.length || audioOptionsLoading) return;
+    setAudioOptionsLoading(true);
+    try {
+      const list = await audioApi.fetchAudioList({ status: 'done' });
+      setAudioOptions(list);
+    } catch (error) {
+      console.error('Ошибка загрузки списка аудио:', error);
+      toast.error('Не удалось загрузить список аудиозаписей');
+    } finally {
+      setAudioOptionsLoading(false);
+    }
+  };
+
   const loadData = async (activeFilters) => {
     setLoading(true);
     try {
@@ -80,7 +129,9 @@ function FrequentWordsSection() {
 
   const openFilters = () => {
     setDraftFilters(filters);
+    setAudioSearchQuery('');
     setFiltersOpen((v) => !v);
+    if (!filtersOpen) loadAudioOptions();
   };
 
   const applyFilters = () => {
@@ -99,6 +150,14 @@ function FrequentWordsSection() {
   };
 
   const activeFilterCount = countActiveFilters(filters);
+  const visibleAudioOptions = getVisibleAudioOptions(
+    audioOptions,
+    audioSearchQuery,
+    draftFilters.audioIds,
+  );
+  const matchedAudioCount = audioSearchQuery.trim()
+    ? audioOptions.filter((audio) => matchesAudioSearch(audio, audioSearchQuery)).length
+    : audioOptions.length;
 
   const filterFieldStyle = {
     width: '100%',
@@ -221,6 +280,64 @@ function FrequentWordsSection() {
               </div>
             </div>
 
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Аудиозаписи</label>
+              {audioOptionsLoading ? (
+                <div style={{ fontSize: '13px', color: colors.textFaint }}>Загрузка…</div>
+              ) : audioOptions.length === 0 ? (
+                <div style={{ fontSize: '13px', color: colors.textFaint }}>Нет готовых записей</div>
+              ) : (
+                <>
+                  <input
+                    type="search"
+                    value={audioSearchQuery}
+                    onChange={(e) => setAudioSearchQuery(e.target.value)}
+                    placeholder="Поиск по названию, дате или ID"
+                    aria-label="Поиск аудиозаписей"
+                    style={{ ...filterFieldStyle, marginBottom: '8px' }}
+                  />
+                  {audioSearchQuery.trim() && (
+                    <div style={{ marginBottom: '8px', fontSize: '12px', color: colors.textFaint }}>
+                      Найдено: {matchedAudioCount} из {audioOptions.length}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto', paddingRight: '4px' }}>
+                    {visibleAudioOptions.length === 0 ? (
+                      <div style={{ fontSize: '13px', color: colors.textFaint, padding: '4px 0' }}>
+                        Ничего не найдено
+                      </div>
+                    ) : (
+                      visibleAudioOptions.map((audio) => {
+                        const audioId = String(audio.id);
+                        const checked = draftFilters.audioIds.includes(audioId);
+                        return (
+                          <label key={audioId} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', cursor: 'pointer', lineHeight: 1.35 }}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setDraftFilters((f) => ({
+                                  ...f,
+                                  audioIds: checked
+                                    ? f.audioIds.filter((id) => id !== audioId)
+                                    : [...f.audioIds, audioId],
+                                }));
+                              }}
+                              style={{ width: '16px', height: '16px', marginTop: '2px', flexShrink: 0, accentColor: colors.primary }}
+                            />
+                            <span style={{ wordBreak: 'break-word' }}>{formatAudioLabel(audio)}</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+              <div style={{ marginTop: '6px', fontSize: '12px', color: colors.textFaint, lineHeight: 1.4 }}>
+                Если ничего не выбрано — все записи. Выбранные записи остаются в списке при поиске.
+              </div>
+            </div>
+
             <div style={{ marginBottom: '18px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Количество слов в топе</label>
               <input
@@ -255,7 +372,7 @@ function FrequentWordsSection() {
   return (
     <StatsSection
       title="Самые частые слова"
-      description="Топ слов по выбранным фильтрам. На странице — превью, полный список открывается по кнопке."
+      description="Топ слов по выбранным фильтрам."
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: colors.textMuted, alignItems: 'center' }}>
@@ -283,6 +400,11 @@ function FrequentWordsSection() {
                   {LANG_LABELS[lang] || lang}
                 </span>
               ))}
+            </span>
+          )}
+          {filters.audioIds.length > 0 && (
+            <span style={{ fontSize: '12px', color: colors.textMuted }}>
+              Записей: <b style={{ color: colors.text }}>{filters.audioIds.length}</b>
             </span>
           )}
         </div>

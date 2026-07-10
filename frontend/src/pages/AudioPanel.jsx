@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { audioApi } from '../api/audioApi';
 import AudioPlayer from '../components/AudioPlayer';
 import TranscriptionBox from '../components/TranscriptionBox';
+import AudioMetadataEditModal from '../components/AudioMetadataEditModal';
 import { AudioRowSkeleton } from '../components/ui/Skeleton';
 import { useToast } from '../components/ui/toastContext';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -9,6 +10,7 @@ import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { isTerminal } from '../constants/status';
 import { canManageCorpus } from '../constants/roleTranslations';
 import SpeakerFilterSelect from '../components/stats/SpeakerFilterSelect';
+import SelectDropdown from '../components/SelectDropdown';
 
 const EMPTY_FILTERS = { words: '', langs: [], speakers: [], status: '', dateFrom: '', dateTo: '' };
 
@@ -16,6 +18,13 @@ const LANG_FILTER_OPTIONS = [
   { value: 'ru', label: 'Русский' },
   { value: 'tt', label: 'Татарский' },
   { value: 'unknown', label: 'Другой' },
+];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: '', label: 'Любой статус' },
+  { value: 'done', label: 'Обработано' },
+  { value: 'processing_text', label: 'В обработке' },
+  { value: 'error', label: 'Ошибка' },
 ];
 
 function countActiveFilters(filters) {
@@ -37,6 +46,7 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [totalStorageMb, setTotalStorageMb] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [metadataEditOpen, setMetadataEditOpen] = useState(false);
 
   // Filters: `filters` is what's applied to the list, `draftFilters` is the
   // in-progress state of the open filter panel.
@@ -135,20 +145,6 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
     color: colors.text,
   };
 
-  // Native <select> renders with a different box than text inputs; normalize it
-  // with appearance:none + a custom chevron so all fields share the same margins.
-  const filterSelectStyle = {
-    ...filterFieldStyle,
-    appearance: 'none',
-    WebkitAppearance: 'none',
-    MozAppearance: 'none',
-    paddingRight: '30px',
-    cursor: 'pointer',
-    backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23555555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'right 10px center',
-  };
-
   const loadTotalStorage = async () => {
     try {
       const data = await audioApi.fetchTotalStorage();
@@ -158,12 +154,40 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
     }
   };
 
-  const handleDeleteSuccess = () => {
-    setSelectedAudioId(null);
-    setSelectedTranscription('');
-    setSelectedTranscriptionWords([]);
+  const handleDeleteSuccess = (audio, undoMeta) => {
+    const wasSelected = selectedAudioId === audio?.id;
+    if (wasSelected) {
+      setSelectedAudioId(null);
+      setSelectedTranscription('');
+      setSelectedTranscriptionWords([]);
+      setMetadataEditOpen(false);
+    }
     loadAudioList();
-    toast.success('Аудиозапись удалена');
+
+    const undoSeconds = undoMeta?.undo_seconds ?? 30;
+    const title = audio?.filename || 'Аудиозапись';
+    toast.undo(`«${title}» удалена`, {
+      seconds: undoSeconds,
+      onUndo: async () => {
+        try {
+          await audioApi.restoreAudio(audio.id);
+          loadAudioList();
+          if (wasSelected) {
+            setSelectedAudioId(audio.id);
+            handleTranscribeClick(audio.id);
+          }
+          toast.success('Аудиозапись восстановлена');
+        } catch (error) {
+          console.error(error);
+          const status = error?.response?.status;
+          toast.error(
+            status === 410
+              ? 'Время для отмены удаления истекло'
+              : 'Не удалось восстановить аудиозапись',
+          );
+        }
+      },
+    });
   };
 
   const handleMetadataUpdated = () => {
@@ -171,6 +195,7 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
   };
 
   const handleTranscribeClick = async (audioId) => {
+    setMetadataEditOpen(false);
     if (selectedAudioId === audioId) {
       setSelectedAudioId(null);
       setSelectedTranscription('');
@@ -314,16 +339,12 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
 
                 <div style={{ marginBottom: '14px' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Статус</label>
-                  <select
+                  <SelectDropdown
                     value={draftFilters.status}
-                    onChange={(e) => setDraftFilters((f) => ({ ...f, status: e.target.value }))}
-                    style={filterSelectStyle}
-                  >
-                    <option value="">Любой статус</option>
-                    <option value="done">Обработано</option>
-                    <option value="processing_text">В обработке</option>
-                    <option value="error">Ошибка</option>
-                  </select>
+                    onChange={(status) => setDraftFilters((f) => ({ ...f, status }))}
+                    options={STATUS_FILTER_OPTIONS}
+                    ariaLabel="Статус обработки"
+                  />
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '18px' }}>
@@ -422,8 +443,21 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
                 isLoading={isTranscribing}
                 audioName={currentAudioName}
                 audioId={selectedAudioId}
+                audioRecordedAt={selectedAudio?.recorded_at}
+                audioUploadedAt={selectedAudio?.uploaded_at}
                 canEdit={canManageCorpus(userRole)}
+                canDownloadJson={canManageCorpus(userRole)}
                 onWordsChanged={setSelectedTranscriptionWords}
+                onEditMetadata={canManageCorpus(userRole) ? () => setMetadataEditOpen(true) : undefined}
+              />
+              <AudioMetadataEditModal
+                open={metadataEditOpen}
+                onClose={() => setMetadataEditOpen(false)}
+                audioId={selectedAudioId}
+                title={currentAudioName}
+                recordedAt={selectedAudio?.recorded_at}
+                uploadedAt={selectedAudio?.uploaded_at}
+                onSaved={handleMetadataUpdated}
               />
             </div>
           ) : (

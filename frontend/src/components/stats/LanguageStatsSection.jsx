@@ -316,7 +316,7 @@ function LanguageStatsSection() {
   return (
     <StatsSection
       title="Статистика по языкам"
-      description="Количество слов на каждом языке: русский, татарский и прочие."
+      description="Количество слов на каждом языке: русский, татарский и другие."
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: colors.textMuted, alignItems: 'center' }}>
