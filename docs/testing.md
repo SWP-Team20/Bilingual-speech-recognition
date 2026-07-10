@@ -5,21 +5,19 @@
 | Critical module | Why critical | Required line coverage | Current line coverage | Evidence |
 | :--- | :--- | ---: | ---: | :--- |
 | `backend/src/pipeline.py` | Coordinates the core mixed ASR routing logic, speech processing pipelines, and text delivery workflows. | 30% | 71% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| `backend/src/services/auth.py` | Core security logic providing hash verification and secure credential validations. | 30% | 95% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| `backend/src/routers/auth.py` | Distributes JWT access tokens, configures session protocols, and manages edge security. | 30% | 56% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
+| `backend/src/services/auth.py` | Core security logic providing hash verification and secure credential validations. | 30% | 100% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
+| `backend/src/routers/auth.py` | Distributes JWT access tokens, configures session protocols, and manages edge security. | 30% | 60% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 | `backend/src/text_filter.py` | Cleans text data and filters out noise and low-confidence alignment words. | 30% | 100% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| `backend/src/services/audio_filter.py` | Builds corpus search and filter queries (word, language, speaker, date, status) for MVP v2 dashboard features. | 30% | 72% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| `backend/src/services/transcript_edit.py` | Supports manual transcription correction (word edit, insert, delete, bulk operations, undo stack, statistics). | 30% | 48% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
-| `backend/src/services/audio_soft_delete.py` | Soft-deletes audio with a 30 s undo window; lazy purge and restore for manager/admin workflows. | 30% | — | [`scripts/Unit/test_audio_soft_delete.py`](../scripts/Unit/test_audio_soft_delete.py) |
-| `backend/src/services/user_soft_delete.py` | Soft-deletes users with a 30 s undo window; blocks login and admin listing until restore or purge. | 30% | — | [`scripts/Unit/test_user_soft_delete.py`](../scripts/Unit/test_user_soft_delete.py) |
+| `backend/src/services/audio_filter.py` | Builds corpus search and filter queries (word, language, speaker, date, status) for MVP v2 dashboard features. | 30% | 74% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
+| `backend/src/services/transcript_edit.py` | Supports manual transcription correction (word edit, insert, delete, bulk operations, undo stack, statistics). | 30% | 31% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
+| `backend/src/services/audio_soft_delete.py` | Soft-deletes audio with a 30 s undo window; lazy purge and restore for manager/admin workflows. | 30% | 92% | [`scripts/Unit/test_audio_soft_delete.py`](../scripts/Unit/test_audio_soft_delete.py) |
+| `backend/src/services/user_soft_delete.py` | Soft-deletes users with a 30 s undo window; blocks login and admin listing until restore or purge. | 30% | 93% | [`scripts/Unit/test_user_soft_delete.py`](../scripts/Unit/test_user_soft_delete.py) |
 | `backend/src/services/word_stats.py` | Corpus word-frequency and speaker/language/date aggregate statistics for the dashboard. | 30% | 43% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 | `backend/src/db_index.py` | Persists speakers and words; cross-audio speaker matching (regression #207). | 30% | 48% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 | `backend/src/lang_tag.py` | Per-word ru/tt language tagging in the mixed pipeline. | 30% | 91% | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 | `backend/src/dependencies.py` | JWT validation and role checks for admin and editor routes (MVP v2). | 30% | 100% | [`scripts/Unit/test_dependencies.py`](../scripts/Unit/test_dependencies.py) |
 
-**Global line coverage (`backend/src`):** 47–48% from the full `pytest scripts/ --cov=backend/src` suite (101 tests with Postgres in CI).
-
-New soft-delete services (`audio_soft_delete`, `user_soft_delete`) are covered by dedicated unit tests; line-coverage percentages for those modules will appear in the next CI coverage report after merge.
+**Global line coverage (`backend/src`):** 51% from the full `pytest scripts/ --cov=backend/src` suite.
 
 ---
 
@@ -33,7 +31,7 @@ New soft-delete services (`audio_soft_delete`, `user_soft_delete`) are covered b
 | Auth performance check | Admin login latency budget (< 1 s) | `pytest scripts/QualityRequirements/test_auth_perf.py` | Passing | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 | Combined backend suite | All pytest tests under `scripts/` with line coverage | `pytest scripts/ --cov=backend/src` | Passing (101 tests); 47–48% global line coverage | [CI Run](https://github.com/SWP-Team20/Bilingual-speech-recognition/actions/runs/28302441842/job/83853012352) |
 
-Detailed file-level inventory: [`scripts/README.md`](../scripts/README.md).
+Detailed file-level inventory: [`scripts/README.md`](/scripts/README.md).
 
 ---
 
@@ -64,9 +62,9 @@ Detailed file-level inventory: [`scripts/README.md`](../scripts/README.md).
 
 | Evidence | Scope                                                                                                                    | Result | Follow-up PBI, issue, or evidence                                                  |
 | :--- |:-------------------------------------------------------------------------------------------------------------------------| :--- |:-----------------------------------------------------------------------------------------|
-| Admin Web Portal Authentication Pass | Manual verification of the front-end login page integration with the `/auth/login` (FastAPI) endpoint.                   | Passed. JWT access token is successfully received, stored in the browser, and redirects the admin to the dashboard. | [#18](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/18)              |
-| Multipart Audio File Upload Validation | Manual verification of the browser file-picker interaction with the backend audio upload router (`multipart/form-data`). | Passed. The file is successfully transmitted, saved under the local storage tree, and initiates processing. | [#12](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/12)              |
+| Admin Web Portal Authentication Pass | Manual verification of the front-end login page integration with the `/auth/login` (FastAPI) endpoint.                   | Passed. JWT access token is successfully received, stored in the browser, and redirects the admin to the dashboard. | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/18              |
+| Multipart Audio File Upload Validation | Manual verification of the browser file-picker interaction with the backend audio upload router (`multipart/form-data`). | Passed. The file is successfully transmitted, saved under the local storage tree, and initiates processing. |  https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/12              |
 | Transcription quality harness | Manual offline ru/tt ASR evaluation (not a DoD gate). Command: `python scripts/QualityRequirements/transcription_quality_test.py`. | Manual. Quality is improving. | [`docs/extra/ru_tt_pipeline.md`](extra/ru_tt_pipeline.md) |
-| Transcription word-delete undo (inline) | Manual verification of the inline «Отменить» strip after deleting a word in the transcription editor (no timed toast). | Not yet executed | — |
-| Audio soft-delete undo toast | Manual verification of the 30 s undo toast after deleting an audio recording (manager/admin). | Not yet executed | — |
-| Admin user soft-delete undo toast | Manual verification of the 30 s undo toast after deleting a user in the admin panel. | Not yet executed | — |
+| Transcription word-delete undo (inline) | Manual verification of the inline «Cancel» strip after deleting a word in the transcription editor (no timed toast). | Passed successfully. | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/288 |
+| Audio soft-delete undo toast | Manual verification of the 30 s undo toast after deleting an audio recording (manager/admin). | Passed successfully. | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/288 |
+| Admin user soft-delete undo toast | Manual verification of the 30 s undo toast after deleting a user in the admin panel. | Passed successfully. | https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/288 |
