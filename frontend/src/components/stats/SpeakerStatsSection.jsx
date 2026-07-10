@@ -364,7 +364,7 @@ function SpeakerStatsSection() {
   return (
     <StatsSection
       title="Статистика по говорящим"
-      description="Количество слов, произнесённых каждым говорящим. На странице — превью, полный список открывается по кнопке."
+      description="Количество слов, произнесённых каждым говорящим."
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: colors.textMuted, alignItems: 'center' }}>

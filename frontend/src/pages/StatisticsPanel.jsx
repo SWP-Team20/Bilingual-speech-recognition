@@ -21,15 +21,6 @@ function StatisticsPanel() {
         overflow: 'hidden',
       }}
     >
-      <div style={{ padding: isNarrow ? '16px' : '20px 24px', borderBottom: `1px solid ${colors.border}`, flexShrink: 0 }}>
-        <h2 style={{ margin: 0, fontSize: isNarrow ? '22px' : '28px', fontWeight: 'bold', color: colors.textStrong }}>
-          Статистика
-        </h2>
-        <p style={{ margin: '8px 0 0', fontSize: '14px', color: colors.textMuted, lineHeight: 1.45 }}>
-          Разделы идут последовательно: слова, языки, даты и говорящие.
-        </p>
-      </div>
-
       <div
         style={{
           flex: 1,

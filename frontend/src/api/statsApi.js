@@ -23,6 +23,7 @@ export const statsApi = {
     params.set('limit', String(clampLimit(filters.limit)));
     appendListParams(params, 'lang', filters.langs);
     appendListParams(params, 'speaker', speakerList(filters));
+    appendListParams(params, 'audio_id', filters.audioIds);
     if (filters.dateFrom) params.set('date_from', filters.dateFrom);
     if (filters.dateTo) params.set('date_to', filters.dateTo);
 

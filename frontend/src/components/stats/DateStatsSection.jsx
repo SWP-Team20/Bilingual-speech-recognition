@@ -367,7 +367,7 @@ function DateStatsSection() {
   return (
     <StatsSection
       title="Статистика по датам"
-      description="Сколько слов было произнесено в каждый день записи. На странице — превью, полный список открывается по кнопке."
+      description="Сколько слов было произнесено в каждый день записи."
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: colors.textMuted, alignItems: 'center' }}>

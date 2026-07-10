@@ -31,16 +31,18 @@ async def get_frequent_words(
     speaker: Optional[list[str]] = Query(None, description="Говорящий (мама / папа / …)"),
     date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
     limit: int = Query(50, ge=1, le=500, description="Максимальное число слов в ответе"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Самые частые слова. Фильтры: говорящий, язык (ru/tt/unknown), дата."""
+    """Самые частые слова. Фильтры: говорящий, язык (ru/tt/unknown), дата, аудиозапись."""
     filters = StatsFilters(
         langs=parse_multi_values(lang),
         speakers=parse_multi_values(speaker),
         date_from=date_from,
         date_to=date_to,
+        audio_ids=_parse_audio_ids(audio_id),
         status="done",
     )
     result = word_stats.compute_frequent_words(db, filters, limit=limit)
