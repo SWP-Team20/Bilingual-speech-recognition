@@ -55,5 +55,11 @@ export const userApi = {
   adminDeleteUser: async (userId) => {
     const response = await apiClient.delete(`${BACKEND_URLS.adminUsers}${userId}`);
     return response.data;
-  }
+  },
+
+  // Восстановить пользователя (POST /api/v1/users/{user_id}/restore)
+  adminRestoreUser: async (userId) => {
+    const response = await apiClient.post(`${BACKEND_URLS.adminUsers}${userId}/restore`);
+    return response.data;
+  },
 };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { audioApi } from '../api/audioApi';
 import ConfirmDialog from './ui/ConfirmDialog';
-import Modal from './ui/Modal';
+import AudioMetadataEditModal, { formatRecordingDate } from './AudioMetadataEditModal';
 import { useToast } from './ui/toastContext';
-import { colors, radius, shadow, focusRing, MOBILE_BREAKPOINT } from '../theme';
+import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { isAudioProcessing as statusIsAudioProcessing, isTextProcessing as statusIsTextProcessing, isDone, isError } from '../constants/status';
 import { canManageCorpus } from '../constants/roleTranslations';
@@ -35,28 +35,8 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-// Recording date as DD.MM.YYYY (falls back to the upload date)
 function formatDate(value) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  return `${dd}.${mm}.${d.getFullYear()}`;
-}
-
-function toDateInputValue(value) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  const tz = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
-
-function todayStr() {
-  const d = new Date();
-  const tz = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
+  return formatRecordingDate(value);
 }
 
 function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, onMetadataUpdated, userRole }) {
@@ -66,10 +46,6 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDate, setEditDate] = useState('');
-  const [editError, setEditError] = useState('');
-  const [isSavingMetadata, setIsSavingMetadata] = useState(false);
   const [sizeMb, setSizeMb] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -96,33 +72,6 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
   const isTextProcessing = statusIsTextProcessing(currentStatus);
   const isFullyDone = isDone(currentStatus);
   const displayDate = formatDate(audio.recorded_at || audio.uploaded_at);
-  const editDateTooLate = editDate && editDate > todayStr();
-
-  const inputBaseStyle = {
-    width: '100%',
-    margin: 0,
-    display: 'block',
-    padding: '10px 12px',
-    borderRadius: radius.sm,
-    border: `1px solid ${colors.borderStrong}`,
-    boxSizing: 'border-box',
-    outline: 'none',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    backgroundColor: colors.surface,
-    color: colors.text,
-  };
-
-  const focusHandlers = {
-    onFocus: (e) => {
-      e.currentTarget.style.borderColor = colors.primary;
-      e.currentTarget.style.boxShadow = focusRing;
-    },
-    onBlur: (e) => {
-      e.currentTarget.style.borderColor = colors.borderStrong;
-      e.currentTarget.style.boxShadow = 'none';
-    },
-  };
 
   // Storage size (skips pending uploads)
   useEffect(() => {
@@ -513,76 +462,15 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
         onCancel={() => setConfirmOpen(false)}
       />
 
-      <Modal open={editOpen} onClose={closeEditModal} maxWidth="460px" closeOnBackdrop={!isSavingMetadata}>
-        <h4 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 18px 0', color: colors.textStrong }}>
-          Изменить аудиозапись
-        </h4>
-
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>
-            Название
-          </label>
-          <input
-            type="text"
-            value={editTitle}
-            placeholder="Название аудиозаписи"
-            disabled={isSavingMetadata}
-            onChange={(e) => { setEditTitle(e.target.value); if (editError) setEditError(''); }}
-            style={{ ...inputBaseStyle, borderColor: editError ? colors.danger : colors.borderStrong }}
-            {...focusHandlers}
-          />
-        </div>
-
-        <div style={{ marginBottom: editError || editDateTooLate ? '8px' : '24px' }}>
-          <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, marginBottom: '6px' }}>
-            Дата записи
-          </label>
-          <input
-            type="date"
-            value={editDate}
-            max={todayStr()}
-            disabled={isSavingMetadata}
-            onChange={(e) => { setEditDate(e.target.value); if (editError) setEditError(''); }}
-            style={{ ...inputBaseStyle, borderColor: editDateTooLate ? colors.danger : colors.borderStrong }}
-            {...focusHandlers}
-          />
-        </div>
-
-        {editDateTooLate && (
-          <div style={{ marginBottom: '16px', fontSize: '13px', fontWeight: 500, color: colors.danger }}>
-            Дата записи не может быть позже сегодняшней
-          </div>
-        )}
-
-        {editError && (
-          <div style={{ marginBottom: '16px', fontSize: '13px', fontWeight: 500, color: colors.danger }}>
-            {editError}
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={closeEditModal}
-            disabled={isSavingMetadata}
-            onMouseEnter={(e) => { if (!isSavingMetadata) e.currentTarget.style.backgroundColor = '#ececec'; }}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = colors.page)}
-            style={{ backgroundColor: colors.page, color: '#333', border: `1px solid ${colors.borderStrong}`, padding: '10px 18px', borderRadius: radius.sm, fontWeight: 600, cursor: isSavingMetadata ? 'not-allowed' : 'pointer', opacity: isSavingMetadata ? 0.6 : 1, transition: 'background-color 0.15s ease' }}
-          >
-            Отмена
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveMetadata}
-            disabled={isSavingMetadata || !editTitle.trim() || editDateTooLate}
-            onMouseEnter={(e) => { if (!isSavingMetadata && editTitle.trim() && !editDateTooLate) e.currentTarget.style.backgroundColor = colors.primaryHover; }}
-            onMouseLeave={(e) => { if (!isSavingMetadata && editTitle.trim() && !editDateTooLate) e.currentTarget.style.backgroundColor = colors.primary; }}
-            style={{ backgroundColor: colors.primary, color: '#fff', border: 'none', padding: '10px 18px', borderRadius: radius.sm, fontWeight: 'bold', cursor: (isSavingMetadata || !editTitle.trim() || editDateTooLate) ? 'not-allowed' : 'pointer', opacity: (isSavingMetadata || !editTitle.trim() || editDateTooLate) ? 0.5 : 1, transition: 'background-color 0.15s ease' }}
-          >
-            {isSavingMetadata ? 'Сохранение…' : 'Сохранить'}
-          </button>
-        </div>
-      </Modal>
+      <AudioMetadataEditModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        audioId={audio.id}
+        title={audio.filename}
+        recordedAt={audio.recorded_at}
+        uploadedAt={audio.uploaded_at}
+        onSaved={onMetadataUpdated}
+      />
     </div>
   );
 
@@ -663,8 +551,8 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
     setConfirmOpen(false);
     try {
       setIsDeleting(true);
-      await audioApi.deleteAudio(audio.id);
-      if (onDeleteSuccess) onDeleteSuccess();
+      const result = await audioApi.deleteAudio(audio.id);
+      if (onDeleteSuccess) onDeleteSuccess(audio, result);
     } catch (error) {
       console.error("Ошибка при удалении аудио:", error);
       toast.error('Не удалось удалить аудиозапись');
@@ -674,45 +562,7 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
   }
 
   function openEditModal() {
-    setEditTitle(audio.filename || '');
-    setEditDate(toDateInputValue(audio.recorded_at || audio.uploaded_at));
-    setEditError('');
     setEditOpen(true);
-  }
-
-  function closeEditModal() {
-    if (isSavingMetadata) return;
-    setEditOpen(false);
-    setEditError('');
-  }
-
-  async function handleSaveMetadata() {
-    const trimmedTitle = editTitle.trim();
-    if (!trimmedTitle || editDateTooLate) return;
-
-    const payload = {};
-    if (trimmedTitle !== audio.filename) payload.title = trimmedTitle;
-    const currentDate = toDateInputValue(audio.recorded_at || audio.uploaded_at);
-    if (editDate !== currentDate) payload.recordedAt = editDate || null;
-
-    if (!payload.title && payload.recordedAt === undefined) {
-      closeEditModal();
-      return;
-    }
-
-    setIsSavingMetadata(true);
-    setEditError('');
-    try {
-      await audioApi.updateAudioMetadata(audio.id, payload);
-      setEditOpen(false);
-      if (onMetadataUpdated) onMetadataUpdated();
-      toast.success('Данные аудиозаписи обновлены');
-    } catch (error) {
-      const detail = error.response?.data?.detail;
-      setEditError(typeof detail === 'string' ? detail : 'Не удалось сохранить изменения');
-    } finally {
-      setIsSavingMetadata(false);
-    }
   }
 }
 

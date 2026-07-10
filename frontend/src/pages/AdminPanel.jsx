@@ -16,7 +16,7 @@ function AdminPanel() {
   const [error, setError] = useState('');
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   const [pwdUserId, setPwdUserId] = useState(null);
-  const [deleteUserId, setDeleteUserId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const toast = useToast();
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
@@ -131,12 +131,31 @@ function AdminPanel() {
   };
 
   const confirmDeleteUser = async () => {
-    const userId = deleteUserId;
-    setDeleteUserId(null);
+    const target = deleteTarget;
+    setDeleteTarget(null);
+    if (!target) return;
     try {
-      await userApi.adminDeleteUser(userId);
-      loadAdminUsers();
-      toast.success('Пользователь удалён');
+      const undoMeta = await userApi.adminDeleteUser(target.id);
+      setUsersList((prev) => prev.filter((u) => (u.id || u.user_id) !== target.id));
+      const undoSeconds = undoMeta?.undo_seconds ?? 30;
+      toast.undo(`Пользователь «${target.username}» удалён`, {
+        seconds: undoSeconds,
+        onUndo: async () => {
+          try {
+            await userApi.adminRestoreUser(target.id);
+            loadAdminUsers();
+            toast.success('Пользователь восстановлен');
+          } catch (err) {
+            console.error('Ошибка восстановления пользователя:', err);
+            const status = err?.response?.status;
+            toast.error(
+              status === 410
+                ? 'Время для отмены удаления истекло'
+                : 'Не удалось восстановить пользователя',
+            );
+          }
+        },
+      });
     } catch (err) {
       console.error("Ошибка удаления пользователя:", err);
       const backendMessage = err.response?.data?.detail;
@@ -188,7 +207,7 @@ function AdminPanel() {
                     {!isMe && (
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button type="button" onClick={() => setPwdUserId(u.id || u.user_id)} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.primaryHover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.primary} style={{ padding: '6px 12px', backgroundColor: colors.primary, color: 'white', border: 'none', borderRadius: radius.sm, cursor: 'pointer', fontSize: '14px', fontWeight: '550', transition: 'background-color 0.2s ease' }}>Сменить пароль</button>
-                        <button type="button" onClick={() => setDeleteUserId(u.id || u.user_id)} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.dangerHover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.danger} style={{ padding: '6px 12px', backgroundColor: colors.danger, color: 'white', border: 'none', borderRadius: radius.sm, cursor: 'pointer', fontSize: '14px', fontWeight: '550', transition: 'background-color 0.2s ease' }}>Удалить</button>
+                        <button type="button" onClick={() => setDeleteTarget({ id: u.id || u.user_id, username: u.username })} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = colors.dangerHover} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = colors.danger} style={{ padding: '6px 12px', backgroundColor: colors.danger, color: 'white', border: 'none', borderRadius: radius.sm, cursor: 'pointer', fontSize: '14px', fontWeight: '550', transition: 'background-color 0.2s ease' }}>Удалить</button>
                       </div>
                     )}
                   </div>
@@ -275,13 +294,13 @@ function AdminPanel() {
       />
 
       <ConfirmDialog
-        open={deleteUserId !== null}
+        open={deleteTarget !== null}
         title="Удалить пользователя?"
-        message="Вы уверены, что хотите удалить этого пользователя? Это действие нельзя отменить."
+        message="Вы уверены, что хотите удалить этого пользователя? Отменить можно в течение 30 секунд."
         confirmLabel="Удалить"
         danger
         onConfirm={confirmDeleteUser}
-        onCancel={() => setDeleteUserId(null)}
+        onCancel={() => setDeleteTarget(null)}
       />
 
     </div>
