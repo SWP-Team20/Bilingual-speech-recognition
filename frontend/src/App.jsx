@@ -4,6 +4,8 @@ import AuthPage from './pages/AuthPage';
 import DashboardPage from './pages/DashboardPage';
 import SecurityPage from './pages/SecurityPage';
 import { ToastProvider } from './components/ui/Toast';
+import { clearSession } from './api/authSession';
+import { useSessionKeepAlive } from './hooks/useSessionKeepAlive';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -11,13 +13,14 @@ function App() {
     return !!token;
   });
 
+  useSessionKeepAlive(isAuthenticated);
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    clearSession();
     setIsAuthenticated(false);
   };
 
   const handleDeleteAccount = () => {
-    localStorage.removeItem('token');
+    clearSession();
     setIsAuthenticated(false);
   };
 
