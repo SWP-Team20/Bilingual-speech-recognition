@@ -83,8 +83,15 @@ Feedback not addressed:
 
 ### Updates
 
-- Added authorization tests in [test_authorization.py (QRT-004)](/scripts/QualityRequirements/test_authorization.py)
-- Added filter tests in [test_words_stats.py](/scripts/Unit/test_word_stats.py)
+- Expanded [QRT-004 authorization tests](/scripts/QualityRequirements/test_authorization.py): role checks on admin user list, transcript edit, and transcription download (`403` for JSON format for the `user` role; `404` for missing resources).
+- Added statistics filter unit tests in [`test_word_stats.py`](/scripts/Unit/test_word_stats.py) and [`test_audio_filter_stats.py`](/scripts/Unit/test_audio_filter_stats.py) (corpus filters for stats sections, including per-audio scoping).
+- Added transcription undo unit tests in [`test_transcript_undo.py`](/scripts/Unit/test_transcript_undo.py) (undo snapshot stack push, depth limit, restore).
+- Extended [`test_transcript_edit.py`](/scripts/Unit/test_transcript_edit.py) with bulk language assignment and bulk delete coverage.
+- Added audio soft-delete unit tests in [`test_audio_soft_delete.py`](/scripts/Unit/test_audio_soft_delete.py) (30 s undo window, restore, expired restore).
+- Added user soft-delete unit tests in [`test_user_soft_delete.py`](/scripts/Unit/test_user_soft_delete.py) (same pattern as audio soft delete for admin user removal).
+- Updated [`docs/testing.md`](/docs/testing.md): new critical modules (`audio_soft_delete`, `user_soft_delete`), suite size **94** pytest tests (**77** unit · **3** integration · **13** QRT · **1** supplementary perf).
+- Added manual UAT scenarios **UAT-006–UAT-011** in [`docs/user-acceptance-tests.md`](/docs/user-acceptance-tests.md): transcription word undo, audio/user soft-delete undo toasts, bulk word edit, statistics audio filter, metadata edit from transcription header.
+- Frontend UX changes covered by UAT (not automated pytest): custom `SelectDropdown` alignment fix, inline transcription undo strip, timed undo toasts, clickable transcription title/date modal, extended JWT session with silent refresh (`POST /auth/refresh`).
 
 ### Links
 
