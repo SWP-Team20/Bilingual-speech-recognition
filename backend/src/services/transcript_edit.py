@@ -14,6 +14,7 @@
 Чистые функции (mutate_*, compute_stats, normalize_word) не трогают БД и покрыты
 юнит-тестами; функции edit_word/insert_word/delete_word связывают их с JSON и БД.
 """
+import copy
 import json
 import os
 from collections import Counter
@@ -22,6 +23,7 @@ from uuid import UUID
 from backend.src import models, text_filter
 
 VALID_LANGS = ("ru", "tt", "unknown")
+TRANSCRIPT_UNDO_MAX = 20
 
 
 # --- чистая логика (без БД, тестируемая) -----------------------------------
@@ -92,6 +94,29 @@ def mutate_delete(words, position):
     if not 0 <= position < len(words):
         raise IndexError("position out of range")
     return words.pop(position)
+
+
+def mutate_bulk_set_language(words, positions, language):
+    """Меняет языковой тег у нескольких слов по индексам."""
+    lang = normalize_lang(language)
+    changed = 0
+    for pos in sorted({p for p in positions if 0 <= p < len(words)}):
+        mutate_edit(words, pos, language=lang)
+        changed += 1
+    if changed == 0:
+        raise IndexError("position out of range")
+    return changed
+
+
+def mutate_bulk_delete(words, positions):
+    """Удаляет несколько слов по индексам (с конца, чтобы не сбивать индексы)."""
+    unique_positions = sorted({p for p in positions if 0 <= p < len(words)}, reverse=True)
+    if not unique_positions:
+        raise IndexError("position out of range")
+    removed = []
+    for pos in unique_positions:
+        removed.append(mutate_delete(words, pos))
+    return removed
 
 
 def compute_stats(words, duration_sec):
@@ -201,6 +226,147 @@ def _recompute_stats(db, audio, words):
     return stats
 
 
+def _undo_stack_path(audio):
+    return os.path.abspath(os.path.join(audio.folder_path, "transcript_undo.json"))
+
+
+def _load_undo_stack(audio) -> list:
+    path = _undo_stack_path(audio)
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            stack = json.load(f)
+        return stack if isinstance(stack, list) else []
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+def _write_undo_stack(audio, stack: list) -> None:
+    path = _undo_stack_path(audio)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(stack, f, ensure_ascii=False)
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def _push_undo_snapshot(db, audio, data) -> None:
+    """Сохраняет снимок слов и строк БД перед удалением (для быстрой отмены)."""
+    words = copy.deepcopy(data.get("words") or [])
+    snapshot = {"words": words}
+    if db is not None:
+        aid = UUID(str(audio.id))
+        rows = (
+            db.query(models.Word)
+            .filter(models.Word.audio_id == aid)
+            .order_by(models.Word.position)
+            .all()
+        )
+        snapshot["word_rows"] = [
+            {
+                "text": r.text,
+                "raw": r.raw,
+                "start_sec": r.start_sec,
+                "end_sec": r.end_sec,
+                "language": r.language,
+                "confidence": r.confidence,
+                "speaker_id": r.speaker_id,
+            }
+            for r in rows
+        ]
+
+    stack = _load_undo_stack(audio)
+    stack.append(snapshot)
+    if len(stack) > TRANSCRIPT_UNDO_MAX:
+        stack = stack[-TRANSCRIPT_UNDO_MAX:]
+    _write_undo_stack(audio, stack)
+
+
+def _snapshot_words(entry):
+    if isinstance(entry, list):
+        return entry
+    if isinstance(entry, dict):
+        return entry.get("words") or []
+    return []
+
+
+def _restore_words_db(db, audio, words, word_rows=None) -> None:
+    """Восстанавливает строки Word без полной переиндексации и диаризации."""
+    aid = UUID(str(audio.id))
+    db.query(models.Word).filter(models.Word.audio_id == aid).delete(synchronize_session=False)
+
+    if word_rows and len(word_rows) == len(words):
+        for i, row in enumerate(word_rows):
+            db.add(models.Word(
+                audio_id=aid,
+                text=row["text"],
+                raw=row.get("raw"),
+                start_sec=row["start_sec"],
+                end_sec=row["end_sec"],
+                language=row["language"],
+                confidence=row.get("confidence"),
+                position=i,
+                speaker_id=row.get("speaker_id"),
+            ))
+        db.flush()
+        return
+
+    spk_cache = {}
+    for i, w in enumerate(words):
+        label = w.get("speaker")
+        speaker_id = None
+        if label:
+            if label not in spk_cache:
+                sp = _find_speaker_by_label(db, label)
+                spk_cache[label] = sp.id if sp is not None else None
+            speaker_id = spk_cache[label]
+        db.add(models.Word(
+            audio_id=aid,
+            text=w["text"],
+            raw=w.get("raw"),
+            start_sec=w["start"],
+            end_sec=w["end"],
+            language=w["lang"],
+            confidence=w.get("conf"),
+            position=i,
+            speaker_id=speaker_id,
+        ))
+    db.flush()
+
+
+def undo_last_delete(db, audio):
+    """Отменяет последнее удаление слов: восстанавливает предыдущий снимок."""
+    stack = _load_undo_stack(audio)
+    if not stack:
+        raise ValueError("Нечего отменять")
+
+    entry = stack.pop()
+    _write_undo_stack(audio, stack)
+
+    words = _snapshot_words(entry)
+    word_rows = entry.get("word_rows") if isinstance(entry, dict) else None
+
+    data = _load(audio)
+    _restore_words_db(db, audio, words, word_rows)
+    return _finalize(db, audio, data, words)
+
+
+def undo_stack_depth(audio) -> int:
+    return len(_load_undo_stack(audio))
+
+
+def _response_payload(audio, words, sentences, stats):
+    return {
+        "id": str(audio.id),
+        "filename": audio.filename,
+        "words": words,
+        "sentences": sentences,
+        "stats": stats,
+        "undo_available": undo_stack_depth(audio) > 0,
+    }
+
+
 def _finalize(db, audio, data, words):
     """Пересобирает sentences, пересчитывает статистику, коммитит БД и пишет JSON+TXT.
     Возвращает полезную нагрузку для фронта (words + sentences + stats)."""
@@ -218,13 +384,7 @@ def _finalize(db, audio, data, words):
         f.flush()
         os.fsync(f.fileno())
     _write_txt(audio, data["sentences"])
-    return {
-        "id": str(audio.id),
-        "filename": audio.filename,
-        "words": words,
-        "sentences": data["sentences"],
-        "stats": stats,
-    }
+    return _response_payload(audio, words, data["sentences"], stats)
 
 
 def _speaker_used_outside_audio(db, speaker_id, audio_id) -> bool:
@@ -401,6 +561,7 @@ def edit_word(db, audio, position, raw=None, text=None, language=None):
 
     # Пустой ввод при правке = удаление
     if raw is not None and not str(raw).strip():
+        _push_undo_snapshot(db, audio, data)
         mutate_delete(words, position)
         aid = UUID(str(audio.id))
         row = _word_row(db, audio.id, position)
@@ -469,6 +630,7 @@ def delete_word(db, audio, position):
     """Удалить слово по индексу."""
     data = _load(audio)
     words = data.get("words") or []
+    _push_undo_snapshot(db, audio, data)
     mutate_delete(words, position)   # бросит IndexError при плохом индексе
 
     aid = UUID(str(audio.id))
@@ -478,4 +640,109 @@ def delete_word(db, audio, position):
     db.query(models.Word).filter(models.Word.audio_id == aid, models.Word.position > position).update(
         {models.Word.position: models.Word.position - 1}, synchronize_session=False
     )
+    return _finalize(db, audio, data, words)
+
+
+def bulk_assign_speaker(db, audio, positions, speaker_id=None, new_label=None):
+    """Назначить выбранным словам говорящего (независимо от текущей метки)."""
+    if speaker_id is None and not (new_label and str(new_label).strip()):
+        raise ValueError("Укажите new_label или speaker_id")
+
+    data = _load(audio)
+    words = data.get("words") or []
+    unique_positions = sorted({p for p in positions if 0 <= p < len(words)})
+    if not unique_positions:
+        raise IndexError("position out of range")
+
+    target = None
+    if speaker_id is not None:
+        target = db.query(models.Speaker).filter(models.Speaker.id == speaker_id).first()
+        if target is None:
+            raise LookupError("Говорящий не найден")
+    else:
+        label = str(new_label).strip()
+        existing = _find_speaker_by_label(db, label)
+        if existing is not None:
+            target = existing
+        else:
+            first_row = _word_row(db, audio.id, unique_positions[0])
+            old_speaker = None
+            if first_row is not None and first_row.speaker_id is not None:
+                old_speaker = (
+                    db.query(models.Speaker)
+                    .filter(models.Speaker.id == first_row.speaker_id)
+                    .first()
+                )
+            target = models.Speaker(
+                label=label,
+                embedding=list(old_speaker.embedding) if old_speaker and old_speaker.embedding else None,
+            )
+            db.add(target)
+            db.flush()
+
+    display_label = target.label
+    old_speaker_ids = set()
+    for pos in unique_positions:
+        words[pos]["speaker"] = display_label
+        row = _word_row(db, audio.id, pos)
+        if row is not None:
+            if row.speaker_id is not None:
+                old_speaker_ids.add(row.speaker_id)
+            row.speaker_id = target.id
+
+    for old_id in old_speaker_ids:
+        if old_id == target.id:
+            continue
+        still_used = (
+            db.query(models.Word.id)
+            .filter(models.Word.speaker_id == old_id)
+            .first()
+        )
+        if still_used is None:
+            db.query(models.Speaker).filter(models.Speaker.id == old_id).delete(
+                synchronize_session=False
+            )
+
+    return _finalize(db, audio, data, words)
+
+
+def bulk_edit_words(db, audio, positions, language=None, delete=False, speaker_id=None, new_label=None):
+    """Массово сменить язык, назначить говорящего или удалить несколько слов за один проход."""
+    if speaker_id is not None or (new_label and str(new_label).strip()):
+        return bulk_assign_speaker(
+            db, audio, positions, speaker_id=speaker_id, new_label=new_label,
+        )
+
+    data = _load(audio)
+    words = data.get("words") or []
+    aid = UUID(str(audio.id))
+
+    if delete:
+        unique_positions = sorted({p for p in positions if 0 <= p < len(words)}, reverse=True)
+        if not unique_positions:
+            raise IndexError("position out of range")
+        _push_undo_snapshot(db, audio, data)
+        for pos in unique_positions:
+            mutate_delete(words, pos)
+            row = _word_row(db, audio.id, pos)
+            if row is not None:
+                db.delete(row)
+            db.query(models.Word).filter(
+                models.Word.audio_id == aid,
+                models.Word.position > pos,
+            ).update(
+                {models.Word.position: models.Word.position - 1},
+                synchronize_session=False,
+            )
+    else:
+        lang = normalize_lang(language)
+        unique_positions = sorted({p for p in positions if 0 <= p < len(words)})
+        if not unique_positions:
+            raise IndexError("position out of range")
+        for pos in unique_positions:
+            w = mutate_edit(words, pos, language=lang)
+            row = _word_row(db, audio.id, pos)
+            if row is not None:
+                row.language = w["lang"]
+
     return _finalize(db, audio, data, words)

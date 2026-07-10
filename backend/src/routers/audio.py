@@ -23,6 +23,7 @@ from backend.src.services.audio_filter import (
     parse_multi_values,
 )
 from backend.src.services import transcript_edit
+from backend.src.services import audio_soft_delete
 from backend.src import db_index
 
 router = APIRouter()
@@ -138,7 +139,8 @@ async def get_all_audio(
     current_user: User = Depends(get_current_user),
 ):
     """Список аудио с необязательными фильтрами: дата · слово · говорящий · язык · статус."""
-    query = db.query(models.AudioFile)
+    audio_soft_delete.purge_expired_soft_deletes(db)
+    query = audio_soft_delete.active_audio_filter(db.query(models.AudioFile))
     return filter_audio_files(query, filters).all()
 
 
@@ -154,7 +156,7 @@ async def get_audio_by_filename(
         raise HTTPException(status_code=400, detail="Название не может быть пустым")
 
     return (
-        db.query(models.AudioFile)
+        audio_soft_delete.active_audio_filter(db.query(models.AudioFile))
         .filter(models.AudioFile.filename.ilike(f"%{name}%"))
         .order_by(models.AudioFile.uploaded_at.desc())
         .all()
@@ -176,7 +178,11 @@ async def get_audio_by_id(
 
         raise HTTPException(status_code=404, detail="Запись не найдена (некорректный ID)")
 
-    audio = db.query(models.AudioFile).filter(models.AudioFile.id == parsed_uuid).first()
+    audio = (
+        audio_soft_delete.active_audio_filter(db.query(models.AudioFile))
+        .filter(models.AudioFile.id == parsed_uuid)
+        .first()
+    )
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
@@ -228,7 +234,11 @@ async def get_audio_element_sizes(
     except ValueError:
         raise HTTPException(status_code=400, detail="Некорректный формат ID")
 
-    audio = db.query(models.AudioFile).filter(models.AudioFile.id == parsed_uuid).first()
+    audio = (
+        audio_soft_delete.active_audio_filter(db.query(models.AudioFile))
+        .filter(models.AudioFile.id == parsed_uuid)
+        .first()
+    )
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
@@ -278,7 +288,11 @@ async def get_audio_status(
         # If it's a temporary upload placeholder, tell the frontend it's actively processing
         return {"id": uuid4(), "status": "processing_audio"}
 
-    audio = db.query(models.AudioFile).filter(models.AudioFile.id == parsed_uuid).first()
+    audio = (
+        audio_soft_delete.active_audio_filter(db.query(models.AudioFile))
+        .filter(models.AudioFile.id == parsed_uuid)
+        .first()
+    )
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
@@ -348,9 +362,7 @@ async def get_transcription_by_id(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
-    if not audio:
-        raise HTTPException(status_code=404, detail="Запись не найдена")
+    audio = _get_audio_or_404(db, audio_id)
 
     transcription_json_path = os.path.join(audio.folder_path, "transcription.json")
     if not os.path.exists(transcription_json_path):
@@ -378,9 +390,10 @@ async def download_transcription(
     if format not in ("txt", "json"):
         raise HTTPException(status_code=400, detail="Используйте format='txt' или format='json'")
 
-    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
-    if not audio:
-        raise HTTPException(status_code=404, detail="Запись не найдена")
+    if format == "json" and current_user.role == UserRole.USER:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
+    audio = _get_audio_or_404(db, audio_id)
 
     if format == "txt":
         # Всегда пересобираем TXT из актуального JSON, чтобы скачивание
@@ -617,7 +630,11 @@ def _require_editor(current_user: User):
 
 
 def _get_audio_or_404(db: Session, audio_id: UUID) -> models.AudioFile:
-    audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
+    audio = (
+        audio_soft_delete.active_audio_filter(db.query(models.AudioFile))
+        .filter(models.AudioFile.id == audio_id)
+        .first()
+    )
     if not audio:
         raise HTTPException(status_code=404, detail="Запись не найдена")
     return audio
@@ -639,6 +656,27 @@ def _run_transcript_edit(db, action):
         db.rollback()
         logger.exception("Transcript word edit failed")
         raise HTTPException(status_code=500, detail="Не удалось изменить транскрипцию")
+
+
+@router.patch("/transcriptions/{audio_id}/words/bulk")
+async def bulk_edit_transcription_words(
+    audio_id: UUID,
+    payload: schemas.WordsBulkRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Массово сменить язык, назначить говорящего или удалить несколько слов по индексам."""
+    _require_editor(current_user)
+    audio = _get_audio_or_404(db, audio_id)
+    return _run_transcript_edit(db, lambda: transcript_edit.bulk_edit_words(
+        db,
+        audio,
+        payload.positions,
+        language=payload.language,
+        delete=payload.delete,
+        speaker_id=payload.speaker_id,
+        new_label=payload.new_label,
+    ))
 
 
 @router.patch("/transcriptions/{audio_id}/words/{position}")
@@ -688,6 +726,25 @@ async def delete_transcription_word(
     _require_editor(current_user)
     audio = _get_audio_or_404(db, audio_id)
     return _run_transcript_edit(db, lambda: transcript_edit.delete_word(db, audio, position))
+
+
+@router.post("/transcriptions/{audio_id}/undo")
+async def undo_transcription_delete(
+    audio_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Отменить последнее удаление слов в транскрипции."""
+    _require_editor(current_user)
+    audio = _get_audio_or_404(db, audio_id)
+
+    def _action():
+        try:
+            return transcript_edit.undo_last_delete(db, audio)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    return _run_transcript_edit(db, _action)
 
 
 @router.patch("/transcriptions/{audio_id}/speakers")
@@ -749,7 +806,7 @@ async def reindex_audio_db(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.delete("/audio/{audio_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/audio/{audio_id}", response_model=schemas.AudioDeleteResponse)
 async def delete_audio(
     audio_id: UUID,
     db: Session = Depends(get_db),
@@ -758,17 +815,34 @@ async def delete_audio(
     if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
 
+    audio_soft_delete.purge_expired_soft_deletes(db)
     audio = db.query(models.AudioFile).filter(models.AudioFile.id == audio_id).first()
-    if not audio:
+    if not audio or audio.deleted_at is not None:
         raise HTTPException(status_code=404, detail="Запись не найдена")
 
+    undo_until = audio_soft_delete.soft_delete_audio(db, audio)
+    return schemas.AudioDeleteResponse(
+        id=audio_id,
+        undo_seconds=audio_soft_delete.AUDIO_UNDO_SECONDS,
+        undo_until=undo_until,
+    )
+
+
+@router.post("/audio/{audio_id}/restore", response_model=schemas.AudioFileResponse)
+async def restore_audio(
+    audio_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Восстановить аудиозапись в пределах окна отмены удаления."""
+    if current_user.role not in [UserRole.ADMIN, UserRole.MANAGER]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Недостаточно прав")
+
     try:
-        if audio.folder_path:
-            shutil.rmtree(audio.folder_path, ignore_errors=True)
-    except Exception:
-        pass
+        audio = audio_soft_delete.restore_audio(db, audio_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except TimeoutError as exc:
+        raise HTTPException(status_code=410, detail=str(exc))
 
-    db.delete(audio)
-    db.commit()
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return audio

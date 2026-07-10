@@ -15,6 +15,18 @@ class AudioFileResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class AudioDeleteResponse(BaseModel):
+    id: UUID
+    undo_seconds: int
+    undo_until: datetime
+
+
+class UserDeleteResponse(BaseModel):
+    id: UUID
+    undo_seconds: int
+    undo_until: datetime
+
 class AudioStatusResponse(BaseModel):
     id: UUID
     status: str
@@ -63,6 +75,29 @@ class WordInsertRequest(BaseModel):
             raise ValueError("language должен быть ru / tt / unknown")
         if not self.raw.strip():
             raise ValueError("Слово не может быть пустым")
+        return self
+
+
+class WordsBulkRequest(BaseModel):
+    """Массовая правка слов по индексам: смена языка, говорящего или удаление."""
+    positions: list[int] = Field(..., min_length=1, description="Индексы слов в транскрипции")
+    language: str | None = Field(default=None, description="Новый языковой тег для всех выбранных слов")
+    delete: bool = Field(default=False, description="Удалить выбранные слова")
+    speaker_id: int | None = Field(default=None, description="ID говорящего для назначения выбранным словам")
+    new_label: str | None = Field(default=None, min_length=1, max_length=100, description="Новая метка говорящего")
+
+    @model_validator(mode="after")
+    def _check(self):
+        has_speaker = self.speaker_id is not None or bool(self.new_label and str(self.new_label).strip())
+        has_lang = self.language is not None
+        has_delete = self.delete
+        chosen = sum([has_speaker, has_lang, has_delete])
+        if chosen != 1:
+            raise ValueError("Укажите одно действие: language, delete=true, или speaker_id/new_label")
+        if self.delete and (self.language is not None or has_speaker):
+            raise ValueError("Укажите либо language, либо delete=true, либо speaker_id/new_label")
+        if self.language is not None and self.language not in _VALID_LANGS:
+            raise ValueError("language должен быть ru / tt / unknown")
         return self
 
 
