@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { audioApi } from '../api/audioApi';
 import ConfirmDialog from './ui/ConfirmDialog';
-import AudioMetadataEditModal, { formatRecordingDate } from './AudioMetadataEditModal';
+import AudioMetadataEditModal from './AudioMetadataEditModal';
+import { formatRecordingDate } from '../utils/recordingDate';
 import { useToast } from './ui/toastContext';
 import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { useMediaQuery } from '../hooks/useMediaQuery';

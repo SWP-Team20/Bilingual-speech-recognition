@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { audioApi } from '../api/audioApi';
 import { speakersApi } from '../api/speakersApi';
-import { formatRecordingDate } from './AudioMetadataEditModal';
+import { formatRecordingDate } from '../utils/recordingDate';
 import { useToast } from './ui/toastContext';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import SelectDropdown from './SelectDropdown';

@@ -3,28 +3,12 @@ import { audioApi } from '../api/audioApi';
 import Modal from './ui/Modal';
 import { useToast } from './ui/toastContext';
 import { colors, radius, focusRing } from '../theme';
-
-export function toDateInputValue(value) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  const tz = d.getTimezoneOffset() * 60000;
-  return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
+import { toDateInputValue } from '../utils/recordingDate';
 
 function todayStr() {
   const d = new Date();
   const tz = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - tz).toISOString().slice(0, 10);
-}
-
-export function formatRecordingDate(value) {
-  if (!value) return '';
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
 export default function AudioMetadataEditModal({
