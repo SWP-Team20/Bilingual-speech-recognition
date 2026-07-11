@@ -13,3 +13,5 @@ To read hosted documentation check out [Bilingual Speech Recognition Docs](https
 To run this app read the [Setup & Deployment Guide](docs/deployment.md).
 
 To check releases and latest changes consult with the [Changelog](CHANGELOG.md).
+
+To see the current product status and handover scope read the [Customer Handover](/docs/customer-handover.md)
