@@ -12,24 +12,13 @@ You are an AI coding agent working on **Bilingual Speech Recognition**, a web ap
 
 Agents must run the following verification commands to ensure changes do not break existing quality gates before submitting code.
 
-### Frontend Validation
-
-The frontend environment runs on Node.js. Run the combined linter and build command to ensure zero syntax and production build errors:
-
-```bash
-npm run lint && npm run build
-
-```
-
-Note: The CI pipeline executes this under the `frontend-quality-check` job and will fail on any warnings or compilation errors.
-
 ### Backend Validation
 The backend test suite is structured within the `scripts` directory and categorized by markers defined in `pytest.ini`. Target your testing commands based on the scope of your changes.
 
-*   **Unit Tests:** Run `pytest -m unit` to execute pure logic tests that require no database or running API
-*   **Integration Tests:** Run `pytest -m integration` for pipeline, database, or API tests. **Note: Postgres is required for these tests**
-*   **Quality Requirement Tests (QRT):** Run `pytest -m qrt` to verify quality requirements. **Note: Postgres is required for these tests**
-*   **Full Suite:** Run `pytest` to discover and execute all `test_*.py` files across the test paths
+-   **Unit Tests:** Run `pytest -m unit` to execute pure logic tests that require no database or running API
+-   **Integration Tests:** Run `pytest -m integration` for pipeline, database, or API tests. **Note: Postgres is required for these tests**
+-   **Quality Requirement Tests (QRT):** Run `pytest -m qrt` to verify quality requirements. **Note: Postgres is required for these tests**
+-   **Full Suite:** Run `pytest` to discover and execute all `test_*.py` files across the test paths
 
 
 ## Repository Workflow and PR Compliance
