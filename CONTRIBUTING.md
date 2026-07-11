@@ -1,4 +1,4 @@
-# Contributing to Bilingual Speech Recognition
+# Contributing
 
 Document outlines the required workflow for contributors to ensure high code quality, maintainability, and compliance with our project standards.
 
