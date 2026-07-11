@@ -24,20 +24,12 @@ npm run lint && npm run build
 Note: The CI pipeline executes this under the `frontend-quality-check` job and will fail on any warnings or compilation errors.
 
 ### Backend Validation
+The backend test suite is structured within the `scripts` directory and categorized by markers defined in `pytest.ini`. Target your testing commands based on the scope of your changes.
 
-The backend environment uses Python and utilizes caching for dependencies to optimize execution times. Run the test suite via `pytest`:
-
-```bash
-# Run the entire test suite (94 tests including unit, integration, and QRT)
-pytest
-
-# Target specific critical areas or quality requirement tests
-pytest scripts/QualityRequirements/test_security.py
-pytest scripts/QualityRequirements/test_authorization.py
-pytest scripts/Unit/test_transcript_undo.py
-pytest scripts/Unit/test_audio_soft_delete.py
-
-```
+*   **Unit Tests:** Run `pytest -m unit` to execute pure logic tests that require no database or running API
+*   **Integration Tests:** Run `pytest -m integration` for pipeline, database, or API tests. **Note: Postgres is required for these tests**
+*   **Quality Requirement Tests (QRT):** Run `pytest -m qrt` to verify quality requirements. **Note: Postgres is required for these tests**
+*   **Full Suite:** Run `pytest` to discover and execute all `test_*.py` files across the test paths
 
 
 ## Repository Workflow and PR Compliance
