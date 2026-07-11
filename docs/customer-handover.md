@@ -23,12 +23,8 @@ All core features that were required by the customer are implemented. The system
 - **Data Export:** Processed transcriptions can be directly downloaded in `.txt` and `.json` formats
 
 ## 4. Configuration and Secrets Handling
-To deploy the system on the customer's own hardware, the following environment variables must be configured.
+To deploy the system on the customer's own hardware,  environment variables must be configured in the `.env` file.
 
-- `DATABASE_URL`: Connection string for the database
-- `JWT_SECRET_KEY`: Secret key used for signing authentication tokens
-- `CORS_ORIGINS`: Allowed domains for the frontend application
-- `AUDIO_STORAGE_PATH`: Directory path for storing uploaded and processed audio files
 
 ## 5. Installation and Deployment
 The product is fully containerized. Once the customer prepares an independent environment, the basic deployment steps are:
