@@ -12,7 +12,7 @@ Documents and all artifacts can be found in [docs/ folder](docs/). It contains a
 
 Hosted documentation site can be accessed in [Bilingual Speech Recognition Docs](https://swp-team20.github.io/Bilingual-speech-recognition/).
 
-Customer handover artifact with transition process information can be accessed [here](docs/customer-handover.md).
+To see the current product status and handover scope read [Customer Handover](/docs/customer-handover.md).
 
 ### Directory tree
 
@@ -52,12 +52,18 @@ docs/
 └── user-stories.md
 ```
 
-## Helpful links
+## Changes and Contribution
+
+To check releases and latest changes consult with the [Changelog](CHANGELOG.md).
+
+If you would like to contrubute to this product, please, familiarize yourself with contributing guidelines both for agents and humans:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [AGENTS.md](AGENTS.md)
+
+## Helpful Links
 
 To access deployed app in Innopolis University network go to the https://10.93.26.206:5173.
 
 To run this app read the [Setup & Deployment Guide](docs/deployment.md).
 
-To check releases and latest changes consult with the [Changelog](CHANGELOG.md).
-
-To see the current product status and handover scope read the [Customer Handover](/docs/customer-handover.md).
