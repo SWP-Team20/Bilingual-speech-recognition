@@ -1,5 +1,5 @@
 
-# Cusomer Handover 
+# Customer Handover 
 
 ## 1. Handover scope
 
