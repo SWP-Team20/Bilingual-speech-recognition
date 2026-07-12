@@ -59,7 +59,7 @@ This update adds comprehensive statistical tracking for speakers, words, and lan
 
 ### Release
 
-![Release](...) [INSERT SCREENSHOT]
+![Release](images/release.png)
 
 ### Product Screenshots
 
@@ -75,7 +75,7 @@ This update adds comprehensive statistical tracking for speakers, words, and lan
 
 ### Links
 
-- [SemVer Release](...) [INSERT LINK]
+- [SemVer Release](https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.4.0)
 - [Deployed Product](https://10.93.26.206:5173)
 - [Access Instructions (README.md)](/README.md)
 - [Deployment Insctructions](/docs/deployment.md)
