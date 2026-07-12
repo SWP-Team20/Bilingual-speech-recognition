@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 12.07.2026
+
 ### Added
 - New words count statistics with ability to filter by speaker, date and language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/273
 - New speaker statistics with ability to filter by audio files, date, language in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/274
@@ -88,7 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Uploaded audio transcription feature in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/49
 - Color coding Russian and Tatar words in transcription in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/52
 
-[unreleased]: https://github.com/SWP-Team20/Bilingual-speech-recognition/compare/v0.3.0...main
+[unreleased]: https://github.com/SWP-Team20/Bilingual-speech-recognition/compare/v0.4.0...main
+[0.4.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.4.0
 [0.3.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SWP-Team20/Bilingual-speech-recognition/releases/tag/v0.1.0
