@@ -132,8 +132,8 @@ All UAT tests from UAT-006 to UAT-011 passed successfully and validated by clien
 ### Links
 
 - [Customer Handover](/docs/customer-handover.md)
-- [Customer Review Transcript](...) [INSERT LINK]
-- [Customer Review Summary](...) [INSERT LINK]
+- [Customer Review Transcript](customer-review-transcript.md)
+- [Customer Review Summary](customer-review-summary.md)
 
 ---
 
