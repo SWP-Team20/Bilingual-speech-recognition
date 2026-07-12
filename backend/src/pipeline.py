@@ -17,6 +17,7 @@
 """
 import os
 import json
+import threading
 from uuid import uuid4, UUID
 
 from backend.src import audio_process, asr, tatar_asr, lid, lang_tag, text_filter
@@ -24,6 +25,17 @@ from backend.src import audio_process, asr, tatar_asr, lid, lang_tag, text_filte
 SR = 16000
 WIN_SEC = int(os.environ.get("ASR_WINDOW_SEC", "25"))   # под-окно для LID/ASR (память + роутинг)
 _SENT_END = (".", "?", "!", "…")
+
+# ML-модели — синглтоны без потокобезопасности; фоновые upload-задачи идут параллельно.
+_pipeline_lock = threading.Lock()
+
+
+def _warm_asr_model_stack(audio) -> None:
+    """LID + Whisper-TT до первого вызова large-v3 (CTranslate2). См. docs/ru_tt_pipeline.md."""
+    warm_len = min(len(audio), SR * 3)
+    if warm_len >= SR // 4:
+        lid.detect(audio[:warm_len].astype("float32"))
+    tatar_asr.ensure_loaded()
 
 
 def build_sentences(words):
@@ -62,6 +74,14 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
                   original_filename=None, db=None, language=None):
     """language игнорируется (язык определяется аудио-LID по сегменту);
     параметр оставлен для совместимости вызова из роутера."""
+    with _pipeline_lock:
+        return _process_audio_impl(
+            input_path, storage_dir, audio_id, original_filename, db, language,
+        )
+
+
+def _process_audio_impl(input_path, storage_dir="./storage", audio_id=None,
+                        original_filename=None, db=None, language=None):
     audio_id = str(audio_id or uuid4())
     folder = os.path.join(storage_dir, audio_id)
     os.makedirs(folder, exist_ok=True)
@@ -100,6 +120,8 @@ def process_audio(input_path, storage_dir="./storage", audio_id=None,
             traceback.print_exc()
     else:
         print("[Pipeline] Speaker diarization is explicitly DISABLED via ASR_DIARIZE env var.")
+
+    _warm_asr_model_stack(audio)
 
     # 2-3. посегментная маршрутизация LID -> ASR -> тег (+ говорящий сегмента)
     words = []
