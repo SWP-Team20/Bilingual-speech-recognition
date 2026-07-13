@@ -7,6 +7,7 @@ import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../../theme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import StatsSection from './StatsSection';
 import StatsDisplayModeToggle from './StatsDisplayModeToggle';
+import StatsDownloadButton from './StatsDownloadButton';
 import SpeakerFilterSelect from './SpeakerFilterSelect';
 import VerticalBarChart from './VerticalBarChart';
 
@@ -149,6 +150,15 @@ function FrequentWordsSection() {
     loadData(EMPTY_FILTERS);
   };
 
+  const handleDownload = async (format) => {
+    try {
+      await statsApi.downloadStatsExport('frequent-words', format, filters);
+    } catch (error) {
+      console.error('Ошибка скачивания статистики слов:', error);
+      toast.error('Не удалось скачать статистику');
+    }
+  };
+
   const activeFilterCount = countActiveFilters(filters);
   const visibleAudioOptions = getVisibleAudioOptions(
     audioOptions,
@@ -184,6 +194,7 @@ function FrequentWordsSection() {
   const chartToolbar = (
     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
       <StatsDisplayModeToggle mode={displayMode} onChange={setDisplayMode} />
+      <StatsDownloadButton onDownload={handleDownload} disabled={loading || !data?.items?.length} />
 
       <div ref={filterWrapRef} style={{ position: 'relative', flexShrink: 0 }}>
         <button
