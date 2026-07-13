@@ -164,7 +164,7 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
     }
     loadAudioList();
 
-    const undoSeconds = undoMeta?.undo_seconds ?? 30;
+    const undoSeconds = undoMeta?.undo_seconds ?? 60;
     const title = audio?.filename || 'Аудиозапись';
     toast.undo(`«${title}» удалена`, {
       seconds: undoSeconds,

@@ -75,7 +75,7 @@ export function ToastProvider({ children }) {
     error: (m, d, opts) => show(m, 'error', d ?? 4000, opts),
     info: (m, d, opts) => show(m, 'info', d ?? 4000, opts),
     dismiss,
-    undo: (message, { onUndo, seconds = 30, actionLabel = 'Отменить' } = {}) => {
+    undo: (message, { onUndo, seconds = 60, actionLabel = 'Отменить' } = {}) => {
       const duration = seconds * 1000;
       const id = ++idCounter;
       const toast = {
