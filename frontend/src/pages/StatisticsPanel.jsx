@@ -4,7 +4,7 @@ import DateStatsSection from '../components/stats/DateStatsSection';
 import SpeakerStatsSection from '../components/stats/SpeakerStatsSection';
 import StatsDownloadButton from '../components/stats/StatsDownloadButton';
 import StatsFiltersProvider from '../components/stats/StatsFiltersProvider';
-import { useAllStatsFilters } from '../components/stats/statsFiltersContext';
+import { useStatsFiltersSnapshot } from '../components/stats/statsFiltersContext';
 import { statsApi } from '../api/statsApi';
 import { useToast } from '../components/ui/toastContext';
 import { colors, radius, MOBILE_BREAKPOINT } from '../theme';
@@ -13,11 +13,11 @@ import { useMediaQuery } from '../hooks/useMediaQuery';
 function StatisticsPanelContent() {
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
   const toast = useToast();
-  const categoryFilters = useAllStatsFilters();
+  const getCategoryFilters = useStatsFiltersSnapshot();
 
   const handleExportAll = async (format) => {
     try {
-      await statsApi.downloadAllStatsExport(format, categoryFilters);
+      await statsApi.downloadAllStatsExport(format, getCategoryFilters());
     } catch (error) {
       console.error('Ошибка экспорта всей статистики:', error);
       toast.error('Не удалось экспортировать всю статистику');
