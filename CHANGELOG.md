@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Ability to download .xlsx and .csv with statistics (filters also affect the contents of those files)
+
 ## [0.4.1] - 12.07.2026
 
 ### Added
