@@ -7,8 +7,10 @@ import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../../theme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import StatsSection from './StatsSection';
 import StatsDisplayModeToggle from './StatsDisplayModeToggle';
+import StatsDownloadButton from './StatsDownloadButton';
 import SpeakerBarChart from './SpeakerBarChart';
 import SpeakerFilterSelect from './SpeakerFilterSelect';
+import { useStatsFiltersRegistry } from './statsFiltersContext';
 
 const LIMIT_MIN = 1;
 const LIMIT_MAX = 500;
@@ -86,6 +88,11 @@ function DateStatsSection() {
   const filterWrapRef = useRef(null);
   const toast = useToast();
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
+  const registerFilters = useStatsFiltersRegistry('dates');
+
+  useEffect(() => {
+    registerFilters(filters);
+  }, [filters, registerFilters]);
 
   useEffect(() => {
     loadData(filters);
@@ -152,6 +159,15 @@ function DateStatsSection() {
     loadData(EMPTY_FILTERS);
   };
 
+  const handleDownload = async (format) => {
+    try {
+      await statsApi.downloadStatsExport('dates', format, filters);
+    } catch (error) {
+      console.error('Ошибка скачивания статистики по датам:', error);
+      toast.error('Не удалось экспортировать статистику');
+    }
+  };
+
   const activeFilterCount = countActiveFilters(filters);
   const visibleAudioOptions = getVisibleAudioOptions(
     audioOptions,
@@ -188,6 +204,7 @@ function DateStatsSection() {
   const chartToolbar = (
     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
       <StatsDisplayModeToggle mode={displayMode} onChange={setDisplayMode} />
+      <StatsDownloadButton onDownload={handleDownload} disabled={loading || !chartItems.length} />
 
       <div ref={filterWrapRef} style={{ position: 'relative', flexShrink: 0 }}>
         <button

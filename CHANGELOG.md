@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Ability to download .xlsx and .csv with statistics (filters also affect the contents of those files) in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/329
+
 ### Changed
 - Auth page redesigned to more flat style with app logo on it in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/331
 - Logo now displayed instead of project name in dashboard page in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/331
