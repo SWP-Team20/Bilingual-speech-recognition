@@ -85,6 +85,63 @@ const EXPORT_ENDPOINTS = {
   },
 };
 
+function toCategoryFiltersPayload(filters = {}) {
+  return {
+    langs: filters.langs || [],
+    speakers: filters.speakers || [],
+    date_from: filters.dateFrom || null,
+    date_to: filters.dateTo || null,
+    audio_ids: filters.audioIds || [],
+    limit: Number.isFinite(Number(filters.limit)) ? Number(filters.limit) : null,
+  };
+}
+
+const DEFAULT_CATEGORY_FILTERS = {
+  frequent_words: {
+    langs: [],
+    speakers: [],
+    date_from: null,
+    date_to: null,
+    audio_ids: [],
+    limit: 30,
+  },
+  languages: {
+    langs: [],
+    speakers: [],
+    date_from: null,
+    date_to: null,
+    audio_ids: [],
+    limit: null,
+  },
+  dates: {
+    langs: [],
+    speakers: [],
+    date_from: null,
+    date_to: null,
+    audio_ids: [],
+    limit: 30,
+  },
+  speakers: {
+    langs: [],
+    speakers: [],
+    date_from: null,
+    date_to: null,
+    audio_ids: [],
+    limit: 20,
+  },
+};
+
+async function triggerBlobDownload(response, fallbackName) {
+  const fileName = parseFilename(response.headers['content-disposition']) || fallbackName;
+  const url = URL.createObjectURL(response.data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 async function downloadExport(category, format, filters = {}) {
   const config = EXPORT_ENDPOINTS[category];
   if (!config) {
@@ -99,17 +156,29 @@ async function downloadExport(category, format, filters = {}) {
     responseType: 'blob',
   });
 
-  const fileName = parseFilename(response.headers['content-disposition'])
-    || `${config.fallbackName}.${format}`;
+  await triggerBlobDownload(response, `${config.fallbackName}.${format}`);
+}
 
-  const url = URL.createObjectURL(response.data);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+async function downloadAllExport(format, categoryFilters = {}) {
+  const response = await apiClient.post('/api/v1/stats/export/all', {
+    format,
+    frequent_words: categoryFilters['frequent-words']
+      ? toCategoryFiltersPayload(categoryFilters['frequent-words'])
+      : DEFAULT_CATEGORY_FILTERS.frequent_words,
+    languages: categoryFilters.languages
+      ? toCategoryFiltersPayload(categoryFilters.languages)
+      : DEFAULT_CATEGORY_FILTERS.languages,
+    dates: categoryFilters.dates
+      ? toCategoryFiltersPayload(categoryFilters.dates)
+      : DEFAULT_CATEGORY_FILTERS.dates,
+    speakers: categoryFilters.speakers
+      ? toCategoryFiltersPayload(categoryFilters.speakers)
+      : DEFAULT_CATEGORY_FILTERS.speakers,
+  }, {
+    responseType: 'blob',
+  });
+
+  await triggerBlobDownload(response, `stats_all.${format}`);
 }
 
 export const statsApi = {
@@ -142,4 +211,5 @@ export const statsApi = {
   },
 
   downloadStatsExport: downloadExport,
+  downloadAllStatsExport: downloadAllExport,
 };

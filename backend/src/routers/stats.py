@@ -53,6 +53,21 @@ def _parse_export_format(format: str) -> str:
     return normalized
 
 
+def _parse_audio_ids_from_strings(audio_ids: list[str]) -> List[UUID]:
+    return _parse_audio_ids(audio_ids or None)
+
+
+def _category_filters_to_stats(filters: schemas.StatsCategoryFilters) -> StatsFilters:
+    return StatsFilters(
+        langs=filters.langs,
+        speakers=filters.speakers,
+        date_from=filters.date_from,
+        date_to=filters.date_to,
+        audio_ids=_parse_audio_ids_from_strings(filters.audio_ids),
+        status="done",
+    )
+
+
 @router.get("/words/frequent", response_model=schemas.FrequentWordsResponse)
 async def get_frequent_words(
     lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),
@@ -297,6 +312,47 @@ async def export_speaker_word_stats(
         filters,
         export_format=export_format,
         audio_labels=_resolve_audio_labels(db, filters.audio_ids),
+    )
+    return _export_response(content, media_type, filename)
+
+
+@router.post("/export/all")
+async def export_all_stats(
+    payload: schemas.StatsExportAllRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Экспортировать всю статистику в одном файле с учётом фильтров каждой категории."""
+    export_format = _parse_export_format(payload.format)
+
+    frequent_filters = _category_filters_to_stats(payload.frequent_words)
+    language_filters = _category_filters_to_stats(payload.languages)
+    date_filters = _category_filters_to_stats(payload.dates)
+    speaker_filters = _category_filters_to_stats(payload.speakers)
+
+    frequent_limit = payload.frequent_words.limit or 30
+    date_limit = payload.dates.limit or 30
+    speaker_limit = payload.speakers.limit or 20
+
+    frequent_words = word_stats.compute_frequent_words(db, frequent_filters, limit=frequent_limit)
+    languages = word_stats.compute_language_word_counts(db, language_filters)
+    dates = word_stats.compute_date_word_counts(db, date_filters, limit=date_limit)
+    speakers = word_stats.compute_speaker_word_counts(db, speaker_filters, limit=speaker_limit)
+
+    content, media_type, filename = stats_export.export_all_stats(
+        frequent_words=frequent_words,
+        frequent_filters=frequent_filters,
+        languages=languages,
+        language_filters=language_filters,
+        dates=dates,
+        date_filters=date_filters,
+        speakers=speakers,
+        speaker_filters=speaker_filters,
+        export_format=export_format,
+        frequent_audio_labels=_resolve_audio_labels(db, frequent_filters.audio_ids),
+        language_audio_labels=_resolve_audio_labels(db, language_filters.audio_ids),
+        date_audio_labels=_resolve_audio_labels(db, date_filters.audio_ids),
+        speaker_audio_labels=_resolve_audio_labels(db, speaker_filters.audio_ids),
     )
     return _export_response(content, media_type, filename)
 

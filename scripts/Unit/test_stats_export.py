@@ -11,6 +11,7 @@ from openpyxl import load_workbook
 from backend.src.services.audio_filter import StatsFilters
 from backend.src.services.stats_export import (
     build_export_payload,
+    export_all_stats,
     export_date_stats,
     export_frequent_words,
     export_language_stats,
@@ -132,3 +133,93 @@ def test_export_date_and_speaker_stats_reject_unknown_format():
 
     with pytest.raises(ValueError, match="csv и xlsx"):
         export_speaker_stats(speaker_result, StatsFilters(), export_format="ods")
+
+
+def test_export_all_stats_xlsx_has_four_sheets():
+    frequent = FrequentWordsResult(
+        items=[WordFrequency(text="дом", language="ru", count=2)],
+        total_words=2,
+        unique_words=1,
+        limit=30,
+    )
+    languages = LanguageWordsResult(
+        items=[LanguageWordCount(language="ru", label="Русский", count=2)],
+        total_words=2,
+    )
+    dates = DateWordsResult(
+        items=[DateWordCount(date="2026-01-01", label="2026-01-01", count=2)],
+        total_words=2,
+        total_dates=1,
+        limit=30,
+    )
+    speakers = SpeakerWordsResult(
+        items=[SpeakerWordCount(speaker_id=1, label="мама", count=2)],
+        total_words=2,
+        total_speakers=1,
+        limit=20,
+    )
+
+    content, media_type, filename = export_all_stats(
+        frequent_words=frequent,
+        frequent_filters=StatsFilters(langs=["ru"]),
+        languages=languages,
+        language_filters=StatsFilters(),
+        dates=dates,
+        date_filters=StatsFilters(),
+        speakers=speakers,
+        speaker_filters=StatsFilters(),
+        export_format="xlsx",
+    )
+
+    assert media_type.endswith("spreadsheetml.sheet")
+    assert filename.endswith(".xlsx")
+
+    workbook = load_workbook(io.BytesIO(content))
+    assert workbook.sheetnames == ["Частые слова", "Языки", "Даты", "Говорящие"]
+
+
+def test_export_all_stats_csv_contains_all_sections():
+    frequent = FrequentWordsResult(
+        items=[WordFrequency(text="дом", language="ru", count=2)],
+        total_words=2,
+        unique_words=1,
+        limit=30,
+    )
+    languages = LanguageWordsResult(
+        items=[LanguageWordCount(language="ru", label="Русский", count=2)],
+        total_words=2,
+    )
+    dates = DateWordsResult(
+        items=[DateWordCount(date="2026-01-01", label="2026-01-01", count=2)],
+        total_words=2,
+        total_dates=1,
+        limit=30,
+    )
+    speakers = SpeakerWordsResult(
+        items=[SpeakerWordCount(speaker_id=1, label="мама", count=2)],
+        total_words=2,
+        total_speakers=1,
+        limit=20,
+    )
+
+    content, media_type, filename = export_all_stats(
+        frequent_words=frequent,
+        frequent_filters=StatsFilters(langs=["ru"]),
+        languages=languages,
+        language_filters=StatsFilters(speakers=["мама"]),
+        dates=dates,
+        date_filters=StatsFilters(),
+        speakers=speakers,
+        speaker_filters=StatsFilters(),
+        export_format="csv",
+    )
+
+    assert media_type == "text/csv; charset=utf-8"
+    assert filename.endswith(".csv")
+
+    rows = _read_csv_rows(content)
+    assert ["Раздел", "Самые частые слова"] in rows
+    assert ["Раздел", "Статистика по языкам"] in rows
+    assert ["Раздел", "Статистика по датам"] in rows
+    assert ["Раздел", "Статистика по говорящим"] in rows
+    assert ["Говорящие", "мама"] in rows

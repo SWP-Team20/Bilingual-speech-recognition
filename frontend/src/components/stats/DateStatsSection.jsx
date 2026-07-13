@@ -10,6 +10,7 @@ import StatsDisplayModeToggle from './StatsDisplayModeToggle';
 import StatsDownloadButton from './StatsDownloadButton';
 import SpeakerBarChart from './SpeakerBarChart';
 import SpeakerFilterSelect from './SpeakerFilterSelect';
+import { useStatsFiltersRegistry } from './statsFiltersContext';
 
 const LIMIT_MIN = 1;
 const LIMIT_MAX = 500;
@@ -87,6 +88,11 @@ function DateStatsSection() {
   const filterWrapRef = useRef(null);
   const toast = useToast();
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
+  const registerFilters = useStatsFiltersRegistry('dates');
+
+  useEffect(() => {
+    registerFilters(filters);
+  }, [filters, registerFilters]);
 
   useEffect(() => {
     loadData(filters);
@@ -158,7 +164,7 @@ function DateStatsSection() {
       await statsApi.downloadStatsExport('dates', format, filters);
     } catch (error) {
       console.error('Ошибка скачивания статистики по датам:', error);
-      toast.error('Не удалось скачать статистику');
+      toast.error('Не удалось экспортировать статистику');
     }
   };
 

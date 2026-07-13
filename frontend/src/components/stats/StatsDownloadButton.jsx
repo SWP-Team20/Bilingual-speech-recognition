@@ -15,7 +15,13 @@ const menuItemStyle = {
   fontFamily: 'inherit',
 };
 
-function StatsDownloadButton({ onDownload, disabled = false }) {
+function StatsDownloadButton({
+  onDownload,
+  disabled = false,
+  label = 'Экспорт',
+  loadingLabel = 'Экспорт…',
+  ariaLabel = 'Экспорт статистики',
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [downloadingFormat, setDownloadingFormat] = useState(null);
   const menuRef = useRef(null);
@@ -61,8 +67,8 @@ function StatsDownloadButton({ onDownload, disabled = false }) {
         disabled={disabled || isDownloading}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
-        aria-label="Скачать статистику"
-        title="Скачать"
+        aria-label={ariaLabel}
+        title={label}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -84,7 +90,7 @@ function StatsDownloadButton({ onDownload, disabled = false }) {
           <path d="M7 10l5 5 5-5" />
           <path d="M4 19h16" />
         </svg>
-        {isDownloading ? 'Скачивание…' : 'Скачать'}
+        {isDownloading ? loadingLabel : label}
       </button>
 
       {menuOpen && !disabled && (

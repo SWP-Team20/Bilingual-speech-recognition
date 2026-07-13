@@ -9,6 +9,7 @@ import StatsSection from './StatsSection';
 import StatsDisplayModeToggle from './StatsDisplayModeToggle';
 import StatsDownloadButton from './StatsDownloadButton';
 import SpeakerFilterSelect from './SpeakerFilterSelect';
+import { useStatsFiltersRegistry } from './statsFiltersContext';
 import VerticalBarChart from './VerticalBarChart';
 
 const EMPTY_FILTERS = { speakers: [], dateFrom: '', dateTo: '', audioIds: [] };
@@ -65,6 +66,11 @@ function LanguageStatsSection() {
   const filterWrapRef = useRef(null);
   const toast = useToast();
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
+  const registerFilters = useStatsFiltersRegistry('languages');
+
+  useEffect(() => {
+    registerFilters(filters);
+  }, [filters, registerFilters]);
 
   useEffect(() => {
     loadData(filters);
@@ -134,7 +140,7 @@ function LanguageStatsSection() {
       await statsApi.downloadStatsExport('languages', format, filters);
     } catch (error) {
       console.error('Ошибка скачивания статистики по языкам:', error);
-      toast.error('Не удалось скачать статистику');
+      toast.error('Не удалось экспортировать статистику');
     }
   };
 
