@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import apiClient from '../api/apiClient';
+import { useMediaQuery } from '../hooks/useMediaQuery';
+import { colors, focusRing, MOBILE_BREAKPOINT, radius } from '../theme';
 
 function AuthPage({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    e.stopPropagation(); // Предотвращаем всплытие события
+    e.stopPropagation();
 
-    // Если уже идет загрузка, игнорируем повторные клики
     if (isLoading || !username.trim() || !password.trim()) return;
 
     setIsLoading(true);
-    setError(''); // Сбрасываем старую ошибку ТОЛЬКО перед началом нового запроса
+    setError('');
 
     try {
       const formData = new URLSearchParams();
@@ -31,78 +33,98 @@ function AuthPage({ onLoginSuccess }) {
       const data = response.data;
 
       localStorage.setItem('token', data.access_token);
-      
-      // Передаем управление родителю только при УСПЕШНОМ входе
-      onLoginSuccess(); 
-      
+      onLoginSuccess();
     } catch (err) {
-      console.error("Ошибка аутентификации:", err);
-
-      // Вытаскиваем ошибку из бэка, если она есть
+      console.error('Ошибка аутентификации:', err);
       const errorMessage = err.response?.data?.detail || 'Неправильное имя пользователя или пароль.';
       setError(errorMessage);
     } finally {
-      setIsLoading(false); // Кнопка снова активна, но стейт error НЕ трогаем
+      setIsLoading(false);
     }
   };
 
   const isFormValid = username.trim() !== '' && password.trim().length >= 4 && !isLoading;
 
+  const inputStyle = {
+    width: '100%',
+    height: '48px',
+    backgroundColor: colors.surface,
+    border: `1px solid ${colors.borderStrong}`,
+    borderRadius: radius.sm,
+    padding: '0 16px',
+    fontSize: '16px',
+    color: colors.text,
+    boxSizing: 'border-box',
+    outline: 'none',
+    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
+    fontFamily: 'inherit',
+  };
+
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      minHeight: '100vh', 
-      backgroundColor: '#f5f5f5', 
+    <div style={{
+      fontFamily: 'system-ui, sans-serif',
+      backgroundColor: colors.page,
+      minHeight: '100vh',
       width: '100%',
       boxSizing: 'border-box',
-      margin: '0',
-      fontFamily: 'system-ui, sans-serif'
+      padding: isNarrow ? '24px 16px' : '40px 24px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
     }}>
-      <div style={{ 
-        backgroundColor: '#fff', 
-        width: '100%', 
-        maxWidth: '540px', 
-        borderRadius: '16px', 
-        padding: '60px 45px', 
-        boxShadow: '0 18px 50px rgba(0,0,0,0.10)', 
-        border: '1px solid #ececec',
+      <div style={{
+        width: '100%',
+        maxWidth: '420px',
+        boxSizing: 'border-box',
         textAlign: 'center',
-        boxSizing: 'border-box'
       }}>
-        <form onSubmit={handleLoginSubmit}>
-          <h2 style={{ 
-            fontSize: '32px', 
-            fontWeight: 'bold', 
-            margin: '0 0 10px 0',
-            color: '#000',
-            letterSpacing: '-0.5px'
+        <header style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          marginBottom: isNarrow ? '28px' : '36px',
+        }}>
+          <img
+            src="/favicon.svg"
+            alt=""
+            aria-hidden="true"
+            style={{
+              display: 'block',
+              height: isNarrow ? '80px' : '112px',
+              width: 'auto',
+              marginBottom: isNarrow ? '16px' : '20px',
+            }}
+          />
+          <h1 style={{
+            fontSize: isNarrow ? '24px' : '32px',
+            fontWeight: 'bold',
+            margin: 0,
+            letterSpacing: '-0.5px',
+            lineHeight: 1.2,
+            color: colors.textStrong,
+            textAlign: 'center',
           }}>
             Bilingual Speech Recognition
-          </h2>
+          </h1>
+        </header>
 
-          {/* Demo credentials text */}
-          <p style={{
-            fontSize: '14px',
-            color: '#666',
-            margin: '15px 0 35px 0',
-            fontFamily: 'system-ui, sans-serif'
-          }}>
-            Используйте имя пользователя <strong style={{ color: '#000' }}>"admin"</strong> и<br></br>пароль <strong style={{ color: '#000' }}>"admin"</strong>, чтобы получить доступ
-          </p>
+        <form
+          onSubmit={handleLoginSubmit}
+          style={{
+            width: '100%',
+            textAlign: 'left',
+          }}
+        >
 
-          {/* Error Message Box */}
           {error && (
             <div style={{
-              backgroundColor: '#ffebee',
-              color: '#c62828',
+              backgroundColor: colors.dangerSoftBg,
+              color: colors.dangerText,
               padding: '12px',
-              borderRadius: '4px',
+              borderRadius: radius.sm,
               marginBottom: '20px',
               fontSize: '14px',
-              textAlign: 'left',
-              border: '1px solid #ffcdd2'
+              border: `1px solid ${colors.dangerSoftBorder}`,
             }}>
               {error}
             </div>
@@ -114,23 +136,9 @@ function AuthPage({ onLoginSuccess }) {
             value={username}
             disabled={isLoading}
             onChange={(e) => setUsername(e.target.value)}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }}
-            style={{ 
-              width: '100%', 
-              height: '48px', 
-              backgroundColor: '#fff', 
-              border: '1px solid #ddd', 
-              borderRadius: '8px', 
-              padding: '0 16px', 
-              marginBottom: '20px', 
-              fontSize: '16px', 
-              color: '#000', 
-              boxSizing: 'border-box',
-              outline: 'none',
-              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-              fontFamily: 'system-ui, sans-serif'
-            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = colors.primary; e.currentTarget.style.boxShadow = focusRing; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = colors.borderStrong; e.currentTarget.style.boxShadow = 'none'; }}
+            style={{ ...inputStyle, marginBottom: '20px' }}
           />
 
           <input
@@ -139,45 +147,31 @@ function AuthPage({ onLoginSuccess }) {
             value={password}
             disabled={isLoading}
             onChange={(e) => setPassword(e.target.value)}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#16a34a'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(22,163,74,0.15)'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }}
-            style={{ 
-              width: '100%', 
-              height: '48px', 
-              backgroundColor: '#fff', 
-              border: '1px solid #ddd', 
-              borderRadius: '8px', 
-              padding: '0 16px', 
-              marginBottom: '30px', 
-              fontSize: '16px', 
-              color: '#000', 
-              boxSizing: 'border-box',
-              outline: 'none',
-              transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
-              fontFamily: 'system-ui, sans-serif'
-            }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = colors.primary; e.currentTarget.style.boxShadow = focusRing; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = colors.borderStrong; e.currentTarget.style.boxShadow = 'none'; }}
+            style={{ ...inputStyle, marginBottom: '24px' }}
           />
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
             <button
-              type="submit"
-              disabled={!isFormValid}
-              onMouseEnter={(e) => { if (isFormValid) e.currentTarget.style.backgroundColor = '#166534'; }}
-              onMouseLeave={(e) => { if (isFormValid) e.currentTarget.style.backgroundColor = '#15803d'; }}
-              style={{
-                padding: '10px 28px',
-                backgroundColor: isFormValid ? '#15803d' : '#bbb', 
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isFormValid ? 'pointer' : 'not-allowed',
-                fontSize: '15px',
-                fontWeight: '500',
-                transition: 'background-color 0.2s ease',
-                fontFamily: 'system-ui, sans-serif'
-              }}
-            >
-              {isLoading ? 'Производится вход...' : 'Войти'}
+            type="submit"
+            disabled={!isFormValid}
+            onMouseEnter={(e) => { if (isFormValid) e.currentTarget.style.backgroundColor = colors.primaryDeep; }}
+            onMouseLeave={(e) => { if (isFormValid) e.currentTarget.style.backgroundColor = colors.primaryHover; }}
+            style={{
+              padding: '10px 28px',
+              backgroundColor: isFormValid ? colors.primaryHover : colors.disabled,
+              color: colors.surface,
+              border: 'none',
+              borderRadius: radius.sm,
+              cursor: isFormValid ? 'pointer' : 'not-allowed',
+              fontSize: '15px',
+              fontWeight: '500',
+              transition: 'background-color 0.2s ease',
+              fontFamily: 'inherit',
+            }}
+          >
+            {isLoading ? 'Производится вход...' : 'Войти'}
             </button>
           </div>
         </form>
