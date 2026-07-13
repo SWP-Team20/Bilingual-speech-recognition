@@ -137,7 +137,7 @@ function AdminPanel() {
     try {
       const undoMeta = await userApi.adminDeleteUser(target.id);
       setUsersList((prev) => prev.filter((u) => (u.id || u.user_id) !== target.id));
-      const undoSeconds = undoMeta?.undo_seconds ?? 30;
+      const undoSeconds = undoMeta?.undo_seconds ?? 60;
       toast.undo(`Пользователь «${target.username}» удалён`, {
         seconds: undoSeconds,
         onUndo: async () => {
@@ -296,7 +296,7 @@ function AdminPanel() {
       <ConfirmDialog
         open={deleteTarget !== null}
         title="Удалить пользователя?"
-        message="Вы уверены, что хотите удалить этого пользователя? Отменить можно в течение 30 секунд."
+        message="Вы уверены, что хотите удалить этого пользователя? Отменить можно в течение 60 секунд."
         confirmLabel="Удалить"
         danger
         onConfirm={confirmDeleteUser}

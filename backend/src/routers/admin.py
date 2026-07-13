@@ -106,7 +106,7 @@ async def admin_delete_user(
         db: Session = Depends(get_db),
         current_admin: User = Depends(RoleChecker([UserRole.ADMIN]))
 ):
-    """Администратор удаляет пользователя с возможностью отмены в течение 30 секунд."""
+    """Администратор удаляет пользователя с возможностью отмены в течение 60 секунд."""
     user_soft_delete.purge_expired_soft_deletes(db)
     user = _get_active_user(db, user_id)
     if not user:

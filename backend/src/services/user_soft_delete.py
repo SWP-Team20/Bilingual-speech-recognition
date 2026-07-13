@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from backend.src import models
 
-USER_UNDO_SECONDS = 30
+USER_UNDO_SECONDS = 60
 
 
 def purge_expired_soft_deletes(db) -> int:
