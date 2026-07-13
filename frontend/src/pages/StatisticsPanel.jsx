@@ -51,14 +51,20 @@ function StatisticsPanelContent() {
       >
         <div
           style={{
+            position: 'relative',
             display: 'flex',
-            justifyContent: 'space-between',
+            flexDirection: isNarrow ? 'column' : 'row',
             alignItems: 'center',
-            gap: '12px',
-            flexWrap: 'wrap',
+            gap: isNarrow ? '12px' : '0',
           }}
         >
-          <div>
+          <div
+            style={{
+              flex: 1,
+              textAlign: 'center',
+              padding: isNarrow ? '0' : '0 140px',
+            }}
+          >
             <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 700, color: colors.textStrong }}>
               Статистика
             </h2>
@@ -66,12 +72,21 @@ function StatisticsPanelContent() {
               Экспорт всего отчёта учитывает фильтры каждой категории.
             </p>
           </div>
-          <StatsDownloadButton
-            label="Экспорт всего"
-            loadingLabel="Экспорт всего…"
-            ariaLabel="Экспорт всей статистики"
-            onDownload={handleExportAll}
-          />
+          <div
+            style={{
+              position: isNarrow ? 'static' : 'absolute',
+              right: 0,
+              top: isNarrow ? undefined : '50%',
+              transform: isNarrow ? undefined : 'translateY(-50%)',
+            }}
+          >
+            <StatsDownloadButton
+              label="Экспорт всего"
+              loadingLabel="Экспорт всего…"
+              ariaLabel="Экспорт всей статистики"
+              onDownload={handleExportAll}
+            />
+          </div>
         </div>
 
         <FrequentWordsSection />
