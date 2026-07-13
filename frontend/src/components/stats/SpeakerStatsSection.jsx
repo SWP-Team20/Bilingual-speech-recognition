@@ -164,6 +164,7 @@ function SpeakerStatsSection() {
   };
 
   const activeFilterCount = countActiveFilters(filters);
+  const isInitialLoad = loading && data === null;
   const visibleAudioOptions = getVisibleAudioOptions(
     audioOptions,
     audioSearchQuery,
@@ -198,7 +199,7 @@ function SpeakerStatsSection() {
   const chartToolbar = (
     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
       <StatsDisplayModeToggle mode={displayMode} onChange={setDisplayMode} />
-      <StatsDownloadButton onDownload={handleDownload} disabled={loading || !data?.items?.length} />
+      <StatsDownloadButton onDownload={handleDownload} disabled={isInitialLoad} />
 
       <div ref={filterWrapRef} style={{ position: 'relative', flexShrink: 0 }}>
         <button
@@ -417,10 +418,10 @@ function SpeakerStatsSection() {
             </span>
           )}
         </div>
-        {loading && chartToolbar}
+        {isInitialLoad && chartToolbar}
       </div>
 
-      {loading ? (
+      {isInitialLoad ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px minmax(0, 1fr) 48px', gap: '10px', alignItems: 'center' }}>

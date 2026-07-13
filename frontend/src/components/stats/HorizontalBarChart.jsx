@@ -47,26 +47,27 @@ function HorizontalBarChart({
   toolbar = null,
 }) {
   const [expanded, setExpanded] = useState(false);
+  const hasItems = items.length > 0;
 
-  if (!items.length) {
-    return (
-      <div style={{ padding: '36px 16px', textAlign: 'center', color: colors.textFaint, fontSize: '14px' }}>
-        Нет данных для отображения
-      </div>
-    );
-  }
-
-  const maxValue = Math.max(
-    ...items.map((item) => getChartDisplayValue(item.count, displayMode, total)),
-    displayMode === 'percent' ? 0.1 : 1,
-  );
+  const maxValue = hasItems
+    ? Math.max(
+      ...items.map((item) => getChartDisplayValue(item.count, displayMode, total)),
+      displayMode === 'percent' ? 0.1 : 1,
+    )
+    : 1;
 
   const previewItems = items.slice(0, PREVIEW_MAX_ROWS);
   const hasMore = items.length > PREVIEW_MAX_ROWS;
 
-  const usedLangs = showLanguageLegend
+  const usedLangs = showLanguageLegend && hasItems
     ? Object.entries(LANG_STYLES).filter(([lang]) => items.some((item) => item.language === lang))
     : [];
+
+  const emptyState = (
+    <div style={{ padding: '24px 16px', textAlign: 'center', color: colors.textFaint, fontSize: '14px' }}>
+      Нет данных для отображения
+    </div>
+  );
 
   const renderRows = (rows, { labelWidth, valueWidth, rowHeight, compact, showRank = false, startIndex = 0 }) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '12px' : '4px' }}>
@@ -206,12 +207,12 @@ function HorizontalBarChart({
           boxSizing: 'border-box',
         }}
       >
-        {renderRows(previewItems, {
+        {hasItems ? renderRows(previewItems, {
           labelWidth: LABEL_WIDTH_PREVIEW,
           valueWidth: VALUE_WIDTH_PREVIEW,
           rowHeight: PREVIEW_ROW_HEIGHT,
           compact: true,
-        })}
+        }) : emptyState}
 
         <div
           style={{
@@ -307,6 +308,7 @@ function HorizontalBarChart({
           </div>
         )}
 
+        {hasItems && (
         <div
           style={{
             display: 'grid',
@@ -326,6 +328,7 @@ function HorizontalBarChart({
           <span>Доля</span>
           <span style={{ textAlign: 'right' }}>{displayMode === 'percent' ? '%' : 'Кол-во'}</span>
         </div>
+        )}
 
         <div
           style={{
@@ -338,13 +341,13 @@ function HorizontalBarChart({
             padding: '6px 8px',
           }}
         >
-          {renderRows(items, {
+          {hasItems ? renderRows(items, {
             labelWidth: LABEL_WIDTH_EXPANDED,
             valueWidth: VALUE_WIDTH_EXPANDED,
             rowHeight: EXPANDED_ROW_HEIGHT,
             compact: false,
             showRank: true,
-          })}
+          }) : emptyState}
         </div>
         </div>
       </Modal>
