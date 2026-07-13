@@ -2,15 +2,16 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi import status as http_status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from uuid import UUID
 
-from backend.src import schemas
+from backend.src import models, schemas
 from backend.src.database import get_db
 from backend.src.dependencies import get_current_user
 from backend.src.models import User, UserRole
 from backend.src.services.audio_filter import StatsFilters, parse_multi_values
-from backend.src.services import word_stats
+from backend.src.services import stats_export, word_stats
 
 router = APIRouter(prefix="/stats", tags=["Statistics"])
 
@@ -23,6 +24,48 @@ def _parse_audio_ids(audio_id: Optional[list[str]]) -> List[UUID]:
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=f"Некорректный audio_id: {raw_id}") from exc
     return audio_ids
+
+
+def _resolve_audio_labels(db: Session, audio_ids: List[UUID]) -> List[str]:
+    if not audio_ids:
+        return []
+    rows = (
+        db.query(models.AudioFile)
+        .filter(models.AudioFile.id.in_(audio_ids))
+        .all()
+    )
+    by_id = {str(row.id): row.filename for row in rows}
+    return [by_id.get(str(audio_id), str(audio_id)) for audio_id in audio_ids]
+
+
+def _export_response(content: bytes, media_type: str, filename: str) -> Response:
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _parse_export_format(format: str) -> str:
+    normalized = format.strip().lower()
+    if normalized not in {"csv", "xlsx"}:
+        raise HTTPException(status_code=400, detail="Поддерживаются только форматы csv и xlsx")
+    return normalized
+
+
+def _parse_audio_ids_from_strings(audio_ids: list[str]) -> List[UUID]:
+    return _parse_audio_ids(audio_ids or None)
+
+
+def _category_filters_to_stats(filters: schemas.StatsCategoryFilters) -> StatsFilters:
+    return StatsFilters(
+        langs=filters.langs,
+        speakers=filters.speakers,
+        date_from=filters.date_from,
+        date_to=filters.date_to,
+        audio_ids=_parse_audio_ids_from_strings(filters.audio_ids),
+        status="done",
+    )
 
 
 @router.get("/words/frequent", response_model=schemas.FrequentWordsResponse)
@@ -152,6 +195,166 @@ async def get_speaker_word_stats(
         total_speakers=result.total_speakers,
         limit=result.limit,
     )
+
+
+@router.get("/words/frequent/export")
+async def export_frequent_words(
+    format: str = Query("csv", description="Формат файла: csv или xlsx"),
+    lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),
+    speaker: Optional[list[str]] = Query(None, description="Говорящий (мама / папа / …)"),
+    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
+    limit: int = Query(50, ge=1, le=500, description="Максимальное число слов в ответе"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Скачать самые частые слова в CSV или Excel с учётом фильтров."""
+    export_format = _parse_export_format(format)
+    filters = StatsFilters(
+        langs=parse_multi_values(lang),
+        speakers=parse_multi_values(speaker),
+        date_from=date_from,
+        date_to=date_to,
+        audio_ids=_parse_audio_ids(audio_id),
+        status="done",
+    )
+    result = word_stats.compute_frequent_words(db, filters, limit=limit)
+    content, media_type, filename = stats_export.export_frequent_words(
+        result,
+        filters,
+        export_format=export_format,
+        audio_labels=_resolve_audio_labels(db, filters.audio_ids),
+    )
+    return _export_response(content, media_type, filename)
+
+
+@router.get("/languages/words/export")
+async def export_language_word_stats(
+    format: str = Query("csv", description="Формат файла: csv или xlsx"),
+    speaker: Optional[list[str]] = Query(None, description="Говорящий (мама / папа / …)"),
+    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Скачать статистику по языкам в CSV или Excel с учётом фильтров."""
+    export_format = _parse_export_format(format)
+    filters = StatsFilters(
+        speakers=parse_multi_values(speaker),
+        date_from=date_from,
+        date_to=date_to,
+        audio_ids=_parse_audio_ids(audio_id),
+        status="done",
+    )
+    result = word_stats.compute_language_word_counts(db, filters)
+    content, media_type, filename = stats_export.export_language_stats(
+        result,
+        filters,
+        export_format=export_format,
+        audio_labels=_resolve_audio_labels(db, filters.audio_ids),
+    )
+    return _export_response(content, media_type, filename)
+
+
+@router.get("/dates/words/export")
+async def export_date_word_stats(
+    format: str = Query("csv", description="Формат файла: csv или xlsx"),
+    lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),
+    speaker: Optional[list[str]] = Query(None, description="Говорящий (мама / папа / …)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
+    limit: int = Query(30, ge=1, le=500, description="Максимальное число дат на графике"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Скачать статистику по датам в CSV или Excel с учётом фильтров."""
+    export_format = _parse_export_format(format)
+    filters = StatsFilters(
+        langs=parse_multi_values(lang),
+        speakers=parse_multi_values(speaker),
+        audio_ids=_parse_audio_ids(audio_id),
+        status="done",
+    )
+    result = word_stats.compute_date_word_counts(db, filters, limit=limit)
+    content, media_type, filename = stats_export.export_date_stats(
+        result,
+        filters,
+        export_format=export_format,
+        audio_labels=_resolve_audio_labels(db, filters.audio_ids),
+    )
+    return _export_response(content, media_type, filename)
+
+
+@router.get("/speakers/words/export")
+async def export_speaker_word_stats(
+    format: str = Query("csv", description="Формат файла: csv или xlsx"),
+    lang: Optional[list[str]] = Query(None, description="Язык: ru / tt / unknown"),
+    date_from: Optional[str] = Query(None, description="Дата записи с (ISO YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Дата записи по, включительно (ISO YYYY-MM-DD)"),
+    audio_id: Optional[list[str]] = Query(None, description="UUID аудиозаписей; можно повторять или через запятую"),
+    limit: int = Query(20, ge=1, le=500, description="Максимальное число говорящих в ответе"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Скачать статистику по говорящим в CSV или Excel с учётом фильтров."""
+    export_format = _parse_export_format(format)
+    filters = StatsFilters(
+        langs=parse_multi_values(lang),
+        date_from=date_from,
+        date_to=date_to,
+        audio_ids=_parse_audio_ids(audio_id),
+        status="done",
+    )
+    result = word_stats.compute_speaker_word_counts(db, filters, limit=limit)
+    content, media_type, filename = stats_export.export_speaker_stats(
+        result,
+        filters,
+        export_format=export_format,
+        audio_labels=_resolve_audio_labels(db, filters.audio_ids),
+    )
+    return _export_response(content, media_type, filename)
+
+
+@router.post("/export/all")
+async def export_all_stats(
+    payload: schemas.StatsExportAllRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Экспортировать всю статистику в одном файле с учётом фильтров каждой категории."""
+    export_format = _parse_export_format(payload.format)
+
+    frequent_filters = _category_filters_to_stats(payload.frequent_words)
+    language_filters = _category_filters_to_stats(payload.languages)
+    date_filters = _category_filters_to_stats(payload.dates)
+    speaker_filters = _category_filters_to_stats(payload.speakers)
+
+    frequent_limit = payload.frequent_words.limit or 30
+    date_limit = payload.dates.limit or 30
+    speaker_limit = payload.speakers.limit or 20
+
+    frequent_words = word_stats.compute_frequent_words(db, frequent_filters, limit=frequent_limit)
+    languages = word_stats.compute_language_word_counts(db, language_filters)
+    dates = word_stats.compute_date_word_counts(db, date_filters, limit=date_limit)
+    speakers = word_stats.compute_speaker_word_counts(db, speaker_filters, limit=speaker_limit)
+
+    content, media_type, filename = stats_export.export_all_stats(
+        frequent_words=frequent_words,
+        frequent_filters=frequent_filters,
+        languages=languages,
+        language_filters=language_filters,
+        dates=dates,
+        date_filters=date_filters,
+        speakers=speakers,
+        speaker_filters=speaker_filters,
+        export_format=export_format,
+        frequent_audio_labels=_resolve_audio_labels(db, frequent_filters.audio_ids),
+        language_audio_labels=_resolve_audio_labels(db, language_filters.audio_ids),
+        date_audio_labels=_resolve_audio_labels(db, date_filters.audio_ids),
+        speaker_audio_labels=_resolve_audio_labels(db, speaker_filters.audio_ids),
+    )
+    return _export_response(content, media_type, filename)
 
 
 @router.post("/rebuild", response_model=schemas.StatsRebuildResponse)

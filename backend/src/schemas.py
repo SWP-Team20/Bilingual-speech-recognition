@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -259,3 +259,20 @@ class DateWordsResponse(BaseModel):
 class StatsRebuildResponse(BaseModel):
     processed: int
     from_json: bool
+
+
+class StatsCategoryFilters(BaseModel):
+    langs: List[str] = []
+    speakers: List[str] = []
+    date_from: Optional[str] = None
+    date_to: Optional[str] = None
+    audio_ids: List[str] = []
+    limit: Optional[int] = Field(default=None, ge=1, le=500)
+
+
+class StatsExportAllRequest(BaseModel):
+    format: str = "xlsx"
+    frequent_words: StatsCategoryFilters = Field(default_factory=StatsCategoryFilters)
+    languages: StatsCategoryFilters = Field(default_factory=StatsCategoryFilters)
+    dates: StatsCategoryFilters = Field(default_factory=StatsCategoryFilters)
+    speakers: StatsCategoryFilters = Field(default_factory=StatsCategoryFilters)

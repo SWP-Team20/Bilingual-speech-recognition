@@ -13,6 +13,7 @@ psycopg[binary]           # драйвер PostgreSQL (postgresql+psycopg)
 # =====================================================================
 pwdlib[bcrypt]
 PyJWT>=2.10.0
+openpyxl                  # экспорт статистики в Excel
 
 # =====================================================================
 # Audio, ML & ASR Toolchain
