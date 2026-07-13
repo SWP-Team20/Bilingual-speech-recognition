@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Auth page redesigned to more flat style with app logo on it in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/331
+- Logo now displayed instead of project name in dashboard page in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/331
+
 ## [0.4.1] - 12.07.2026
 
 ### Added
