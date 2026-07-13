@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../api/userApi';
 import UploadButton from '../components/UploadButton';
@@ -10,7 +10,6 @@ import StatisticsPanel from './StatisticsPanel';
 import AdminPanel from './AdminPanel';
 import { canManageCorpus } from '../constants/roleTranslations';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { useHeaderSearchWrap } from '../hooks/useHeaderSearchWrap';
 import { MOBILE_BREAKPOINT } from '../theme';
 
 function DashboardPage({ onLogout }) {
@@ -21,11 +20,7 @@ function DashboardPage({ onLogout }) {
   const [uploadVersion, setUploadVersion] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
-  const headerRef = useRef(null);
-  const titleRef = useRef(null);
   const canManage = canManageCorpus(userRole);
-  const searchOnOwnRow = useHeaderSearchWrap({ headerRef, titleRef, hasUploadButton: canManage });
-  const stackSearch = isNarrow || searchOnOwnRow;
 
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
@@ -61,41 +56,40 @@ function DashboardPage({ onLogout }) {
       <div style={{ maxWidth: '1440px', margin: '0 auto', width: '100%', padding: isNarrow ? '0 16px' : '0 40px', flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', minHeight: 0 }}>
 
         <div
-          ref={headerRef}
           style={{
             display: 'grid',
-            gridTemplateColumns: stackSearch ? '1fr auto' : 'auto 1fr auto',
-            gridTemplateAreas: stackSearch
-              ? '"title actions" "search search"'
-              : '"title search actions"',
-            gap: stackSearch ? '12px' : '24px',
+            gridTemplateColumns: 'auto 1fr auto',
+            gridTemplateAreas: '"title search actions"',
+            gap: isNarrow ? '12px' : '24px',
             alignItems: 'center',
-            marginBottom: stackSearch ? '20px' : '40px',
+            marginBottom: isNarrow ? '20px' : '40px',
             width: '100%',
             flexShrink: 0,
           }}
         >
-          <h1
-            ref={titleRef}
+          <div
             style={{
               gridArea: 'title',
-              fontSize: isNarrow ? '20px' : '42px',
-              fontWeight: 'bold',
-              margin: 0,
-              letterSpacing: '-0.5px',
-              padding: 0,
-              textAlign: 'left',
-              lineHeight: 1.15,
+              display: 'flex',
+              alignItems: 'center',
+              flexShrink: 0,
               minWidth: 0,
-              whiteSpace: stackSearch ? 'normal' : 'nowrap',
             }}
           >
-            Bilingual Speech Recognition
-          </h1>
+            <img
+              src="/favicon.svg"
+              alt="Bilingual Speech Recognition"
+              style={{
+                display: 'block',
+                height: isNarrow ? '44px' : '48px',
+                width: 'auto',
+              }}
+            />
+          </div>
 
           <AudioSearchBar
             onSearch={handleSearch}
-            compact={stackSearch}
+            compact={isNarrow}
             style={{ gridArea: 'search', width: '100%', minWidth: 0 }}
           />
 
@@ -105,7 +99,7 @@ function DashboardPage({ onLogout }) {
               justifySelf: 'end',
               display: 'flex',
               alignItems: 'center',
-              gap: stackSearch ? '12px' : '24px',
+              gap: isNarrow ? '12px' : '24px',
               flexShrink: 0,
             }}
           >
@@ -115,16 +109,16 @@ function DashboardPage({ onLogout }) {
                 onUploadEnd={handleUploadEnd}
                 userRole={userRole}
                 style={{
-                  height: stackSearch ? '44px' : '48px',
-                  width: stackSearch ? 'auto' : '160px',
-                  padding: stackSearch ? '0 14px' : 0,
-                  fontSize: stackSearch ? '16px' : '18px',
+                  height: isNarrow ? '44px' : '48px',
+                  width: isNarrow ? 'auto' : '160px',
+                  padding: isNarrow ? '0 14px' : 0,
+                  fontSize: isNarrow ? '16px' : '18px',
                   boxSizing: 'border-box',
                 }}
               />
             )}
             <ProfileDropdown
-              size={stackSearch ? 44 : 48}
+              size={isNarrow ? 44 : 48}
               onLogout={onLogout}
               onNavigateToSecurity={() => navigate('/security')}
             />
