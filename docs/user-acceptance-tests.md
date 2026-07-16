@@ -71,7 +71,7 @@
 - **Customer comments or observed issues after execution** : Works as planned
 - **Resulting PBIs or issues after execution** : None
 
-## UAT-006 [Active]
+## UAT-006 [Retired]
 
 - **User goal** : Undo an accidental word deletion while editing a transcription without retyping the whole sentence
 - **Preconditions** : The user has an account with manager or admin access. At least one processed audio file with a transcription is available. The application is deployed and accessible.
@@ -81,10 +81,10 @@
   3. Click a word and delete it using the word editor
   4. Click «Cancel» on the inline undo strip that appears above the transcription
 - **Expected outcome** : The deleted word reappears in the transcription at its original position; no timed toast is shown for this action
-- **Customer comments or observed issues after execution** : Don't have yet
-- **Resulting PBIs or issues after execution** : Don't have yet
+- **Customer comments or observed issues after execution** : Works as planned
+- **Resulting PBIs or issues after execution** : None
 
-## UAT-007 [Active]
+## UAT-007 [Retired]
 
 - **User goal** : Recover an accidentally deleted audio recording within a short grace period
 - **Preconditions** : The user has an account with manager or admin access. At least one audio file is visible in the list. The application is deployed and accessible.
@@ -92,12 +92,12 @@
   1. Open the application and log in with manager or admin credentials
   2. Select an audio recording and click the delete button
   3. Confirm deletion in the warning dialog
-  4. Within 30 seconds, click «Отменить» on the toast notification
+  4. Within 30 seconds, click «Cancel» on the toast notification
 - **Expected outcome** : The recording disappears from the list immediately after deletion, then reappears after undo; after 30 seconds without undo the recording is permanently removed
-- **Customer comments or observed issues after execution** : Don't have yet
-- **Resulting PBIs or issues after execution** : Don't have yet
+- **Customer comments or observed issues after execution** : Need to extend the timer to 60 seconds
+- **Resulting PBIs or issues after execution** : https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/302
 
-## UAT-008 [Active]
+## UAT-008 [Retired]
 
 - **User goal** : Recover an accidentally deleted user account from the admin panel within a short grace period
 - **Preconditions** : The user has an account with admin access. At least one non-admin test user exists. The application is deployed and accessible.
@@ -105,12 +105,12 @@
   1. Open the application and log in with admin credentials
   2. Navigate to the admin panel
   3. Click «Delete» next to a test user and confirm in the dialog
-  4. Within 30 seconds, click «Отменить» on the toast notification
+  4. Within 30 seconds, click «Cancel» on the toast notification
 - **Expected outcome** : The user disappears from the list immediately after deletion, then reappears after undo; the deleted user cannot log in while soft-deleted; after 30 seconds without undo the account is permanently removed
-- **Customer comments or observed issues after execution** : Don't have yet
-- **Resulting PBIs or issues after execution** : Don't have yet
+- **Customer comments or observed issues after execution** : Need to extend the timer to 60 seconds
+- **Resulting PBIs or issues after execution** : https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/302
 
-## UAT-009 [Active]
+## UAT-009 [Retired]
 
 - **User goal** : Change the language or speaker label for several words at once instead of editing each word individually
 - **Preconditions** : The user has an account with manager or admin access. A transcription with multiple words is available. The application is deployed and accessible.
@@ -120,10 +120,10 @@
   3. Select two or more words (Shift/Ctrl+click)
   4. In the bulk toolbar, choose a new language or speaker and click «Apply»
 - **Expected outcome** : All selected words update to the chosen language or speaker; the bulk toolbar shows the selection count and closes when dismissed
-- **Customer comments or observed issues after execution** : Don't have yet
-- **Resulting PBIs or issues after execution** : Don't have yet
+- **Customer comments or observed issues after execution** : Works as planned
+- **Resulting PBIs or issues after execution** : None
 
-## UAT-010 [Active]
+## UAT-010 [Retired]
 
 - **User goal** : View word statistics scoped to a single audio recording rather than the whole corpus
 - **Preconditions** : The user has an account. At least two processed audio files with transcriptions exist. The application is deployed and accessible.
@@ -133,10 +133,10 @@
   3. Open the filters panel and select one audio recording
   4. Apply filters and review frequent words, speaker, language, or date sections
 - **Expected outcome** : Statistics reflect only the selected recording; clearing the audio filter restores corpus-wide results
-- **Customer comments or observed issues after execution** : Don't have yet
-- **Resulting PBIs or issues after execution** : Don't have yet
+- **Customer comments or observed issues after execution** : Works as planned
+- **Resulting PBIs or issues after execution** : none
 
-## UAT-011 [Active]
+## UAT-011 [Retired]
 
 - **User goal** : Correct the displayed title or recording date of an audio file without re-uploading it
 - **Preconditions** : The user has an account with manager or admin access. At least one audio file with a transcription is available. The application is deployed and accessible.
@@ -146,5 +146,19 @@
   3. Click the title / date line at the top of the transcription
   4. Change the filename or recording date in the modal and save
 - **Expected outcome** : The updated title and date appear in the transcription header and in the audio list without reloading the page
+- **Customer comments or observed issues after execution** : Works as planned
+- **Resulting PBIs or issues after execution** : None
+
+## UAT-012 [Active]
+
+- **User goal** : View detailed statistics of speakers with ability to see in which audio each word was spoken
+- **Preconditions** : The user has an account with manager or admin access. At least one audio file with a transcription is available. The application is deployed and accessible.
+- **Step-by-step instructions** :
+  1. Open the application and log in with manager or admin credentials
+  2. Open the statistics panel and find per-speaker statistics
+  3. Click the "Detailed Statistics" button
+  4. Choose a speaker and click on a word
+- **Expected outcome** : The user should be redirected to an audio page with audio and word chosen highlighted
 - **Customer comments or observed issues after execution** : Don't have yet
 - **Resulting PBIs or issues after execution** : Don't have yet
+
