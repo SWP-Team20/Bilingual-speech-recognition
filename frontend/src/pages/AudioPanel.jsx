@@ -279,7 +279,7 @@ function AudioPanel({
   const showTranscriptionColumn = !isNarrow || selectedAudioId;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: isNarrow ? '28px' : '48px', height: isNarrow ? 'auto' : '100%', minHeight: 0 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: isNarrow ? '28px' : '48px', height: isNarrow ? 'auto' : '100%', minHeight: 0, flex: isNarrow ? undefined : 1, overflow: isNarrow ? 'visible' : 'hidden' }}>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: isNarrow ? 'auto' : '100%', alignItems: 'stretch', order: isNarrow ? 2 : undefined }}>
         <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: isNarrow ? 'flex-start' : 'center', gap: '12px', flexShrink: 0, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flexWrap: 'wrap' }}>
@@ -447,8 +447,24 @@ function AudioPanel({
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: isNarrow ? 'visible' : 'auto', boxSizing: 'border-box', width: '100%' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+        <div
+          className={isNarrow ? undefined : 'panel-scroll panel-scroll--left'}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            boxSizing: 'border-box',
+            width: '100%',
+          }}
+        >
+          <div
+            className={isNarrow ? undefined : 'panel-scroll__content'}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              width: '100%',
+            }}
+          >
             {isInitialLoading ? (
               <>
                 <AudioRowSkeleton />
@@ -484,26 +500,44 @@ function AudioPanel({
       </div>
 
       {showTranscriptionColumn && (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: isNarrow ? 'auto' : '100%', alignItems: 'stretch', order: isNarrow ? 1 : undefined }}>
-        <div style={{ flex: 1, height: isNarrow ? 'auto' : '100%', minHeight: 0, width: '100%' }}>
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        height: isNarrow ? 'auto' : '100%',
+        alignItems: 'stretch',
+        order: isNarrow ? 1 : undefined,
+        overflow: isNarrow ? 'visible' : 'hidden',
+      }}>
           {selectedAudioId ? (
-            <div style={{ display: 'flex', flexDirection: 'column', height: isNarrow ? 'auto' : '100%', width: '100%' }}>
+            <>
               <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
                 <h2 style={{ fontSize: isNarrow ? '22px' : '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>Транскрипция</h2>
               </div>
-              <TranscriptionBox
-                transcriptionText={selectedTranscription}
-                transcriptionWords={selectedTranscriptionWords}
-                isLoading={isTranscribing}
-                audioName={currentAudioName}
-                audioId={selectedAudioId}
-                audioRecordedAt={selectedAudio?.recorded_at}
-                audioUploadedAt={selectedAudio?.uploaded_at}
-                canEdit={canManageCorpus(userRole)}
-                canDownloadJson={canManageCorpus(userRole)}
-                onWordsChanged={setSelectedTranscriptionWords}
-                onEditMetadata={canManageCorpus(userRole) ? () => setMetadataEditOpen(true) : undefined}
-              />
+              <div
+                className={isNarrow ? undefined : 'panel-scroll panel-scroll--right'}
+                style={{
+                  flex: isNarrow ? undefined : 1,
+                  minHeight: 0,
+                  width: '100%',
+                }}
+              >
+                <div className={isNarrow ? undefined : 'panel-scroll__content'}>
+                  <TranscriptionBox
+                    transcriptionText={selectedTranscription}
+                    transcriptionWords={selectedTranscriptionWords}
+                    isLoading={isTranscribing}
+                    audioName={currentAudioName}
+                    audioId={selectedAudioId}
+                    audioRecordedAt={selectedAudio?.recorded_at}
+                    audioUploadedAt={selectedAudio?.uploaded_at}
+                    canEdit={canManageCorpus(userRole)}
+                    canDownloadJson={canManageCorpus(userRole)}
+                    onWordsChanged={setSelectedTranscriptionWords}
+                    onEditMetadata={canManageCorpus(userRole) ? () => setMetadataEditOpen(true) : undefined}
+                  />
+                </div>
+              </div>
               <AudioMetadataEditModal
                 open={metadataEditOpen}
                 onClose={() => setMetadataEditOpen(false)}
@@ -513,13 +547,12 @@ function AudioPanel({
                 uploadedAt={selectedAudio?.uploaded_at}
                 onSaved={handleMetadataUpdated}
               />
-            </div>
+            </>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: colors.waveformScrub, border: `2px dashed ${colors.disabledBg}`, borderRadius: radius.md, padding: '24px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: isNarrow ? '160px' : 0, color: colors.waveformScrub, border: `2px dashed ${colors.disabledBg}`, borderRadius: radius.md, padding: '24px', textAlign: 'center' }}>
               Выберите аудиозапись для просмотра транскрипции
             </div>
           )}
-        </div>
       </div>
       )}
     </div>

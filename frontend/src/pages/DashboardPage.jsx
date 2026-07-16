@@ -152,14 +152,16 @@ function DashboardPage({ onLogout }) {
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           {activeTab === 'audio' && (
-            <AudioPanel
-              userRole={userRole}
-              pendingUploads={pendingUploads}
-              uploadVersion={uploadVersion}
-              searchQuery={searchQuery}
-              focusAudioId={focusAudioId}
-              onFocusAudioHandled={() => setFocusAudioId(null)}
-            />
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <AudioPanel
+                userRole={userRole}
+                pendingUploads={pendingUploads}
+                uploadVersion={uploadVersion}
+                searchQuery={searchQuery}
+                focusAudioId={focusAudioId}
+                onFocusAudioHandled={() => setFocusAudioId(null)}
+              />
+            </div>
           )}
           {activeTab === 'statistics' && <StatisticsPanel />}
           {activeTab === 'admin' && isAdmin && (
