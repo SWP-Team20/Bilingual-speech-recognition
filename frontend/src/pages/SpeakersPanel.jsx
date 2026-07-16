@@ -88,6 +88,7 @@ function SpeakersPanel({
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [wordData, setWordData] = useState(null);
+  const [wordsSpeakerId, setWordsSpeakerId] = useState(null);
   const [wordsLoading, setWordsLoading] = useState(false);
 
   const [audioOptions, setAudioOptions] = useState([]);
@@ -99,9 +100,10 @@ function SpeakersPanel({
   }, [filters]);
 
   const selectedSpeaker = speakers.find((s) => s.id === selectedSpeakerId) || null;
+  const wordsMatchSelection = wordsSpeakerId === selectedSpeakerId;
   const groupedWords = useMemo(
-    () => groupWordsByAudio(wordData?.items || []),
-    [wordData],
+    () => (wordsMatchSelection ? groupWordsByAudio(wordData?.items || []) : []),
+    [wordData, wordsMatchSelection],
   );
 
   const filterFieldStyle = {
@@ -145,6 +147,7 @@ function SpeakersPanel({
   useEffect(() => {
     if (!selectedSpeakerId) {
       setWordData(null);
+      setWordsSpeakerId(null);
       return undefined;
     }
     let cancelled = false;
@@ -152,12 +155,16 @@ function SpeakersPanel({
       setWordsLoading(true);
       try {
         const result = await speakersApi.fetchSpeakerWords(selectedSpeakerId, filters);
-        if (!cancelled) setWordData(result);
+        if (!cancelled) {
+          setWordData(result);
+          setWordsSpeakerId(selectedSpeakerId);
+        }
       } catch (error) {
         console.error(error);
         if (!cancelled) {
           toast.error('Не удалось загрузить слова говорящего');
           setWordData(null);
+          setWordsSpeakerId(null);
         }
       } finally {
         if (!cancelled) setWordsLoading(false);
@@ -371,10 +378,15 @@ function SpeakersPanel({
             <h2 style={{ margin: 0, fontSize: isNarrow ? '20px' : '22px' }}>
               {selectedSpeaker ? `Слова: ${selectedSpeaker.label}` : 'Слова говорящего'}
             </h2>
-            {wordData && (
+            {wordsMatchSelection && wordData && (
               <div style={{ marginTop: '4px', fontSize: '13px', color: colors.textMuted }}>
                 Всего слов: {wordData.total}
                 {wordData.total > wordData.items.length ? ` · показано ${wordData.items.length}` : ''}
+              </div>
+            )}
+            {wordsLoading && !wordsMatchSelection && (
+              <div style={{ marginTop: '4px', fontSize: '13px', color: colors.textMuted }}>
+                Загрузка…
               </div>
             )}
           </div>
@@ -542,11 +554,10 @@ function SpeakersPanel({
               <div style={{ color: colors.textFaint, textAlign: 'center', padding: '40px 16px' }}>
                 Выберите говорящего слева
               </div>
-            ) : wordsLoading ? (
-              <>
-                <Skeleton height={80} />
-                <Skeleton height={80} />
-              </>
+            ) : wordsLoading && !wordsMatchSelection ? (
+              <div style={{ color: colors.textMuted, textAlign: 'center', padding: '40px 16px', fontSize: '14px' }}>
+                Загрузка…
+              </div>
             ) : groupedWords.length === 0 ? (
               <div style={{ color: colors.textFaint, textAlign: 'center', padding: '40px 16px' }}>
                 Нет слов по выбранным фильтрам
