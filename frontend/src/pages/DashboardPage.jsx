@@ -19,11 +19,19 @@ function DashboardPage({ onLogout }) {
   const [pendingUploads, setPendingUploads] = useState([]);
   const [uploadVersion, setUploadVersion] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [focusAudioId, setFocusAudioId] = useState(null);
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
   const canManage = canManageCorpus(userRole);
 
   const handleSearch = useCallback((query) => {
     setSearchQuery(query);
+  }, []);
+
+  const handleSelectSearchResult = useCallback((audio) => {
+    if (!audio?.id) return;
+    setSearchQuery(audio.filename || '');
+    setFocusAudioId(audio.id);
+    setActiveTab('audio');
   }, []);
 
   useEffect(() => {
@@ -89,6 +97,8 @@ function DashboardPage({ onLogout }) {
 
           <AudioSearchBar
             onSearch={handleSearch}
+            onSelectResult={handleSelectSearchResult}
+            showSuggestions={activeTab !== 'audio'}
             compact={isNarrow}
             style={{ gridArea: 'search', width: '100%', minWidth: 0 }}
           />
@@ -147,6 +157,8 @@ function DashboardPage({ onLogout }) {
               pendingUploads={pendingUploads}
               uploadVersion={uploadVersion}
               searchQuery={searchQuery}
+              focusAudioId={focusAudioId}
+              onFocusAudioHandled={() => setFocusAudioId(null)}
             />
           )}
           {activeTab === 'statistics' && <StatisticsPanel />}

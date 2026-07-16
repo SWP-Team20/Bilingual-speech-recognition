@@ -38,7 +38,14 @@ function countActiveFilters(filters) {
   return count;
 }
 
-function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' }) {
+function AudioPanel({
+  userRole,
+  pendingUploads,
+  uploadVersion,
+  searchQuery = '',
+  focusAudioId = null,
+  onFocusAudioHandled,
+}) {
   const [audioList, setAudioList] = useState([]);
   const [selectedAudioId, setSelectedAudioId] = useState(null);
   const [selectedTranscription, setSelectedTranscription] = useState('');
@@ -54,6 +61,8 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
   const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef(filters);
+  const searchQueryRef = useRef(searchQuery);
+  const loadRequestIdRef = useRef(0);
   const filterWrapRef = useRef(null);
 
   const toast = useToast();
@@ -64,12 +73,49 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
   }, [filters]);
 
   useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
+
+  useEffect(() => {
     loadAudioList();
   }, [searchQuery]);
 
   useEffect(() => {
     if (uploadVersion > 0) loadAudioList();
   }, [uploadVersion]);
+
+  // Open a specific audio when navigating from search suggestions on other tabs.
+  useEffect(() => {
+    if (!focusAudioId) return;
+    let cancelled = false;
+    const audioId = focusAudioId;
+    (async () => {
+      setMetadataEditOpen(false);
+      setSelectedAudioId(audioId);
+      setIsTranscribing(true);
+      try {
+        const data = await audioApi.fetchTranscription(audioId);
+        if (cancelled) return;
+        setSelectedTranscription(data.transcription_text || 'Транскрипция не найдена.');
+        setSelectedTranscriptionWords(data.words || []);
+      } catch (error) {
+        if (cancelled) return;
+        console.error(error);
+        setSelectedTranscription('Ошибка загрузки транскрипции');
+        setSelectedTranscriptionWords([]);
+        toast.error('Не удалось загрузить транскрипцию');
+      } finally {
+        // Only clear focus after a completed (non-cancelled) load. Calling this
+        // from a Strict Mode cleanup race cancels the real request and leaves
+        // an empty transcription panel.
+        if (!cancelled) {
+          setIsTranscribing(false);
+          onFocusAudioHandled?.();
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [focusAudioId]);
 
   // Close the filter panel when clicking outside of it.
   useEffect(() => {
@@ -85,6 +131,7 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
 
   // Consolidated status polling: one timer for the whole list, only while
   // something is still being processed. Replaces per-row polling.
+  // Reads search/filters via refs so the interval never applies a stale query.
   const hasProcessing = audioList.some((a) => !isTerminal(a.status));
   useEffect(() => {
     if (!hasProcessing) return;
@@ -96,16 +143,23 @@ function AudioPanel({ userRole, pendingUploads, uploadVersion, searchQuery = '' 
 
   const loadAudioList = async ({ silent = false, filters: filtersArg } = {}) => {
     const activeFilters = filtersArg ?? filtersRef.current;
+    const query = searchQueryRef.current;
+    const requestId = ++loadRequestIdRef.current;
     try {
-      const data = searchQuery
-        ? await audioApi.searchByFilename(searchQuery)
+      const data = query
+        ? await audioApi.searchByFilename(query)
         : await audioApi.fetchAudioList(activeFilters);
+      // Ignore outdated responses (e.g. a poll that started before a search).
+      if (requestId !== loadRequestIdRef.current) return;
       setAudioList(data);
     } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
       console.error("Ошибка загрузки аудио:", error);
       if (!silent) toast.error('Не удалось загрузить список аудиозаписей');
     } finally {
-      setIsInitialLoading(false);
+      if (requestId === loadRequestIdRef.current) {
+        setIsInitialLoading(false);
+      }
     }
     loadTotalStorage();
   };
