@@ -156,7 +156,7 @@
 - **Step-by-step instructions** :
   1. Open the application and log in with manager or admin credentials
   2. Open the statistics panel and find per-speaker statistics
-  3. Click the "xПодробная статистикаs" buton
+  3. Click the "Подробная статистика" button
   4. Choose a speaker and click on a word
 - **Expected outcome** : The user should be redirected to an audio page with audio and word chosen highlighted
 - **Customer comments or observed issues after execution** : Don't have yet
