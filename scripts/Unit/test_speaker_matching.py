@@ -15,14 +15,30 @@ class FakeSpeaker:
 
 
 class FakeQuery:
-    def __init__(self, speakers):
+    def __init__(self, speakers, label_filter=None):
         self._speakers = speakers
+        self._label_filter = label_filter
 
     def filter(self, *args, **kwargs):
-        return self
+        label_filter = kwargs.get("label_filter")
+        if label_filter is None and args:
+            # func.lower(models.Speaker.label) == value.lower()
+            for arg in args:
+                if hasattr(arg, "right") and hasattr(arg.right, "value"):
+                    label_filter = arg.right.value.lower()
+        return FakeQuery(self._speakers, label_filter=label_filter)
 
     def all(self):
         return [sp for sp in self._speakers if sp.embedding is not None]
+
+    def first(self):
+        if self._label_filter is not None:
+            for sp in self._speakers:
+                if (sp.label or "").lower() == self._label_filter:
+                    return sp
+            return None
+        items = self.all()
+        return items[0] if items else None
 
 
 class FakeDB:
@@ -90,16 +106,70 @@ def test_resolve_speakers_creates_new_for_different_voice():
     assert db.added[0].label == "Говорящий 2"
 
 
-def test_resolve_speakers_without_embedding_always_creates_new():
+def test_resolve_speakers_without_embedding_reuses_singleton_auto_label():
     existing = FakeSpeaker(1, "Говорящий 1", _normalize([1.0, 0.0, 0.0]))
     db = FakeDB([existing])
     words = [{"speaker": "Говорящий 1"}]
 
     result = _resolve_speakers(db, words, {})
 
-    assert result["Говорящий 1"] == 2
+    assert result["Говорящий 1"] == 1
+    assert len(db.added) == 0
+
+
+def test_singleton_auto_label_reuses_across_audios():
+    db = FakeDB([])
+    words1 = [{"speaker": "Говорящий 1"}]
+    words2 = [{"speaker": "Говорящий 1"}, {"speaker": "Говорящий 1"}]
+
+    r1 = _resolve_speakers(db, words1, {})
+    r2 = _resolve_speakers(db, words2, {})
+
+    assert r1["Говорящий 1"] == r2["Говорящий 1"]
     assert len(db.added) == 1
-    assert db.added[0].label == "Говорящий 2"
+    assert db.added[0].label == "Говорящий 1"
+
+
+def test_multi_auto_labels_without_embedding_allocate_separately():
+    db = FakeDB([])
+    words = [{"speaker": "Говорящий 1"}, {"speaker": "Говорящий 2"}]
+
+    result = _resolve_speakers(db, words, {})
+
+    assert result["Говорящий 1"] != result["Говорящий 2"]
+    assert len(db.added) == 2
+    assert {sp.label for sp in db.added} == {"Говорящий 1", "Говорящий 2"}
+
+
+def test_resolve_speakers_reuses_custom_label_without_embedding():
+    existing = FakeSpeaker(1, "мама", None)
+    db = FakeDB([existing])
+    words = [{"speaker": "Мама"}]
+
+    result = _resolve_speakers(db, words, {})
+
+    assert result["Мама"] == 1
+    assert len(db.added) == 0
+
+
+def test_resolve_speakers_creates_custom_label_once():
+    db = FakeDB([])
+    words = [{"speaker": "папа"}, {"speaker": "папа"}]
+
+    result = _resolve_speakers(db, words, {})
+
+    assert result["папа"] == 1
+    assert len(db.added) == 1
+    assert db.added[0].label == "папа"
+
+
+def test_find_best_speaker_match_skips_null_embedding():
+    from backend.src.db_index import _find_best_speaker_match
+
+    db = FakeDB([FakeSpeaker(1, "Говорящий 1", None)])
+    matched, sim = _find_best_speaker_match(db, [1.0, 0.0, 0.0])
+    assert matched is None
+    assert sim == -1.0
 
 
 def test_two_local_voices_never_merge_into_one_speaker():

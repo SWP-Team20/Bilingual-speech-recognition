@@ -232,6 +232,28 @@ class SpeakerWordsResponse(BaseModel):
     limit: int
 
 
+class SpeakerWordHitItem(BaseModel):
+    audio_id: UUID
+    audio_filename: str
+    recorded_at: datetime | None = None
+    text: str
+    raw: str | None = None
+    language: str
+    start_sec: float
+    end_sec: float
+    position: int
+    confidence: float | None = None
+
+
+class SpeakerWordHitsResponse(BaseModel):
+    speaker_id: int
+    speaker_label: str
+    items: List[SpeakerWordHitItem]
+    total: int
+    limit: int
+    offset: int
+
+
 class LanguageWordCountItem(BaseModel):
     language: str
     label: str

@@ -11,7 +11,7 @@ from uuid import UUID
 from sqlalchemy import func
 
 from backend.src import models
-from backend.src.speaker_labels import ensure_word_speakers
+from backend.src.speaker_labels import ensure_word_speakers, is_auto_diarization_label
 
 SR = 16000
 MATCH_THRESHOLD = float(os.environ.get("DIARIZE_MATCH_THRESHOLD", "0.72"))
@@ -20,12 +20,20 @@ _SPEAKER_LABEL_RE = re.compile(r"^Говорящий (\d+)$")
 
 
 def _normalize(vec):
+    if not vec:
+        return []
     n = sum(x * x for x in vec) ** 0.5
     return [x / n for x in vec] if n else list(vec)
 
 
 def _cosine_sim(a, b):
+    if not a or not b:
+        return -1.0
     return sum(x * y for x, y in zip(a, b))
+
+
+def _valid_embedding(emb) -> bool:
+    return isinstance(emb, (list, tuple)) and len(emb) > 0
 
 
 def _blend_embedding(existing, new, weight=EMBEDDING_BLEND_WEIGHT):
@@ -43,16 +51,60 @@ def _allocate_speaker_label(db):
     return f"Говорящий {max(nums, default=0) + 1}"
 
 
+def _find_speaker_by_label(db, label: str):
+    label = (label or "").strip()
+    if not label:
+        return None
+    return (
+        db.query(models.Speaker)
+        .filter(func.lower(models.Speaker.label) == label.lower())
+        .first()
+    )
+
+
+def _create_speaker(db, label, embedding=None):
+    sp = models.Speaker(
+        label=label,
+        embedding=_normalize(embedding) if embedding is not None else None,
+    )
+    db.add(sp)
+    db.flush()
+    return sp
+
+
+def _speaker_for_custom_label(db, label, embedding=None):
+    """Пользовательская метка (мама, папа, …): один глобальный Speaker на имя."""
+    existing = _find_speaker_by_label(db, label)
+    if existing is not None:
+        if embedding is not None and existing.embedding is not None:
+            existing.embedding = _blend_embedding(existing.embedding, embedding)
+        elif embedding is not None and existing.embedding is None:
+            existing.embedding = _normalize(embedding)
+        return existing
+    return _create_speaker(db, label, embedding)
+
+
+def _distinct_speaker_labels(words):
+    return {w.get("speaker") for w in words if w.get("speaker")}
+
+
+def _is_singleton_speaker_label(words, lbl):
+    """В записи только один говорящий (типичный монолог или fallback «Говорящий 1»)."""
+    return _distinct_speaker_labels(words) == {lbl}
+
+
 def _find_best_speaker_match(db, emb, exclude_ids=None):
     """Ближайший глобальный спикер по косинусу (>= порога). exclude_ids — спикеры,
     уже занятые другой локальной меткой этого же аудио (нельзя переиспользовать).
     Возвращает (Speaker|None, similarity)."""
+    if not _valid_embedding(emb):
+        return None, -1.0
     exclude_ids = exclude_ids or set()
     emb = _normalize(emb)
     best_sp = None
     best_sim = -1.0
     for sp in db.query(models.Speaker).filter(models.Speaker.embedding.isnot(None)).all():
-        if sp.id in exclude_ids:
+        if sp.id in exclude_ids or not _valid_embedding(sp.embedding):
             continue
         sim = _cosine_sim(emb, sp.embedding)
         if sim > best_sim:
@@ -68,15 +120,22 @@ def _resolve_speakers(db, words, speaker_embeddings=None):
 
     Гарантия: два РАЗНЫХ локальных голоса одного аудио никогда не схлопываются в
     одного глобального спикера — каждый глобальный спикер занимается максимум одной
-    меткой за вызов (жадно, сначала самое сильное совпадение). Метки без эмбеддинга
-    всегда создают нового спикера."""
+    меткой за вызов (жадно, сначала самое сильное совпадение).
+
+    Монологи с одной меткой «Говорящий 1» (без эмбеддинга) переиспользуют одного
+    глобального говорящего; в записи с несколькими голосами — отдельные id."""
     speaker_embeddings = speaker_embeddings or {}
     labels = sorted({w.get("speaker") for w in words if w.get("speaker")})
     out = {}
     claimed = set()                       # id глобальных спикеров, занятых в ЭТОМ аудио
 
-    pending = [(lbl, speaker_embeddings[lbl]) for lbl in labels if speaker_embeddings.get(lbl)]
-    without_emb = [lbl for lbl in labels if not speaker_embeddings.get(lbl)]
+    pending = [
+        (lbl, speaker_embeddings[lbl])
+        for lbl in labels
+        if _valid_embedding(speaker_embeddings.get(lbl))
+    ]
+    pending_labels = {lbl for lbl, _ in pending}
+    without_emb = [lbl for lbl in labels if lbl not in pending_labels]
 
     # Жадное назначение: на каждом шаге берём пару (метка, спикер) с макс. сходством
     # среди ещё не занятых спикеров, фиксируем её и убираем спикера из доступных.
@@ -94,17 +153,19 @@ def _resolve_speakers(db, words, speaker_embeddings=None):
         claimed.add(matched.id)
         pending.pop(idx)
 
-    # Метки без приемлемого совпадения (и без эмбеддинга) -> новые глобальные спикеры
+    # Метки без приемлемого совпадения по голосу -> новый глобальный спикер
     for lbl, emb in pending:
-        sp = models.Speaker(label=_allocate_speaker_label(db), embedding=_normalize(emb))
-        db.add(sp)
-        db.flush()
+        if not is_auto_diarization_label(lbl):
+            sp = _speaker_for_custom_label(db, lbl, embedding=emb)
+        else:
+            sp = _create_speaker(db, _allocate_speaker_label(db), embedding=emb)
         out[lbl] = sp.id
         claimed.add(sp.id)
     for lbl in without_emb:
-        sp = models.Speaker(label=_allocate_speaker_label(db), embedding=None)
-        db.add(sp)
-        db.flush()
+        if not is_auto_diarization_label(lbl) or _is_singleton_speaker_label(words, lbl):
+            sp = _speaker_for_custom_label(db, lbl)
+        else:
+            sp = _create_speaker(db, _allocate_speaker_label(db))
         out[lbl] = sp.id
 
     return out
@@ -268,3 +329,49 @@ def reindex_from_json(db, audio_id, write_back_json=True):
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
     save_transcription(db, aid, words, segments, stats, speaker_embeddings)
+
+
+def reconcile_corpus_speaker_labels(db):
+    """Синхронизирует Word.speaker_id с words[].speaker из transcription.json.
+
+    Нужно после ручного переименования меток в транскрипции, если вкладка «Говорящие»
+    всё ещё показывает отдельные «Говорящий N» вместо заданных имён."""
+    from backend.src.services import audio_soft_delete
+
+    query = db.query(models.AudioFile).filter(models.AudioFile.status == "done")
+    query = audio_soft_delete.active_audio_filter(query)
+    updated = 0
+
+    for audio in query.all():
+        json_path = os.path.join(audio.folder_path, "transcription.json")
+        if not os.path.exists(json_path):
+            continue
+        with open(json_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        words = data.get("words") or []
+        if not words:
+            continue
+
+        speaker_embeddings = data.get("speaker_embeddings") or {}
+        if not isinstance(speaker_embeddings, dict):
+            speaker_embeddings = {}
+
+        spk_map = _resolve_speakers(db, words, speaker_embeddings)
+        aid = UUID(str(audio.id))
+        rows = (
+            db.query(models.Word)
+            .filter(models.Word.audio_id == aid)
+            .order_by(models.Word.position)
+            .all()
+        )
+        if len(rows) != len(words):
+            continue
+
+        for row, w in zip(rows, words):
+            speaker_id = spk_map.get(w.get("speaker"))
+            if row.speaker_id != speaker_id:
+                row.speaker_id = speaker_id
+                updated += 1
+
+    cleanup_orphan_speakers(db)
+    return updated

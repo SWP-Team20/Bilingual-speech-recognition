@@ -43,7 +43,7 @@ function AudioPanel({
   pendingUploads,
   uploadVersion,
   searchQuery = '',
-  focusAudioId = null,
+  focusAudio = null,
   onFocusAudioHandled,
 }) {
   const [audioList, setAudioList] = useState([]);
@@ -54,6 +54,8 @@ function AudioPanel({
   const [totalStorageMb, setTotalStorageMb] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [metadataEditOpen, setMetadataEditOpen] = useState(false);
+  const [seekTarget, setSeekTarget] = useState(null);
+  const [navHighlight, setNavHighlight] = useState(null);
 
   // Filters: `filters` is what's applied to the list, `draftFilters` is the
   // in-progress state of the open filter panel.
@@ -84,11 +86,18 @@ function AudioPanel({
     if (uploadVersion > 0) loadAudioList();
   }, [uploadVersion]);
 
-  // Open a specific audio when navigating from search suggestions on other tabs.
+  // Open a specific audio when navigating from search or the speakers tab.
   useEffect(() => {
-    if (!focusAudioId) return;
+    if (!focusAudio?.audioId) return;
     let cancelled = false;
-    const audioId = focusAudioId;
+    const { audioId, startSec, position } = focusAudio;
+    setNavHighlight({
+      audioId,
+      wordPosition: Number.isInteger(position) ? position : null,
+    });
+    if (startSec != null && Number.isFinite(startSec)) {
+      setSeekTarget({ audioId, startSec });
+    }
     (async () => {
       setMetadataEditOpen(false);
       setSelectedAudioId(audioId);
@@ -105,9 +114,6 @@ function AudioPanel({
         setSelectedTranscriptionWords([]);
         toast.error('Не удалось загрузить транскрипцию');
       } finally {
-        // Only clear focus after a completed (non-cancelled) load. Calling this
-        // from a Strict Mode cleanup race cancels the real request and leaves
-        // an empty transcription panel.
         if (!cancelled) {
           setIsTranscribing(false);
           onFocusAudioHandled?.();
@@ -115,7 +121,13 @@ function AudioPanel({
       }
     })();
     return () => { cancelled = true; };
-  }, [focusAudioId]);
+  }, [focusAudio]);
+
+  useEffect(() => {
+    if (!seekTarget) return undefined;
+    const timer = setTimeout(() => setSeekTarget(null), 1500);
+    return () => clearTimeout(timer);
+  }, [seekTarget]);
 
   // Close the filter panel when clicking outside of it.
   useEffect(() => {
@@ -488,6 +500,17 @@ function AudioPanel({
                   key={audio.id}
                   audio={audio}
                   isSelected={selectedAudioId === audio.id}
+                  isNavHighlighted={navHighlight?.audioId === audio.id}
+                  onNavHighlightLeave={(event) => {
+                    const next = event?.relatedTarget;
+                    if (next?.closest?.('[data-nav-highlight-transcription]')) return;
+                    setNavHighlight((current) => (
+                      current?.audioId === audio.id ? null : current
+                    ));
+                  }}
+                  seekToSec={
+                    seekTarget?.audioId === audio.id ? seekTarget.startSec : undefined
+                  }
                   onTranscribeToggle={handleTranscribeClick}
                   onDeleteSuccess={handleDeleteSuccess}
                   onMetadataUpdated={handleMetadataUpdated}
@@ -500,7 +523,9 @@ function AudioPanel({
       </div>
 
       {showTranscriptionColumn && (
-      <div style={{
+      <div
+        data-nav-highlight-transcription={navHighlight ? 'true' : undefined}
+        style={{
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
@@ -531,6 +556,12 @@ function AudioPanel({
                     audioId={selectedAudioId}
                     audioRecordedAt={selectedAudio?.recorded_at}
                     audioUploadedAt={selectedAudio?.uploaded_at}
+                    highlightWordIndex={
+                      navHighlight?.audioId === selectedAudioId
+                        ? navHighlight.wordPosition
+                        : null
+                    }
+                    onHighlightWordClear={() => setNavHighlight(null)}
                     canEdit={canManageCorpus(userRole)}
                     canDownloadJson={canManageCorpus(userRole)}
                     onWordsChanged={setSelectedTranscriptionWords}
