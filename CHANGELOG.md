@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Now list of audios does not reuploads when search string is inputted in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/335
-- Now list of audios and transcription tab are scrollable in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/338
+- Instead of assigning "No Speaker", a new Speaker is assigned in transcription in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/337
+- Transcription window is now scrollable in https://github.com/SWP-Team20/Bilingual-speech-recognition/pull/338
 
 ## [0.4.1] - 12.07.2026
 
