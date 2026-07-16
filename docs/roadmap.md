@@ -71,3 +71,18 @@
   -  [Silent JWT refresh](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/287)
   -  [Soft delete with undo](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/288)
   -  [Edit audio filename and recording date from transcription header](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/289)
+
+## Sprint 5
+
+- **Sprint name or number:** 5
+- **Link to the corresponding Sprint milestone:** [Sprint 5](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/5)
+- **Sprint start and finish dates:** 13.07.2026-19.07.2026
+- **Sprint Goal:** Polish the product, finalize documents and explanations for customer transitioning
+- **Short focus or expected outcome statement:** Product without bugs and ready for transition
+- **Linked planned items for that Sprint, such as user stories and supporting PBIs:**
+  -  [US-029: Speaker's words](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/257)
+  -  [Extend soft deletion timer](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/302)
+  -  [Document ASR training process](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/305)
+  -  [App Logo](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/326)
+  -  [Add ability to download statistics in .csv and excel format](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/327)
+  -  [Search process expansion](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/334)
