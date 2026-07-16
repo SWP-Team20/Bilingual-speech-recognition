@@ -92,10 +92,10 @@
   1. Open the application and log in with manager or admin credentials
   2. Select an audio recording and click the delete button
   3. Confirm deletion in the warning dialog
-  4. Within 30 seconds, click «Отменить» on the toast notification
+  4. Within 30 seconds, click «Cancel» on the toast notification
 - **Expected outcome** : The recording disappears from the list immediately after deletion, then reappears after undo; after 30 seconds without undo the recording is permanently removed
 - **Customer comments or observed issues after execution** : Need to extend the timer to 60 seconds
-- **Resulting PBIs or issues after execution** : None
+- **Resulting PBIs or issues after execution** : https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/302
 
 ## UAT-008 [Retired]
 
@@ -105,10 +105,10 @@
   1. Open the application and log in with admin credentials
   2. Navigate to the admin panel
   3. Click «Delete» next to a test user and confirm in the dialog
-  4. Within 30 seconds, click «Отменить» on the toast notification
+  4. Within 30 seconds, click «Cancel» on the toast notification
 - **Expected outcome** : The user disappears from the list immediately after deletion, then reappears after undo; the deleted user cannot log in while soft-deleted; after 30 seconds without undo the account is permanently removed
 - **Customer comments or observed issues after execution** : Need to extend the timer to 60 seconds
-- **Resulting PBIs or issues after execution** : None
+- **Resulting PBIs or issues after execution** : https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/302
 
 ## UAT-009 [Retired]
 
@@ -156,7 +156,7 @@
 - **Step-by-step instructions** :
   1. Open the application and log in with manager or admin credentials
   2. Open the statistics panel and find per-speaker statistics
-  3. Click the "Подробная статистика" button
+  3. Click the "Detailed Statistics" button
   4. Choose a speaker and click on a word
 - **Expected outcome** : The user should be redirected to an audio page with audio and word chosen highlighted
 - **Customer comments or observed issues after execution** : Don't have yet
