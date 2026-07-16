@@ -90,8 +90,8 @@ def test_insert_clamps_position():
 def test_display_speaker_label_treats_null_as_default():
     from backend.src.services.transcript_edit import _display_speaker_label
 
-    assert _display_speaker_label(None) == "Говорящий"
-    assert _display_speaker_label("") == "Говорящий"
+    assert _display_speaker_label(None) == "Говорящий 1"
+    assert _display_speaker_label("") == "Говорящий 1"
     assert _display_speaker_label("мама") == "мама"
 
 
