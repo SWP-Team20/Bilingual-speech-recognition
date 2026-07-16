@@ -55,6 +55,7 @@ function AudioPanel({
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [metadataEditOpen, setMetadataEditOpen] = useState(false);
   const [seekTarget, setSeekTarget] = useState(null);
+  const [navHighlight, setNavHighlight] = useState(null);
 
   // Filters: `filters` is what's applied to the list, `draftFilters` is the
   // in-progress state of the open filter panel.
@@ -89,7 +90,11 @@ function AudioPanel({
   useEffect(() => {
     if (!focusAudio?.audioId) return;
     let cancelled = false;
-    const { audioId, startSec } = focusAudio;
+    const { audioId, startSec, position } = focusAudio;
+    setNavHighlight({
+      audioId,
+      wordPosition: Number.isInteger(position) ? position : null,
+    });
     if (startSec != null && Number.isFinite(startSec)) {
       setSeekTarget({ audioId, startSec });
     }
@@ -495,6 +500,14 @@ function AudioPanel({
                   key={audio.id}
                   audio={audio}
                   isSelected={selectedAudioId === audio.id}
+                  isNavHighlighted={navHighlight?.audioId === audio.id}
+                  onNavHighlightLeave={(event) => {
+                    const next = event?.relatedTarget;
+                    if (next?.closest?.('[data-nav-highlight-transcription]')) return;
+                    setNavHighlight((current) => (
+                      current?.audioId === audio.id ? null : current
+                    ));
+                  }}
                   seekToSec={
                     seekTarget?.audioId === audio.id ? seekTarget.startSec : undefined
                   }
@@ -510,7 +523,9 @@ function AudioPanel({
       </div>
 
       {showTranscriptionColumn && (
-      <div style={{
+      <div
+        data-nav-highlight-transcription={navHighlight ? 'true' : undefined}
+        style={{
         display: 'flex',
         flexDirection: 'column',
         minHeight: 0,
@@ -541,6 +556,12 @@ function AudioPanel({
                     audioId={selectedAudioId}
                     audioRecordedAt={selectedAudio?.recorded_at}
                     audioUploadedAt={selectedAudio?.uploaded_at}
+                    highlightWordIndex={
+                      navHighlight?.audioId === selectedAudioId
+                        ? navHighlight.wordPosition
+                        : null
+                    }
+                    onHighlightWordClear={() => setNavHighlight(null)}
                     canEdit={canManageCorpus(userRole)}
                     canDownloadJson={canManageCorpus(userRole)}
                     onWordsChanged={setSelectedTranscriptionWords}

@@ -40,7 +40,17 @@ function formatDate(value) {
   return formatRecordingDate(value);
 }
 
-function AudioPlayer({ audio, isSelected, seekToSec, onTranscribeToggle, onDeleteSuccess, onMetadataUpdated, userRole }) {
+function AudioPlayer({
+  audio,
+  isSelected,
+  isNavHighlighted = false,
+  onNavHighlightLeave,
+  seekToSec,
+  onTranscribeToggle,
+  onDeleteSuccess,
+  onMetadataUpdated,
+  userRole,
+}) {
   const [loading, setLoading] = useState(false);
   const [downloadingType, setDownloadingType] = useState(null);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
@@ -56,6 +66,7 @@ function AudioPlayer({ audio, isSelected, seekToSec, onTranscribeToggle, onDelet
 
   const audioRef = useRef(null);
   const waveRef = useRef(null);
+  const rowRef = useRef(null);
   const downloadMenuRef = useRef(null);
   const objectUrlRef = useRef('');
   const toast = useToast();
@@ -128,6 +139,11 @@ function AudioPlayer({ audio, isSelected, seekToSec, onTranscribeToggle, onDelet
 
     return () => { cancelled = true; };
   }, [isSelected, seekToSec, audio.id, ensureLoaded, toast]);
+
+  useEffect(() => {
+    if (!isNavHighlighted || !rowRef.current) return;
+    rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [isNavHighlighted, audio.id]);
 
   // Close the download menu on outside click or Escape
   useEffect(() => {
@@ -204,7 +220,23 @@ function AudioPlayer({ audio, isSelected, seekToSec, onTranscribeToggle, onDelet
   const activeRatio = isDragging ? dragRatio : (duration ? currentTime / duration : 0);
 
   return (
-    <div style={{ marginBottom: '16px', width: '100%', boxSizing: 'border-box', textAlign: 'left' }}>
+    <div
+      ref={rowRef}
+      data-nav-highlight-audio={isNavHighlighted ? 'true' : undefined}
+      onMouseLeave={isNavHighlighted ? onNavHighlightLeave : undefined}
+      style={{
+        marginBottom: '16px',
+        width: '100%',
+        boxSizing: 'border-box',
+        textAlign: 'left',
+        padding: isNavHighlighted ? '8px' : 0,
+        borderRadius: isNavHighlighted ? radius.lg : 0,
+        backgroundColor: isNavHighlighted ? colors.primarySoft : 'transparent',
+        border: isNavHighlighted ? `2px solid ${colors.primary}` : '2px solid transparent',
+        boxShadow: isNavHighlighted ? shadow.md : 'none',
+        transition: 'background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+      }}
+    >
       <style>{`@keyframes chevronPulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }`}</style>
       <div style={{
         margin: '0 0 8px 0',

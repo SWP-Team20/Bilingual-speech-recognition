@@ -76,6 +76,8 @@ function TranscriptionBox({
   audioId,
   audioRecordedAt,
   audioUploadedAt,
+  highlightWordIndex = null,
+  onHighlightWordClear,
   canEdit = false,
   canDownloadJson = false,
   onWordsChanged,
@@ -83,6 +85,7 @@ function TranscriptionBox({
 }) {
   const toast = useToast();
   const downloadMenuRef = useRef(null);
+  const highlightWordRef = useRef(null);
   // editor: { mode: 'edit' | 'add', index, raw, language } | null
   const [editor, setEditor] = useState(null);
   // speakerEditor: { paragraphIdx, currentLabel, selectedId, customLabel, mode: 'existing' | 'custom' } | null
@@ -140,6 +143,14 @@ function TranscriptionBox({
     setBulkSpeakerLabel('');
     setCanUndo(false);
   }, [audioId]);
+
+  useEffect(() => {
+    if (highlightWordIndex == null) return;
+    const timer = window.setTimeout(() => {
+      highlightWordRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [highlightWordIndex, audioId]);
 
   useEffect(() => {
     if (!showBulkToolbar || speakers.length) return;
@@ -1012,7 +1023,16 @@ function TranscriptionBox({
       )}
 
       {/* ================= WORDS (editable) ================= */}
-      <div style={{ lineHeight: '2.1', fontSize: '16px', textAlign: 'left', marginTop: '12px' }}>
+      <div
+        data-nav-highlight-transcription={highlightWordIndex != null ? 'true' : undefined}
+        onMouseLeave={(e) => {
+          if (highlightWordIndex == null) return;
+          const next = e.relatedTarget;
+          if (next?.closest?.('[data-nav-highlight-audio]')) return;
+          onHighlightWordClear?.();
+        }}
+        style={{ lineHeight: '2.1', fontSize: '16px', textAlign: 'left', marginTop: '12px' }}
+      >
         {hasWords ? (
           paragraphs.map((p, pIdx) => (
             <div key={pIdx} style={{ marginBottom: '18px', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
@@ -1055,11 +1075,13 @@ function TranscriptionBox({
                 {p.items.map(({ w, gi }, itemIdx) => {
                   const isSelected = selectedIndices.has(gi);
                   const isEditing = editor && editor.index === gi;
+                  const isNavHighlighted = highlightWordIndex === gi;
                   return (
                   <React.Fragment key={gi}>
                     {itemIdx > 0 && ' '}
                     <span style={{ position: 'relative', display: 'inline' }}>
                       <span
+                        ref={isNavHighlighted ? highlightWordRef : undefined}
                         onMouseDown={handleWordMouseDown}
                         onClick={(e) => handleWordClick(gi, e)}
                         title={canEdit
@@ -1070,16 +1092,30 @@ function TranscriptionBox({
                         style={{
                           color: langColor(w.lang),
                           cursor: canEdit ? 'pointer' : 'default',
-                          borderRadius: '3px',
-                          padding: canEdit ? '1px 0' : 0,
-                          backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.14)' : (isEditing ? '#eafaf1' : 'transparent'),
-                          boxShadow: isSelected ? 'inset 0 -2px 0 #93c5fd' : 'none',
-                          transition: 'background-color 0.1s ease',
+                          borderRadius: '4px',
+                          padding: canEdit || isNavHighlighted ? '1px 3px' : 0,
+                          backgroundColor: isNavHighlighted
+                            ? 'rgba(251, 191, 36, 0.45)'
+                            : (isSelected ? 'rgba(37, 99, 235, 0.14)' : (isEditing ? '#eafaf1' : 'transparent')),
+                          boxShadow: isNavHighlighted
+                            ? 'inset 0 -3px 0 #f59e0b'
+                            : (isSelected ? 'inset 0 -2px 0 #93c5fd' : 'none'),
+                          outline: isNavHighlighted ? '2px solid #f59e0b' : 'none',
+                          transition: 'background-color 0.1s ease, outline-color 0.1s ease',
                         }}
                         onMouseEnter={(e) => {
-                          if (canEdit && !isSelected && !isEditing) e.currentTarget.style.backgroundColor = '#f3f3f3';
+                          if (canEdit && !isSelected && !isEditing && !isNavHighlighted) {
+                            e.currentTarget.style.backgroundColor = '#f3f3f3';
+                          }
                         }}
                         onMouseLeave={(e) => {
+                          if (isNavHighlighted) {
+                            const next = e.relatedTarget;
+                            if (!next?.closest?.('[data-nav-highlight-audio]')) {
+                              onHighlightWordClear?.();
+                            }
+                            return;
+                          }
                           if (!isSelected && !isEditing) e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >

@@ -7,7 +7,13 @@ import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../theme';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { formatRecordingDate } from '../utils/recordingDate';
 
-const EMPTY_FILTERS = { dateFrom: '', dateTo: '', audioIds: [] };
+const EMPTY_FILTERS = { dateFrom: '', dateTo: '', audioIds: [], langs: [] };
+
+const LANG_FILTER_OPTIONS = [
+  { value: 'ru', label: 'Русский' },
+  { value: 'tt', label: 'Татарский' },
+  { value: 'unknown', label: 'Другой' },
+];
 
 const LANG_COLORS = {
   ru: '#1976d2',
@@ -20,6 +26,7 @@ function countActiveFilters(filters) {
   if (filters.dateFrom) count += 1;
   if (filters.dateTo) count += 1;
   if (filters.audioIds?.length) count += 1;
+  if (filters.langs?.length) count += 1;
   return count;
 }
 
@@ -385,6 +392,44 @@ function SpeakersPanel({ onNavigateToWord }) {
                   <div style={{ flex: 1 }}>
                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: colors.textMuted }}>Дата по</label>
                     <input type="date" value={draftFilters.dateTo} onChange={(e) => setDraftFilters((f) => ({ ...f, dateTo: e.target.value }))} style={filterFieldStyle} />
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '8px', color: colors.textMuted }}>Язык слов</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {LANG_FILTER_OPTIONS.map(({ value, label }) => {
+                      const checked = draftFilters.langs.includes(value);
+                      return (
+                        <label
+                          key={value}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            fontSize: '14px',
+                            color: colors.text,
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setDraftFilters((f) => ({
+                                ...f,
+                                langs: checked
+                                  ? f.langs.filter((lang) => lang !== value)
+                                  : [...f.langs, value],
+                              }));
+                            }}
+                            style={{ width: '16px', height: '16px', accentColor: colors.primary, cursor: 'pointer' }}
+                          />
+                          {label}
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 

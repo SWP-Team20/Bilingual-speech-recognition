@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from backend.src import models
 from backend.src.services import audio_soft_delete
-from backend.src.services.audio_filter import StatsFilters, apply_date_filters
+from backend.src.services.audio_filter import StatsFilters, apply_date_filters, _apply_stats_language_filter
 
 
 @dataclass
@@ -49,6 +49,8 @@ def _base_query(db: Session, speaker_id: int, filters: StatsFilters):
         query = query.filter(models.AudioFile.id.in_(filters.audio_ids))
     if filters.status:
         query = query.filter(models.AudioFile.status == filters.status)
+    if filters.langs:
+        query = _apply_stats_language_filter(query, filters.langs)
     return query
 
 
@@ -59,6 +61,7 @@ def compute_speaker_word_hits(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     audio_ids: Optional[List[UUID]] = None,
+    langs: Optional[List[str]] = None,
     status: Optional[str] = "done",
     limit: int = 500,
     offset: int = 0,
@@ -73,6 +76,7 @@ def compute_speaker_word_hits(
         date_from=date_from,
         date_to=date_to,
         audio_ids=audio_ids or [],
+        langs=langs or [],
         status=status,
     )
 

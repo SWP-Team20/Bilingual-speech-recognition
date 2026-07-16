@@ -61,6 +61,7 @@ async def list_speaker_words(
     date_from: Optional[str] = Query(None, description="Дата записи с (YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="Дата записи по (YYYY-MM-DD)"),
     audio_id: Optional[List[str]] = Query(None, description="UUID аудиозаписей"),
+    lang: Optional[List[str]] = Query(None, description="Язык слова: ru / tt / unknown"),
     limit: int = Query(500, ge=1, le=2000),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
@@ -81,6 +82,7 @@ async def list_speaker_words(
         date_from=date_from,
         date_to=date_to,
         audio_ids=audio_ids,
+        langs=parse_multi_values(lang),
         limit=limit,
         offset=offset,
     )

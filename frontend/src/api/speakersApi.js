@@ -22,6 +22,7 @@ export const speakersApi = {
     if (filters.dateFrom) params.set('date_from', filters.dateFrom);
     if (filters.dateTo) params.set('date_to', filters.dateTo);
     appendListParams(params, 'audio_id', filters.audioIds);
+    appendListParams(params, 'lang', filters.langs);
     if (filters.limit != null) params.set('limit', String(filters.limit));
     if (filters.offset != null) params.set('offset', String(filters.offset));
 
