@@ -89,6 +89,9 @@ jobs:
       - name: Add virtualenv to PATH
         run: echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
+      - name: Ensure patched setuptools (PYSEC-2026-3447)
+        run: pip install "setuptools>=83.0.0"
+
       - name: Run Backend Dependency Vulnerability Scan (Additional QA Check)
         run: |
           pip-audit
