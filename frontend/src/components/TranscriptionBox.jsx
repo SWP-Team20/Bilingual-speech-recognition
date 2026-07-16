@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { audioApi } from '../api/audioApi';
 import { speakersApi } from '../api/speakersApi';
 import { formatRecordingDate } from '../utils/recordingDate';
 import { useToast } from './ui/toastContext';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import SelectDropdown from './SelectDropdown';
+import FloatingPopover from './ui/FloatingPopover';
 import { MOBILE_BREAKPOINT, colors, radius } from '../theme';
 
 const LANG_OPTIONS = [
@@ -76,6 +77,8 @@ function TranscriptionBox({
   audioId,
   audioRecordedAt,
   audioUploadedAt,
+  highlightWordIndex = null,
+  onHighlightWordClear,
   canEdit = false,
   canDownloadJson = false,
   onWordsChanged,
@@ -83,6 +86,9 @@ function TranscriptionBox({
 }) {
   const toast = useToast();
   const downloadMenuRef = useRef(null);
+  const highlightWordRef = useRef(null);
+  const editorAnchorRef = useRef(null);
+  const speakerAnchorRef = useRef(null);
   // editor: { mode: 'edit' | 'add', index, raw, language } | null
   const [editor, setEditor] = useState(null);
   // speakerEditor: { paragraphIdx, currentLabel, selectedId, customLabel, mode: 'existing' | 'custom' } | null
@@ -110,6 +116,7 @@ function TranscriptionBox({
 
   const words = transcriptionWords || [];
   const counts = countLangs(words);
+  const paragraphs = useMemo(() => groupBySpeaker(words), [words]);
 
   useEffect(() => {
     if (!downloadMenuOpen) return;
@@ -139,6 +146,14 @@ function TranscriptionBox({
     setBulkSpeakerLabel('');
     setCanUndo(false);
   }, [audioId]);
+
+  useEffect(() => {
+    if (highlightWordIndex == null) return;
+    const timer = window.setTimeout(() => {
+      highlightWordRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [highlightWordIndex, audioId]);
 
   useEffect(() => {
     if (!showBulkToolbar || speakers.length) return;
@@ -223,9 +238,10 @@ function TranscriptionBox({
     }
   };
 
-  const openEditor = (index) => {
+  const openEditor = (index, anchorEl) => {
     if (!canEdit || busy) return;
     setSpeakerEditor(null);
+    if (anchorEl) editorAnchorRef.current = anchorEl;
     const w = words[index];
     setEditor({ mode: 'edit', index, raw: w.raw ?? w.text ?? '', language: w.lang || 'unknown' });
   };
@@ -272,7 +288,7 @@ function TranscriptionBox({
     }
     clearSelection();
     setSelectionAnchor(index);
-    openEditor(index);
+    openEditor(index, e.currentTarget);
   };
 
   const handleWordMouseDown = (e) => {
@@ -284,9 +300,10 @@ function TranscriptionBox({
   const openAddAfter = (index) => setEditor({ mode: 'add', index, raw: '', language: 'unknown' });
   const closeEditor = () => { if (!busy) setEditor(null); };
 
-  const openSpeakerEditor = async (paragraphIdx, currentLabel, wordIndices) => {
+  const openSpeakerEditor = async (paragraphIdx, currentLabel, wordIndices, anchorEl) => {
     if (!canEdit || busy) return;
     setEditor(null);
+    if (anchorEl) speakerAnchorRef.current = anchorEl;
     setSpeakerEditor({
       paragraphIdx,
       currentLabel,
@@ -401,11 +418,12 @@ function TranscriptionBox({
   };
 
   const doDelete = async () => {
+    const index = editor.index;
+    setEditor(null);
     setBusy(true);
     try {
-      const data = await audioApi.deleteTranscriptionWord(audioId, editor.index);
+      const data = await audioApi.deleteTranscriptionWord(audioId, index);
       applyResult(data);
-      setEditor(null);
     } catch (e) {
       console.error(e);
       toast.error('Не удалось удалить слово');
@@ -453,15 +471,13 @@ function TranscriptionBox({
   const bulkDeleteWords = async () => {
     if (!audioId || selectedCount === 0 || busy) return;
     const positions = Array.from(selectedIndices).sort((a, b) => a - b);
+    setEditor(null);
     setBusy(true);
     try {
       const data = await audioApi.bulkEditTranscriptionWords(audioId, positions, { delete: true });
       applyResult(data);
       if (selectionMode) exitSelectionMode();
-      else {
-        clearSelection();
-        setEditor(null);
-      }
+      else clearSelection();
     } catch (e) {
       console.error(e);
       toast.error('Не удалось удалить выбранные слова');
@@ -504,19 +520,12 @@ function TranscriptionBox({
     }
   };
 
-  const renderSpeakerPopover = (paragraphIdx, speakerLabel) => {
-    if (!speakerEditor || speakerEditor.paragraphIdx !== paragraphIdx) return null;
-    const otherSpeakers = speakers.filter((s) => s.label !== speakerLabel);
+  const renderSpeakerEditorContent = () => {
+    if (!speakerEditor) return null;
+    const { paragraphIdx, currentLabel } = speakerEditor;
+    const otherSpeakers = speakers.filter((s) => s.label !== currentLabel);
     return (
-      <div
-        onMouseDown={(e) => e.stopPropagation()}
-        style={{
-          position: 'absolute', top: '100%', left: 0, zIndex: 70, marginTop: '6px',
-          minWidth: '260px', backgroundColor: '#fff', border: '1px solid #e0e0e0',
-          borderRadius: '10px', boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: '12px',
-          textAlign: 'left', cursor: 'default', fontWeight: 400, color: '#333',
-        }}
-      >
+      <>
         <div style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginBottom: '10px' }}>
           Метка говорящего
         </div>
@@ -570,7 +579,6 @@ function TranscriptionBox({
           onChange={(selectedId) => setSpeakerEditor((s) => ({ ...s, selectedId, mode: 'existing' }))}
           placeholder="— выберите —"
           ariaLabel="Существующий говорящий"
-          listZIndex={200}
           style={{ marginBottom: '10px' }}
           triggerStyle={{
             backgroundColor: speakerEditor.mode === 'existing' ? colors.surface : '#f7f7f7',
@@ -620,23 +628,16 @@ function TranscriptionBox({
             Отмена
           </button>
         </div>
-      </div>
+      </>
     );
   };
 
-  const renderPopover = (index) => {
-    if (!editor || editor.index !== index) return null;
-    const isAdd = editor.mode === 'add';
+  const renderEditorContent = () => {
+    if (!editor) return null;
+    const { index, mode } = editor;
+    const isAdd = mode === 'add';
     return (
-      <div
-        onMouseDown={(e) => e.stopPropagation()}
-        style={{
-          position: 'absolute', top: '100%', left: 0, zIndex: 60, marginTop: '6px',
-          minWidth: '230px', backgroundColor: '#fff', border: '1px solid #e0e0e0',
-          borderRadius: '10px', boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: '12px',
-          textAlign: 'left', cursor: 'default', fontWeight: 400, color: '#333',
-        }}
-      >
+      <>
         <div style={{ fontSize: '12px', fontWeight: 700, color: '#888', marginBottom: '6px' }}>
           {isAdd ? 'Новое слово' : 'Правка слова'}
         </div>
@@ -668,7 +669,6 @@ function TranscriptionBox({
           onChange={(language) => setEditor((s) => ({ ...s, language }))}
           options={LANG_OPTIONS}
           ariaLabel="Язык слова"
-          listZIndex={200}
           style={{ marginBottom: '10px' }}
         />
 
@@ -704,7 +704,7 @@ function TranscriptionBox({
             + добавить слово после
           </button>
         )}
-      </div>
+      </>
     );
   };
 
@@ -713,6 +713,7 @@ function TranscriptionBox({
   const displayRecordingDate = formatRecordingDate(audioRecordedAt || audioUploadedAt);
 
   return (
+    <>
     <div style={{
       backgroundColor: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #e6e6e6',
       height: 'fit-content', boxSizing: 'border-box', width: '100%', boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
@@ -1012,13 +1013,22 @@ function TranscriptionBox({
       )}
 
       {/* ================= WORDS (editable) ================= */}
-      <div style={{ lineHeight: '2.1', fontSize: '16px', textAlign: 'left', marginTop: '12px' }}>
+      <div
+        data-nav-highlight-transcription={highlightWordIndex != null ? 'true' : undefined}
+        onMouseLeave={(e) => {
+          if (highlightWordIndex == null) return;
+          const next = e.relatedTarget;
+          if (next?.closest?.('[data-nav-highlight-audio]')) return;
+          onHighlightWordClear?.();
+        }}
+        style={{ lineHeight: '2.1', fontSize: '16px', textAlign: 'left', marginTop: '12px' }}
+      >
         {hasWords ? (
-          groupBySpeaker(words).map((p, pIdx) => (
+          paragraphs.map((p, pIdx) => (
             <div key={pIdx} style={{ marginBottom: '18px', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
-              <span style={{ position: 'relative', display: 'block', marginBottom: '6px', padding: 0 }}>
+              <span style={{ display: 'block', marginBottom: '6px', padding: 0 }}>
                 <span
-                  onClick={() => openSpeakerEditor(pIdx, p.speaker, p.items.map(({ gi }) => gi))}
+                  onClick={(e) => openSpeakerEditor(pIdx, p.speaker, p.items.map(({ gi }) => gi), e.currentTarget)}
                   title={canEdit ? 'Нажмите, чтобы сменить метку говорящего' : undefined}
                   style={speakerLabelStyle({
                     canEdit,
@@ -1037,7 +1047,6 @@ function TranscriptionBox({
                 >
                   {p.speaker}:
                 </span>
-                {renderSpeakerPopover(pIdx, p.speaker)}
               </span>
               <p
                 style={{
@@ -1055,11 +1064,16 @@ function TranscriptionBox({
                 {p.items.map(({ w, gi }, itemIdx) => {
                   const isSelected = selectedIndices.has(gi);
                   const isEditing = editor && editor.index === gi;
+                  const isNavHighlighted = highlightWordIndex === gi;
+                  const wordPad = (isNavHighlighted || isSelected || isEditing)
+                    ? '1px 3px'
+                    : (canEdit ? '1px 0' : 0);
                   return (
                   <React.Fragment key={gi}>
                     {itemIdx > 0 && ' '}
-                    <span style={{ position: 'relative', display: 'inline' }}>
+                    <span style={{ display: 'inline' }}>
                       <span
+                        ref={isNavHighlighted ? highlightWordRef : undefined}
                         onMouseDown={handleWordMouseDown}
                         onClick={(e) => handleWordClick(gi, e)}
                         title={canEdit
@@ -1070,22 +1084,35 @@ function TranscriptionBox({
                         style={{
                           color: langColor(w.lang),
                           cursor: canEdit ? 'pointer' : 'default',
-                          borderRadius: '3px',
-                          padding: canEdit ? '1px 0' : 0,
-                          backgroundColor: isSelected ? 'rgba(37, 99, 235, 0.14)' : (isEditing ? '#eafaf1' : 'transparent'),
-                          boxShadow: isSelected ? 'inset 0 -2px 0 #93c5fd' : 'none',
-                          transition: 'background-color 0.1s ease',
+                          borderRadius: '4px',
+                          padding: wordPad,
+                          backgroundColor: isNavHighlighted
+                            ? 'rgba(251, 191, 36, 0.45)'
+                            : (isSelected ? 'rgba(37, 99, 235, 0.14)' : (isEditing ? '#eafaf1' : 'transparent')),
+                          boxShadow: isNavHighlighted
+                            ? 'inset 0 -3px 0 #f59e0b'
+                            : (isSelected ? 'inset 0 -2px 0 #93c5fd' : 'none'),
+                          outline: isNavHighlighted ? '2px solid #f59e0b' : 'none',
+                          transition: 'background-color 0.1s ease, outline-color 0.1s ease',
                         }}
                         onMouseEnter={(e) => {
-                          if (canEdit && !isSelected && !isEditing) e.currentTarget.style.backgroundColor = '#f3f3f3';
+                          if (canEdit && !isSelected && !isEditing && !isNavHighlighted) {
+                            e.currentTarget.style.backgroundColor = '#f3f3f3';
+                          }
                         }}
                         onMouseLeave={(e) => {
+                          if (isNavHighlighted) {
+                            const next = e.relatedTarget;
+                            if (!next?.closest?.('[data-nav-highlight-audio]')) {
+                              onHighlightWordClear?.();
+                            }
+                            return;
+                          }
                           if (!isSelected && !isEditing) e.currentTarget.style.backgroundColor = 'transparent';
                         }}
                       >
                         {w.raw || w.text}
                       </span>
-                      {renderPopover(gi)}
                     </span>
                   </React.Fragment>
                   );
@@ -1107,6 +1134,26 @@ function TranscriptionBox({
         )}
       </div>
     </div>
+
+    <FloatingPopover
+      anchorRef={editorAnchorRef}
+      open={Boolean(editor)}
+      minWidth={230}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {renderEditorContent()}
+    </FloatingPopover>
+
+    <FloatingPopover
+      anchorRef={speakerAnchorRef}
+      open={Boolean(speakerEditor)}
+      minWidth={260}
+      zIndex={1110}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {renderSpeakerEditorContent()}
+    </FloatingPopover>
+    </>
   );
 }
 

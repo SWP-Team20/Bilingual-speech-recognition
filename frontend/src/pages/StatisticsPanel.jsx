@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import FrequentWordsSection from '../components/stats/FrequentWordsSection';
 import LanguageStatsSection from '../components/stats/LanguageStatsSection';
 import DateStatsSection from '../components/stats/DateStatsSection';
@@ -5,15 +6,19 @@ import SpeakerStatsSection from '../components/stats/SpeakerStatsSection';
 import StatsDownloadButton from '../components/stats/StatsDownloadButton';
 import StatsFiltersProvider from '../components/stats/StatsFiltersProvider';
 import { useStatsFiltersSnapshot } from '../components/stats/statsFiltersContext';
+import { EMPTY_SPEAKER_FILTERS, mergeSpeakerWordFilters, speakerFiltersForWordsPanel } from '../components/stats/speakerSharedFilters';
 import { statsApi } from '../api/statsApi';
 import { useToast } from '../components/ui/toastContext';
+import SpeakersPanel from './SpeakersPanel';
 import { colors, radius, MOBILE_BREAKPOINT } from '../theme';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function StatisticsPanelContent() {
+function StatisticsPanelContent({ canManageCorpus = false, onNavigateToWord }) {
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
   const toast = useToast();
   const getCategoryFilters = useStatsFiltersSnapshot();
+  const [speakerDetailOpen, setSpeakerDetailOpen] = useState(false);
+  const [speakerFilters, setSpeakerFilters] = useState(EMPTY_SPEAKER_FILTERS);
 
   const handleExportAll = async (format) => {
     try {
@@ -24,19 +29,34 @@ function StatisticsPanelContent() {
     }
   };
 
+  const panelShellStyle = {
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    border: `1px solid ${colors.border}`,
+    overflow: 'hidden',
+  };
+
+  if (speakerDetailOpen && canManageCorpus) {
+    return (
+      <div style={panelShellStyle}>
+        <SpeakersPanel
+          filters={speakerFiltersForWordsPanel(speakerFilters)}
+          onFiltersChange={(wordFilters) => {
+            setSpeakerFilters((prev) => mergeSpeakerWordFilters(prev, wordFilters));
+          }}
+          onBack={() => setSpeakerDetailOpen(false)}
+          onNavigateToWord={onNavigateToWord}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div
-      style={{
-        flex: 1,
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        backgroundColor: colors.surface,
-        borderRadius: radius.md,
-        border: `1px solid ${colors.border}`,
-        overflow: 'hidden',
-      }}
-    >
+    <div style={panelShellStyle}>
       <div
         style={{
           flex: 1,
@@ -95,16 +115,23 @@ function StatisticsPanelContent() {
 
         <DateStatsSection />
 
-        <SpeakerStatsSection />
+        <SpeakerStatsSection
+          filters={speakerFilters}
+          onFiltersChange={setSpeakerFilters}
+          onOpenDetail={canManageCorpus ? () => setSpeakerDetailOpen(true) : undefined}
+        />
       </div>
     </div>
   );
 }
 
-function StatisticsPanel() {
+function StatisticsPanel({ canManageCorpus = false, onNavigateToWord }) {
   return (
     <StatsFiltersProvider>
-      <StatisticsPanelContent />
+      <StatisticsPanelContent
+        canManageCorpus={canManageCorpus}
+        onNavigateToWord={onNavigateToWord}
+      />
     </StatsFiltersProvider>
   );
 }

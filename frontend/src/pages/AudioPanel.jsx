@@ -43,7 +43,7 @@ function AudioPanel({
   pendingUploads,
   uploadVersion,
   searchQuery = '',
-  focusAudioId = null,
+  focusAudio = null,
   onFocusAudioHandled,
 }) {
   const [audioList, setAudioList] = useState([]);
@@ -54,6 +54,8 @@ function AudioPanel({
   const [totalStorageMb, setTotalStorageMb] = useState(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [metadataEditOpen, setMetadataEditOpen] = useState(false);
+  const [seekTarget, setSeekTarget] = useState(null);
+  const [navHighlight, setNavHighlight] = useState(null);
 
   // Filters: `filters` is what's applied to the list, `draftFilters` is the
   // in-progress state of the open filter panel.
@@ -84,11 +86,18 @@ function AudioPanel({
     if (uploadVersion > 0) loadAudioList();
   }, [uploadVersion]);
 
-  // Open a specific audio when navigating from search suggestions on other tabs.
+  // Open a specific audio when navigating from search or the speakers tab.
   useEffect(() => {
-    if (!focusAudioId) return;
+    if (!focusAudio?.audioId) return;
     let cancelled = false;
-    const audioId = focusAudioId;
+    const { audioId, startSec, position } = focusAudio;
+    setNavHighlight({
+      audioId,
+      wordPosition: Number.isInteger(position) ? position : null,
+    });
+    if (startSec != null && Number.isFinite(startSec)) {
+      setSeekTarget({ audioId, startSec });
+    }
     (async () => {
       setMetadataEditOpen(false);
       setSelectedAudioId(audioId);
@@ -105,9 +114,6 @@ function AudioPanel({
         setSelectedTranscriptionWords([]);
         toast.error('Не удалось загрузить транскрипцию');
       } finally {
-        // Only clear focus after a completed (non-cancelled) load. Calling this
-        // from a Strict Mode cleanup race cancels the real request and leaves
-        // an empty transcription panel.
         if (!cancelled) {
           setIsTranscribing(false);
           onFocusAudioHandled?.();
@@ -115,7 +121,13 @@ function AudioPanel({
       }
     })();
     return () => { cancelled = true; };
-  }, [focusAudioId]);
+  }, [focusAudio]);
+
+  useEffect(() => {
+    if (!seekTarget) return undefined;
+    const timer = setTimeout(() => setSeekTarget(null), 1500);
+    return () => clearTimeout(timer);
+  }, [seekTarget]);
 
   // Close the filter panel when clicking outside of it.
   useEffect(() => {
@@ -279,7 +291,7 @@ function AudioPanel({
   const showTranscriptionColumn = !isNarrow || selectedAudioId;
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: isNarrow ? '28px' : '48px', height: isNarrow ? 'auto' : '100%', minHeight: 0 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: isNarrow ? '1fr' : '1fr 1fr', gap: isNarrow ? '28px' : '48px', height: isNarrow ? 'auto' : '100%', minHeight: 0, flex: isNarrow ? undefined : 1, overflow: isNarrow ? 'visible' : 'hidden' }}>
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: isNarrow ? 'auto' : '100%', alignItems: 'stretch', order: isNarrow ? 2 : undefined }}>
         <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: isNarrow ? 'flex-start' : 'center', gap: '12px', flexShrink: 0, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flexWrap: 'wrap' }}>
@@ -447,8 +459,24 @@ function AudioPanel({
           </div>
         </div>
 
-        <div style={{ flex: 1, overflowY: isNarrow ? 'visible' : 'auto', boxSizing: 'border-box', width: '100%' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+        <div
+          className={isNarrow ? undefined : 'panel-scroll panel-scroll--left'}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            boxSizing: 'border-box',
+            width: '100%',
+          }}
+        >
+          <div
+            className={isNarrow ? undefined : 'panel-scroll__content'}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              width: '100%',
+            }}
+          >
             {isInitialLoading ? (
               <>
                 <AudioRowSkeleton />
@@ -472,6 +500,17 @@ function AudioPanel({
                   key={audio.id}
                   audio={audio}
                   isSelected={selectedAudioId === audio.id}
+                  isNavHighlighted={navHighlight?.audioId === audio.id}
+                  onNavHighlightLeave={(event) => {
+                    const next = event?.relatedTarget;
+                    if (next?.closest?.('[data-nav-highlight-transcription]')) return;
+                    setNavHighlight((current) => (
+                      current?.audioId === audio.id ? null : current
+                    ));
+                  }}
+                  seekToSec={
+                    seekTarget?.audioId === audio.id ? seekTarget.startSec : undefined
+                  }
                   onTranscribeToggle={handleTranscribeClick}
                   onDeleteSuccess={handleDeleteSuccess}
                   onMetadataUpdated={handleMetadataUpdated}
@@ -484,26 +523,52 @@ function AudioPanel({
       </div>
 
       {showTranscriptionColumn && (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, height: isNarrow ? 'auto' : '100%', alignItems: 'stretch', order: isNarrow ? 1 : undefined }}>
-        <div style={{ flex: 1, height: isNarrow ? 'auto' : '100%', minHeight: 0, width: '100%' }}>
+      <div
+        data-nav-highlight-transcription={navHighlight ? 'true' : undefined}
+        style={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        height: isNarrow ? 'auto' : '100%',
+        alignItems: 'stretch',
+        order: isNarrow ? 1 : undefined,
+        overflow: isNarrow ? 'visible' : 'hidden',
+      }}>
           {selectedAudioId ? (
-            <div style={{ display: 'flex', flexDirection: 'column', height: isNarrow ? 'auto' : '100%', width: '100%' }}>
+            <>
               <div style={{ marginBottom: '20px', width: '100%', display: 'flex', justifyContent: 'flex-start', flexShrink: 0 }}>
                 <h2 style={{ fontSize: isNarrow ? '22px' : '28px', fontWeight: 'bold', margin: 0, padding: 0, textAlign: 'left' }}>Транскрипция</h2>
               </div>
-              <TranscriptionBox
-                transcriptionText={selectedTranscription}
-                transcriptionWords={selectedTranscriptionWords}
-                isLoading={isTranscribing}
-                audioName={currentAudioName}
-                audioId={selectedAudioId}
-                audioRecordedAt={selectedAudio?.recorded_at}
-                audioUploadedAt={selectedAudio?.uploaded_at}
-                canEdit={canManageCorpus(userRole)}
-                canDownloadJson={canManageCorpus(userRole)}
-                onWordsChanged={setSelectedTranscriptionWords}
-                onEditMetadata={canManageCorpus(userRole) ? () => setMetadataEditOpen(true) : undefined}
-              />
+              <div
+                className={isNarrow ? undefined : 'panel-scroll panel-scroll--right'}
+                style={{
+                  flex: isNarrow ? undefined : 1,
+                  minHeight: 0,
+                  width: '100%',
+                }}
+              >
+                <div className={isNarrow ? undefined : 'panel-scroll__content'}>
+                  <TranscriptionBox
+                    transcriptionText={selectedTranscription}
+                    transcriptionWords={selectedTranscriptionWords}
+                    isLoading={isTranscribing}
+                    audioName={currentAudioName}
+                    audioId={selectedAudioId}
+                    audioRecordedAt={selectedAudio?.recorded_at}
+                    audioUploadedAt={selectedAudio?.uploaded_at}
+                    highlightWordIndex={
+                      navHighlight?.audioId === selectedAudioId
+                        ? navHighlight.wordPosition
+                        : null
+                    }
+                    onHighlightWordClear={() => setNavHighlight(null)}
+                    canEdit={canManageCorpus(userRole)}
+                    canDownloadJson={canManageCorpus(userRole)}
+                    onWordsChanged={setSelectedTranscriptionWords}
+                    onEditMetadata={canManageCorpus(userRole) ? () => setMetadataEditOpen(true) : undefined}
+                  />
+                </div>
+              </div>
               <AudioMetadataEditModal
                 open={metadataEditOpen}
                 onClose={() => setMetadataEditOpen(false)}
@@ -513,13 +578,12 @@ function AudioPanel({
                 uploadedAt={selectedAudio?.uploaded_at}
                 onSaved={handleMetadataUpdated}
               />
-            </div>
+            </>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: colors.waveformScrub, border: `2px dashed ${colors.disabledBg}`, borderRadius: radius.md, padding: '24px', textAlign: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: isNarrow ? '160px' : 0, color: colors.waveformScrub, border: `2px dashed ${colors.disabledBg}`, borderRadius: radius.md, padding: '24px', textAlign: 'center' }}>
               Выберите аудиозапись для просмотра транскрипции
             </div>
           )}
-        </div>
       </div>
       )}
     </div>
