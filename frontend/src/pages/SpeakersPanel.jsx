@@ -230,10 +230,11 @@ function SpeakersPanel({
       flexDirection: 'column',
       padding: isNarrow ? '12px' : '16px 20px',
       boxSizing: 'border-box',
+      textAlign: 'left',
     }}
     >
-      {onBack && (
-        <div style={{ marginBottom: '16px', flexShrink: 0 }}>
+      {onBack ? (
+        <div style={{ marginBottom: '16px', flexShrink: 0, textAlign: 'left' }}>
           <button
             type="button"
             onClick={onBack}
@@ -255,7 +256,7 @@ function SpeakersPanel({
             ← Назад к статистике
           </button>
         </div>
-      )}
+      ) : null}
     <div style={{
       flex: 1,
       minHeight: 0,
@@ -276,7 +277,14 @@ function SpeakersPanel({
       }}
       >
         <div style={{ padding: '16px 18px', borderBottom: `1px solid ${colors.border}`, flexShrink: 0 }}>
-          <h2 style={{ margin: 0, fontSize: isNarrow ? '20px' : '22px', textAlign: 'left' }}>Говорящие</h2>
+          {!onBack && (
+            <h2 style={{ margin: 0, fontSize: isNarrow ? '20px' : '22px', textAlign: 'left' }}>Говорящие</h2>
+          )}
+          {onBack && (
+            <div style={{ fontSize: '13px', fontWeight: 600, color: colors.textMuted, textAlign: 'left' }}>
+              Список говорящих
+            </div>
+          )}
         </div>
         <div className={isNarrow ? undefined : 'panel-scroll panel-scroll--right'} style={{ flex: 1, minHeight: isNarrow ? undefined : 0 }}>
           <div className={isNarrow ? undefined : 'panel-scroll__content'} style={{ padding: '12px' }}>

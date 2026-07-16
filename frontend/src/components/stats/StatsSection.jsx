@@ -1,6 +1,23 @@
-import { colors, radius, shadow } from '../../theme';
+import { colors, radius, shadow, MOBILE_BREAKPOINT } from '../../theme';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 function StatsSection({ title, description, children, placeholder, headerAction }) {
+  const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
+  const hasHeaderAction = Boolean(headerAction);
+
+  const headerBlock = (
+    <>
+      <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: colors.textStrong }}>
+        {title}
+      </h3>
+      {description && (
+        <p style={{ margin: '6px 0 0', fontSize: '14px', color: colors.textMuted, lineHeight: 1.45 }}>
+          {description}
+        </p>
+      )}
+    </>
+  );
+
   return (
     <section
       style={{
@@ -12,30 +29,45 @@ function StatsSection({ title, description, children, placeholder, headerAction 
         boxSizing: 'border-box',
       }}
     >
-      <div style={{
-        marginBottom: description || children || placeholder ? '16px' : 0,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        gap: '12px',
-      }}
-      >
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: colors.textStrong }}>
-            {title}
-          </h3>
-          {description && (
-            <p style={{ margin: '6px 0 0', fontSize: '14px', color: colors.textMuted, lineHeight: 1.45 }}>
-              {description}
-            </p>
-          )}
-        </div>
-        {headerAction ? (
-          <div style={{ flexShrink: 0 }}>
+      {hasHeaderAction ? (
+        <div style={{
+          position: 'relative',
+          marginBottom: description || children || placeholder ? '16px' : 0,
+          display: 'flex',
+          flexDirection: isNarrow ? 'column' : 'row',
+          alignItems: isNarrow ? 'stretch' : 'center',
+          gap: isNarrow ? '12px' : '0',
+        }}
+        >
+          <div style={{
+            flex: 1,
+            textAlign: 'center',
+            padding: isNarrow ? 0 : '0 190px',
+            minWidth: 0,
+          }}
+          >
+            {headerBlock}
+          </div>
+          <div style={{
+            position: isNarrow ? 'static' : 'absolute',
+            right: 0,
+            top: isNarrow ? undefined : '50%',
+            transform: isNarrow ? undefined : 'translateY(-50%)',
+            flexShrink: 0,
+            alignSelf: isNarrow ? 'flex-end' : undefined,
+          }}
+          >
             {headerAction}
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : (
+        <div style={{
+          marginBottom: description || children || placeholder ? '16px' : 0,
+        }}
+        >
+          {headerBlock}
+        </div>
+      )}
 
       {placeholder ? (
         <div
