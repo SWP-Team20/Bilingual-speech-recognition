@@ -13,6 +13,7 @@ psycopg[binary]           # драйвер PostgreSQL (postgresql+psycopg)
 # =====================================================================
 pwdlib[bcrypt]
 PyJWT>=2.10.0
+setuptools>=83.0.0          # PYSEC-2026-3447 (pip-audit)
 openpyxl                  # экспорт статистики в Excel
 
 # =====================================================================
@@ -20,7 +21,7 @@ openpyxl                  # экспорт статистики в Excel
 # =====================================================================
 faster-whisper            # русская ветка (Whisper large-v3) + VAD
 numpy
-torch                     # бэкенд для transformers-моделей (CPU/CUDA)
+torch>=2.13.0              # >=2.13: совместим с setuptools>=83 (PYSEC-2026-3447)
 transformers              # mms-lid-256 (LID) + yasalma/whisper-finetuned-tt-asr (tt)
 accelerate                # потоковая загрузка весов (меньше пик памяти при load)
 speechbrain               # диаризация: ECAPA speaker-эмбеддинги

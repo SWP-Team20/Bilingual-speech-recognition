@@ -11,6 +11,7 @@ from uuid import UUID
 from sqlalchemy import func
 
 from backend.src import models
+from backend.src.speaker_labels import ensure_word_speakers
 
 SR = 16000
 MATCH_THRESHOLD = float(os.environ.get("DIARIZE_MATCH_THRESHOLD", "0.72"))
@@ -180,6 +181,7 @@ def save_transcription(db, audio_id, words, segments, stats, speaker_embeddings=
     """words: [{'text','start','end','conf','lang','speaker'?}]; segments: карта VAD;
     stats: dict из audio_process.process_silence()['stats']."""
 
+    ensure_word_speakers(words)
     _clear_audio_index(db, audio_id)
     spk_map = _resolve_speakers(db, words, speaker_embeddings)
 
@@ -249,6 +251,14 @@ def reindex_from_json(db, audio_id, write_back_json=True):
     segments = data.get("segment_map") or data.get("segments") or []
     stats = data.get("stats") or {}
     speaker_embeddings = data.get("speaker_embeddings") or {}
+
+    if ensure_word_speakers(words):
+        data["words"] = words
+        from backend.src.pipeline import build_sentences
+        data["sentences"] = build_sentences(words)
+        if write_back_json:
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
 
     if not speaker_embeddings:
         speaker_embeddings = compute_speaker_embeddings_from_audio(audio, segments)

@@ -42,11 +42,13 @@ function speakerLabelStyle({ canEdit = false, active = false } = {}) {
 
 // Группировка плоского массива слов в реплики по смене говорящего.
 // Сохраняем ГЛОБАЛЬНЫЙ индекс каждого слова (== position в БД) — он нужен для правки.
+const UNASSIGNED_SPEAKER_LABEL = 'Говорящий 1';
+
 function groupBySpeaker(words) {
   const paragraphs = [];
   let cur = null;
   words.forEach((w, gi) => {
-    const speaker = w.speaker || 'Говорящий';
+    const speaker = w.speaker || UNASSIGNED_SPEAKER_LABEL;
     if (!cur || cur.speaker !== speaker) {
       cur = { speaker, items: [] };
       paragraphs.push(cur);
@@ -1095,7 +1097,7 @@ function TranscriptionBox({
           sentences.map((sentence, sIdx) => (
             <div key={sIdx} style={{ marginBottom: '18px' }}>
               <div style={speakerLabelStyle()}>
-                {sentence.speaker || 'Неизвестный говорящий'}:
+                {sentence.speaker || UNASSIGNED_SPEAKER_LABEL}:
               </div>
               <p style={{ margin: 0, fontWeight: '500', color: '#333' }}>{sentence.text}</p>
             </div>

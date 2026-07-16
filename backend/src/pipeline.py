@@ -21,6 +21,11 @@ import threading
 from uuid import uuid4, UUID
 
 from backend.src import audio_process, asr, tatar_asr, lid, lang_tag, text_filter
+from backend.src.speaker_labels import (
+    DEFAULT_LOCAL_SPEAKER,
+    ensure_word_speakers,
+    fill_segment_speaker_labels,
+)
 
 SR = 16000
 WIN_SEC = int(os.environ.get("ASR_WINDOW_SEC", "25"))   # под-окно для LID/ASR (память + роутинг)
@@ -121,6 +126,14 @@ def _process_audio_impl(input_path, storage_dir="./storage", audio_id=None,
     else:
         print("[Pipeline] Speaker diarization is explicitly DISABLED via ASR_DIARIZE env var.")
 
+    before_fallback = list(seg_speakers)
+    seg_speakers = fill_segment_speaker_labels(seg_speakers)
+    if seg_speakers and seg_speakers != before_fallback:
+        print(
+            f"[Pipeline] Assigned default speaker '{DEFAULT_LOCAL_SPEAKER}' "
+            "(diarization unavailable or returned no labels)"
+        )
+
     _warm_asr_model_stack(audio)
 
     # 2-3. посегментная маршрутизация LID -> ASR -> тег (+ говорящий сегмента)
@@ -151,6 +164,8 @@ def _process_audio_impl(input_path, storage_dir="./storage", audio_id=None,
                     "lang_tuple": (norm, lang),
                 })
 
+    ensure_word_speakers(words)
+
     result = {
         "audio_id": audio_id,
         "filename": original_filename,
@@ -159,9 +174,9 @@ def _process_audio_impl(input_path, storage_dir="./storage", audio_id=None,
         "stats": proc["stats"],
         "segment_map": proc["segments"],
         "speaker_embeddings": speaker_embeddings,
-        "sentences": build_sentences(words),
         "words": words,
     }
+    result["sentences"] = build_sentences(words)
 
     # 4. Save physical file artifacts to disk
     with open(os.path.join(folder, "transcription.json"), "w", encoding="utf-8") as f:

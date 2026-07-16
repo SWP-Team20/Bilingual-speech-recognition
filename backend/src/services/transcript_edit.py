@@ -143,8 +143,8 @@ def compute_stats(words, duration_sec):
 
 # --- связка с диском и БД ----------------------------------------------------
 
-# Как на фронте: пустой/null speaker в JSON показывается как «Говорящий».
-_DEFAULT_SPEAKER_LABEL = "Говорящий"
+# Совпадает с fallback в speaker_labels.py, если диаризация не назначила метку.
+_DEFAULT_SPEAKER_LABEL = "Говорящий 1"
 
 
 def _display_speaker_label(raw) -> str:
@@ -443,7 +443,7 @@ def relabel_speaker_in_audio(
 
     data = _load(audio)
     words = data.get("words") or []
-    # Совпадает с отображением на фронте: null/"" → «Говорящий»
+    # Совпадает с fallback-меткой: null/"" → «Говорящий 1»
     label_positions = [
         i for i, w in enumerate(words)
         if _display_speaker_label(w.get("speaker")) == current_label
