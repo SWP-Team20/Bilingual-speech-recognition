@@ -13,6 +13,10 @@ export const speakersApi = {
     return response.data;
   },
 
+  reconcileLabels: async () => {
+    await apiClient.post('/api/v1/speakers/reconcile-labels');
+  },
+
   fetchSpeakerWords: async (speakerId, filters = {}) => {
     const params = new URLSearchParams();
     if (filters.dateFrom) params.set('date_from', filters.dateFrom);

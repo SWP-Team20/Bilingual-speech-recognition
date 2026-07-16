@@ -102,6 +102,11 @@ function SpeakersPanel({ onNavigateToWord }) {
     (async () => {
       setSpeakersLoading(true);
       try {
+        try {
+          await speakersApi.reconcileLabels();
+        } catch (reconcileError) {
+          console.warn('Speaker label sync skipped:', reconcileError);
+        }
         const list = await speakersApi.listSpeakers();
         if (cancelled) return;
         setSpeakers(list);

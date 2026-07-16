@@ -111,6 +111,21 @@ async def list_speaker_words(
     )
 
 
+@router.post("/reconcile-labels", status_code=status.HTTP_204_NO_CONTENT)
+async def reconcile_speaker_labels(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Привязать слова в БД к пользовательским меткам из transcription.json."""
+    _require_corpus_manager(current_user)
+
+    from backend.src import db_index
+
+    db_index.reconcile_corpus_speaker_labels(db)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
 @router.post("/cleanup-orphans", status_code=status.HTTP_204_NO_CONTENT)
 async def cleanup_orphan_speakers(
     db: Session = Depends(get_db),

@@ -1,7 +1,15 @@
 # -*- coding: utf-8 -*-
 """Локальные метки говорящих в transcription.json и fallback при сбое диаризации."""
 
+import re
+
 DEFAULT_LOCAL_SPEAKER = "Говорящий 1"
+_AUTO_SPEAKER_LABEL_RE = re.compile(r"^Говорящий (\d+)$")
+
+
+def is_auto_diarization_label(label: str) -> bool:
+    """True для автоматических меток диаризации («Говорящий 1», «Говорящий 2», …)."""
+    return bool(_AUTO_SPEAKER_LABEL_RE.fullmatch((label or "").strip()))
 
 
 def fill_segment_speaker_labels(seg_speakers, fallback=DEFAULT_LOCAL_SPEAKER):
