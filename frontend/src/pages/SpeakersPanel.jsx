@@ -66,7 +66,12 @@ function groupWordsByAudio(items) {
   return groups;
 }
 
-function SpeakersPanel({ onNavigateToWord }) {
+function SpeakersPanel({
+  onNavigateToWord,
+  onBack,
+  filters: controlledFilters,
+  onFiltersChange,
+}) {
   const toast = useToast();
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
   const filterWrapRef = useRef(null);
@@ -75,8 +80,11 @@ function SpeakersPanel({ onNavigateToWord }) {
   const [speakersLoading, setSpeakersLoading] = useState(true);
   const [selectedSpeakerId, setSelectedSpeakerId] = useState(null);
 
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
+  const [internalFilters, setInternalFilters] = useState(EMPTY_FILTERS);
+  const filters = controlledFilters ?? internalFilters;
+  const setFilters = onFiltersChange ?? setInternalFilters;
+
+  const [draftFilters, setDraftFilters] = useState(filters);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [wordData, setWordData] = useState(null);
@@ -85,6 +93,10 @@ function SpeakersPanel({ onNavigateToWord }) {
   const [audioOptions, setAudioOptions] = useState([]);
   const [audioOptionsLoading, setAudioOptionsLoading] = useState(false);
   const [audioSearchQuery, setAudioSearchQuery] = useState('');
+
+  useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
 
   const selectedSpeaker = speakers.find((s) => s.id === selectedSpeakerId) || null;
   const groupedWords = useMemo(
@@ -211,6 +223,39 @@ function SpeakersPanel({ onNavigateToWord }) {
     : audioOptions;
 
   return (
+    <div style={{
+      flex: 1,
+      minHeight: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      padding: isNarrow ? '12px' : '16px 20px',
+      boxSizing: 'border-box',
+    }}
+    >
+      {onBack && (
+        <div style={{ marginBottom: '16px', flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 14px',
+              borderRadius: radius.sm,
+              border: `1px solid ${colors.borderStrong}`,
+              backgroundColor: colors.page,
+              color: colors.text,
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            ← Назад к статистике
+          </button>
+        </div>
+      )}
     <div style={{
       flex: 1,
       minHeight: 0,
@@ -544,6 +589,7 @@ function SpeakersPanel({ onNavigateToWord }) {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

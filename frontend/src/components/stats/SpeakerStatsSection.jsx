@@ -10,12 +10,11 @@ import StatsDisplayModeToggle from './StatsDisplayModeToggle';
 import StatsDownloadButton from './StatsDownloadButton';
 import SpeakerBarChart from './SpeakerBarChart';
 import { useStatsFiltersRegistry } from './statsFiltersContext';
+import { EMPTY_SPEAKER_FILTERS } from './speakerSharedFilters';
 
 const LIMIT_MIN = 1;
 const LIMIT_MAX = 500;
-const LIMIT_DEFAULT = 20;
-
-const EMPTY_FILTERS = { langs: [], dateFrom: '', dateTo: '', audioIds: [], limit: LIMIT_DEFAULT };
+const LIMIT_DEFAULT = EMPTY_SPEAKER_FILTERS.limit;
 
 const LANG_OPTIONS = [
   { value: 'ru', label: 'Русский' },
@@ -70,9 +69,12 @@ function getVisibleAudioOptions(options, query, selectedIds) {
   ];
 }
 
-function SpeakerStatsSection() {
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [draftFilters, setDraftFilters] = useState(EMPTY_FILTERS);
+function SpeakerStatsSection({
+  filters = EMPTY_SPEAKER_FILTERS,
+  onFiltersChange = () => {},
+  onOpenDetail,
+}) {
+  const [draftFilters, setDraftFilters] = useState(filters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -90,8 +92,12 @@ function SpeakerStatsSection() {
   }, [filters, registerFilters]);
 
   useEffect(() => {
+    setDraftFilters(filters);
+  }, [filters]);
+
+  useEffect(() => {
     loadData(filters);
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -142,16 +148,14 @@ function SpeakerStatsSection() {
   const applyFilters = () => {
     const normalized = { ...draftFilters, limit: clampLimit(draftFilters.limit) };
     setDraftFilters(normalized);
-    setFilters(normalized);
+    onFiltersChange(normalized);
     setFiltersOpen(false);
-    loadData(normalized);
   };
 
   const resetFilters = () => {
-    setDraftFilters(EMPTY_FILTERS);
-    setFilters(EMPTY_FILTERS);
+    setDraftFilters(EMPTY_SPEAKER_FILTERS);
+    onFiltersChange(EMPTY_SPEAKER_FILTERS);
     setFiltersOpen(false);
-    loadData(EMPTY_FILTERS);
   };
 
   const handleDownload = async (format) => {
@@ -195,6 +199,30 @@ function SpeakerStatsSection() {
     ...filterFieldStyle,
     padding: '8px 6px',
   };
+
+  const detailButton = onOpenDetail ? (
+    <button
+      type="button"
+      onClick={onOpenDetail}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        backgroundColor: colors.primary,
+        color: '#fff',
+        border: 'none',
+        borderRadius: radius.sm,
+        padding: '8px 14px',
+        fontSize: '14px',
+        fontWeight: 600,
+        cursor: 'pointer',
+        boxShadow: shadow.sm,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      Подробная статистика
+    </button>
+  ) : null;
 
   const chartToolbar = (
     <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0, flexWrap: 'wrap' }}>
@@ -383,6 +411,7 @@ function SpeakerStatsSection() {
     <StatsSection
       title="Статистика по говорящим"
       description="Количество слов, произнесённых каждым говорящим."
+      headerAction={detailButton}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: colors.textMuted, alignItems: 'center' }}>

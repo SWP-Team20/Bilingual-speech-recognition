@@ -1,6 +1,6 @@
 import { colors, radius, shadow } from '../../theme';
 
-function StatsSection({ title, description, children, placeholder }) {
+function StatsSection({ title, description, children, placeholder, headerAction }) {
   return (
     <section
       style={{
@@ -12,15 +12,29 @@ function StatsSection({ title, description, children, placeholder }) {
         boxSizing: 'border-box',
       }}
     >
-      <div style={{ marginBottom: description || children || placeholder ? '16px' : 0 }}>
-        <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: colors.textStrong }}>
-          {title}
-        </h3>
-        {description && (
-          <p style={{ margin: '6px 0 0', fontSize: '14px', color: colors.textMuted, lineHeight: 1.45 }}>
-            {description}
-          </p>
-        )}
+      <div style={{
+        marginBottom: description || children || placeholder ? '16px' : 0,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: '12px',
+      }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: colors.textStrong }}>
+            {title}
+          </h3>
+          {description && (
+            <p style={{ margin: '6px 0 0', fontSize: '14px', color: colors.textMuted, lineHeight: 1.45 }}>
+              {description}
+            </p>
+          )}
+        </div>
+        {headerAction ? (
+          <div style={{ flexShrink: 0 }}>
+            {headerAction}
+          </div>
+        ) : null}
       </div>
 
       {placeholder ? (
