@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { audioApi } from '../api/audioApi';
 import { speakersApi } from '../api/speakersApi';
 import { formatRecordingDate } from '../utils/recordingDate';
@@ -110,6 +110,7 @@ function TranscriptionBox({
 
   const words = transcriptionWords || [];
   const counts = countLangs(words);
+  const paragraphs = useMemo(() => groupBySpeaker(words), [words]);
 
   useEffect(() => {
     if (!downloadMenuOpen) return;
@@ -401,11 +402,12 @@ function TranscriptionBox({
   };
 
   const doDelete = async () => {
+    const index = editor.index;
+    setEditor(null);
     setBusy(true);
     try {
-      const data = await audioApi.deleteTranscriptionWord(audioId, editor.index);
+      const data = await audioApi.deleteTranscriptionWord(audioId, index);
       applyResult(data);
-      setEditor(null);
     } catch (e) {
       console.error(e);
       toast.error('Не удалось удалить слово');
@@ -453,15 +455,13 @@ function TranscriptionBox({
   const bulkDeleteWords = async () => {
     if (!audioId || selectedCount === 0 || busy) return;
     const positions = Array.from(selectedIndices).sort((a, b) => a - b);
+    setEditor(null);
     setBusy(true);
     try {
       const data = await audioApi.bulkEditTranscriptionWords(audioId, positions, { delete: true });
       applyResult(data);
       if (selectionMode) exitSelectionMode();
-      else {
-        clearSelection();
-        setEditor(null);
-      }
+      else clearSelection();
     } catch (e) {
       console.error(e);
       toast.error('Не удалось удалить выбранные слова');
@@ -1014,7 +1014,7 @@ function TranscriptionBox({
       {/* ================= WORDS (editable) ================= */}
       <div style={{ lineHeight: '2.1', fontSize: '16px', textAlign: 'left', marginTop: '12px' }}>
         {hasWords ? (
-          groupBySpeaker(words).map((p, pIdx) => (
+          paragraphs.map((p, pIdx) => (
             <div key={pIdx} style={{ marginBottom: '18px', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
               <span style={{ position: 'relative', display: 'block', marginBottom: '6px', padding: 0 }}>
                 <span

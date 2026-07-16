@@ -7,6 +7,7 @@ import ProfileDropdown from '../components/ProfileDropdown';
 import TabButton from '../components/TabButton';
 import AudioPanel from './AudioPanel';
 import StatisticsPanel from './StatisticsPanel';
+import SpeakersPanel from './SpeakersPanel';
 import AdminPanel from './AdminPanel';
 import { canManageCorpus } from '../constants/roleTranslations';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -19,7 +20,7 @@ function DashboardPage({ onLogout }) {
   const [pendingUploads, setPendingUploads] = useState([]);
   const [uploadVersion, setUploadVersion] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [focusAudioId, setFocusAudioId] = useState(null);
+  const [focusAudio, setFocusAudio] = useState(null);
   const isNarrow = useMediaQuery(MOBILE_BREAKPOINT);
   const canManage = canManageCorpus(userRole);
 
@@ -30,7 +31,14 @@ function DashboardPage({ onLogout }) {
   const handleSelectSearchResult = useCallback((audio) => {
     if (!audio?.id) return;
     setSearchQuery(audio.filename || '');
-    setFocusAudioId(audio.id);
+    setFocusAudio({ audioId: audio.id });
+    setActiveTab('audio');
+  }, []);
+
+  const handleNavigateToWord = useCallback(({ audioId, startSec, position }) => {
+    if (!audioId) return;
+    setSearchQuery('');
+    setFocusAudio({ audioId, startSec, position });
     setActiveTab('audio');
   }, []);
 
@@ -44,6 +52,7 @@ function DashboardPage({ onLogout }) {
         const role = data.role || 'user';
         setUserRole(role);
         if (activeTab === 'admin' && role !== 'admin') setActiveTab('audio');
+        if (activeTab === 'speakers' && !canManageCorpus(role)) setActiveTab('audio');
       })
       .catch(error => console.error("Ошибка загрузки данных пользователя:", error));
   }, []);
@@ -58,6 +67,7 @@ function DashboardPage({ onLogout }) {
   };
 
   const isAdmin = userRole === 'admin';
+  const tabCount = 2 + (canManage ? 1 : 0) + (isAdmin ? 1 : 0);
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', backgroundColor: '#f5f5f5', height: isNarrow ? 'auto' : '100vh', minHeight: '100vh', maxHeight: isNarrow ? 'none' : '100vh', padding: isNarrow ? '20px 0' : '40px 0', display: 'flex', flexDirection: 'column', boxSizing: 'border-box', overflow: isNarrow ? 'auto' : 'hidden' }}>
@@ -96,6 +106,7 @@ function DashboardPage({ onLogout }) {
           </div>
 
           <AudioSearchBar
+            value={searchQuery}
             onSearch={handleSearch}
             onSelectResult={handleSelectSearchResult}
             showSuggestions={activeTab !== 'audio'}
@@ -137,7 +148,7 @@ function DashboardPage({ onLogout }) {
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isAdmin ? '1fr 1fr 1fr' : '1fr 1fr',
+          gridTemplateColumns: isNarrow ? '1fr 1fr' : `repeat(${tabCount}, 1fr)`,
           gap: isNarrow ? '10px' : '48px',
           marginBottom: '24px',
           flexShrink: 0,
@@ -145,6 +156,9 @@ function DashboardPage({ onLogout }) {
         }}>
           <TabButton compact={isNarrow} active={activeTab === 'audio'} onClick={() => setActiveTab('audio')}>Аудиозаписи</TabButton>
           <TabButton compact={isNarrow} active={activeTab === 'statistics'} onClick={() => setActiveTab('statistics')}>Статистика</TabButton>
+          {canManage && (
+            <TabButton compact={isNarrow} active={activeTab === 'speakers'} onClick={() => setActiveTab('speakers')}>Спикеры</TabButton>
+          )}
           {isAdmin && (
             <TabButton compact={isNarrow} active={activeTab === 'admin'} onClick={() => setActiveTab('admin')}>Админ-панель</TabButton>
           )}
@@ -158,12 +172,17 @@ function DashboardPage({ onLogout }) {
                 pendingUploads={pendingUploads}
                 uploadVersion={uploadVersion}
                 searchQuery={searchQuery}
-                focusAudioId={focusAudioId}
-                onFocusAudioHandled={() => setFocusAudioId(null)}
+                focusAudio={focusAudio}
+                onFocusAudioHandled={() => setFocusAudio(null)}
               />
             </div>
           )}
           {activeTab === 'statistics' && <StatisticsPanel />}
+          {activeTab === 'speakers' && canManage && (
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <SpeakersPanel onNavigateToWord={handleNavigateToWord} />
+            </div>
+          )}
           {activeTab === 'admin' && isAdmin && (
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
               <AdminPanel />

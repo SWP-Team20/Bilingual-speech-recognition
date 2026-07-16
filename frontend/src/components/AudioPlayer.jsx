@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { audioApi } from '../api/audioApi';
 import ConfirmDialog from './ui/ConfirmDialog';
 import AudioMetadataEditModal from './AudioMetadataEditModal';
@@ -40,7 +40,7 @@ function formatDate(value) {
   return formatRecordingDate(value);
 }
 
-function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, onMetadataUpdated, userRole }) {
+function AudioPlayer({ audio, isSelected, seekToSec, onTranscribeToggle, onDeleteSuccess, onMetadataUpdated, userRole }) {
   const [loading, setLoading] = useState(false);
   const [downloadingType, setDownloadingType] = useState(null);
   const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
@@ -74,6 +74,14 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
   const isFullyDone = isDone(currentStatus);
   const displayDate = formatDate(audio.recorded_at || audio.uploaded_at);
 
+  const ensureLoaded = useCallback(async () => {
+    if (objectUrlRef.current) return objectUrlRef.current;
+    const url = await audioApi.fetchAudioFile(audio.id, 'processed');
+    objectUrlRef.current = url;
+    if (audioRef.current) audioRef.current.src = url;
+    return url;
+  }, [audio.id]);
+
   // Storage size (skips pending uploads)
   useEffect(() => {
     if (!audio.id || audio.isPending) return;
@@ -90,6 +98,36 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isSelected || seekToSec == null || !Number.isFinite(seekToSec)) return undefined;
+    let cancelled = false;
+
+    (async () => {
+      const el = audioRef.current;
+      if (!el) return;
+      try {
+        if (!objectUrlRef.current) {
+          setLoading(true);
+          await ensureLoaded();
+        }
+        if (cancelled) return;
+        const applySeek = () => {
+          el.currentTime = Math.max(0, seekToSec);
+          setCurrentTime(el.currentTime);
+        };
+        if (el.readyState >= 1) applySeek();
+        else el.addEventListener('loadedmetadata', applySeek, { once: true });
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) toast.error('Не удалось перейти к фрагменту записи');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [isSelected, seekToSec, audio.id, ensureLoaded, toast]);
 
   // Close the download menu on outside click or Escape
   useEffect(() => {
@@ -504,14 +542,6 @@ function AudioPlayer({ audio, isSelected, onTranscribeToggle, onDeleteSuccess, o
   }
 
   // Lazily fetch the audio blob the first time the user presses play.
-  async function ensureLoaded() {
-    if (objectUrlRef.current) return objectUrlRef.current;
-    const url = await audioApi.fetchAudioFile(audio.id, 'processed');
-    objectUrlRef.current = url;
-    if (audioRef.current) audioRef.current.src = url;
-    return url;
-  }
-
   async function togglePlay() {
     const el = audioRef.current;
     if (!el) return;

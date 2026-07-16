@@ -10,8 +10,13 @@ function AudioSearchBar({
   showSuggestions = false,
   style,
   compact = false,
+  value,
 }) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(value ?? '');
+
+  useEffect(() => {
+    if (value !== undefined) setQuery(value);
+  }, [value]);
   const [suggestions, setSuggestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);

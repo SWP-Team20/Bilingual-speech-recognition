@@ -171,6 +171,12 @@ def _load(audio):
         return json.load(f)
 
 
+def _flush_file(f) -> None:
+    f.flush()
+    if os.environ.get("TRANSCRIPT_FSYNC", "0") == "1":
+        os.fsync(f.fileno())
+
+
 def _write_txt(audio, sentences):
     """Перезаписывает transcription.txt в формате «Спикер: текст»."""
     path = _txt_path(audio)
@@ -181,13 +187,12 @@ def _write_txt(audio, sentences):
         lines.append(prefix + (s.get("text") or "") + "\n")
     with open(path, "w", encoding="utf-8", newline="\n") as f:
         f.writelines(lines)
-        f.flush()
-        os.fsync(f.fileno())
+        _flush_file(f)
 
 
 def sync_txt_from_json(audio):
     """Пересобирает transcription.txt из актуального transcription.json (для скачивания)."""
-    from backend.src.pipeline import build_sentences
+    from backend.src.sentence_builder import build_sentences
 
     data = _load(audio)
     words = data.get("words") or []
@@ -247,8 +252,7 @@ def _write_undo_stack(audio, stack: list) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(stack, f, ensure_ascii=False)
-        f.flush()
-        os.fsync(f.fileno())
+        _flush_file(f)
 
 
 def _push_undo_snapshot(db, audio, data) -> None:
@@ -370,7 +374,7 @@ def _response_payload(audio, words, sentences, stats):
 def _finalize(db, audio, data, words):
     """Пересобирает sentences, пересчитывает статистику, коммитит БД и пишет JSON+TXT.
     Возвращает полезную нагрузку для фронта (words + sentences + stats)."""
-    from backend.src.pipeline import build_sentences   # ленивый импорт (тяжёлый пайплайн)
+    from backend.src.sentence_builder import build_sentences
 
     data["words"] = words
     data["sentences"] = build_sentences(words)
@@ -381,8 +385,7 @@ def _finalize(db, audio, data, words):
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
-        f.flush()
-        os.fsync(f.fileno())
+        _flush_file(f)
     _write_txt(audio, data["sentences"])
     return _response_payload(audio, words, data["sentences"], stats)
 
@@ -715,25 +718,11 @@ def bulk_edit_words(db, audio, positions, language=None, delete=False, speaker_i
 
     data = _load(audio)
     words = data.get("words") or []
-    aid = UUID(str(audio.id))
 
     if delete:
-        unique_positions = sorted({p for p in positions if 0 <= p < len(words)}, reverse=True)
-        if not unique_positions:
-            raise IndexError("position out of range")
         _push_undo_snapshot(db, audio, data)
-        for pos in unique_positions:
-            mutate_delete(words, pos)
-            row = _word_row(db, audio.id, pos)
-            if row is not None:
-                db.delete(row)
-            db.query(models.Word).filter(
-                models.Word.audio_id == aid,
-                models.Word.position > pos,
-            ).update(
-                {models.Word.position: models.Word.position - 1},
-                synchronize_session=False,
-            )
+        mutate_bulk_delete(words, positions)
+        _restore_words_db(db, audio, words)
     else:
         lang = normalize_lang(language)
         unique_positions = sorted({p for p in positions if 0 <= p < len(words)})
