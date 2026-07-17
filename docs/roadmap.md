@@ -51,7 +51,7 @@
   -  [Speakers list endpoint](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/207)
   -  [US-025: Original audio download](https://github.com/SWP-Team20/Bilingual-speech-recognition/issues/211)
 
-  ## Sprint 4
+## Sprint 4
 
 - **Sprint name or number:** 4
 - **Link to the corresponding Sprint milestone:** [Sprint 4](https://github.com/SWP-Team20/Bilingual-speech-recognition/milestone/4)

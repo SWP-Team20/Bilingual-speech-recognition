@@ -1,55 +1,69 @@
+# Customer Handover
 
-# Customer Handover 
+## 1. Handover Scope
 
-## 1. Handover scope
+**Current status:** ready for independent use after the customer has an accessible runtime environment.
 
-**Current Status:** Ready for independent use
+Full independent operation on the customer side is still limited by customer-side access and deployment constraints. Recent User Acceptance Tests (UAT) and trial validations were therefore conducted through shared-screen sessions.
 
-Currently, full deployment or independent operation on the customer side is blocked because the customer is not able to connect to the Innopolis network or deploy the product independently. Therefore, recent User Acceptance Tests (UAT) and trial validations have been conducted via shared-screen sessions.
+## 2. Current Product Status
 
-## 2. Current Product Status and Handover Scope
-All core features that were required by the customer are implemented. The system currently supports bilingual Russian-Tatar speech recognition, complete with comprehensive statistical tracking (per-speaker, per-language, per-date), and an admin panel for user maintenance.
+All core features requested by the customer are implemented. The system supports bilingual Russian-Tatar speech recognition, transcript correction, speaker labels, corpus search, statistics by speaker/language/date/frequent words, CSV/XLSX statistics export, and an admin panel for user maintenance.
 
-- **Transferred / Delegated:** 
-  - Source code access via the `SWP-Team20/Bilingual-speech-recognition` repository
-  - Functional deployment artifacts
-- **Retained by Team:** 
-  - Active hosting and database management on the Innopolis internal server
-  - ASR model training, which is currently conducted by the team outside of the GitHub scope
+**Transferred / delegated:**
+
+- Source code access through the `SWP-Team20/Bilingual-speech-recognition` repository.
+- Functional deployment and setup documentation.
+
+**Retained by the team:**
+
+- Active hosting and database management on the Innopolis internal server.
+- ASR model experimentation and training, which is conducted outside the GitHub application runtime.
 
 ## 3. Accessing and Using the Product
-- **Current Deployment URL:** `https://10.93.26.206:5173`
-- **Usage Instructions:** Users can log in using their credentials. The authentication token is valid for 24 hours with a silent refresh mechanism, ensuring sessions do not expire mid-work
-- **Data Export:** Processed transcriptions can be directly downloaded in `.txt` and `.json` formats
 
-## 4. Configuration and Secrets Handling
-To deploy the system on the customer's own hardware,  environment variables must be configured in the `.env` file.
+- **Current deployment URL:** `https://10.93.26.206:5173`
+- **Login:** users authenticate with their credentials. The frontend can refresh sessions through `/api/v1/auth/refresh`.
+- **Transcript export:** processed transcriptions can be downloaded as `.txt` and `.json`.
+- **Statistics export:** frequent-word, language, date, speaker, and combined statistics can be downloaded as `.csv` or `.xlsx`.
 
+## 4. Configuration and Secrets
+
+To deploy the system on customer-owned hardware, environment variables must be configured in a local `.env` file. Secret values must not be committed to version control.
 
 ## 5. Installation and Deployment
-The product is fully containerized. Once the customer prepares an independent environment, the basic deployment steps are:
 
-1. Clone the repository
-2. Configure the `.env` file
-3. Build and launch the containers
-4. For detailed infrastructure setup, please refer to the [Deployment Instructions](/docs/deployment.md)
+Once the customer prepares an independent environment, the basic deployment steps are:
 
-## 6. Operational Notes and Troubleshooting
-- **Data Management:** The system features a soft-deletion mechanism for audio files, users, and transcription words. This includes a 30-second undo window for audio and user deletion to prevent accidental data loss.
-- **Transcription Editing:** Managers and admins can change speaker labels, manually correct spelling. Words are strictly divided by spaces to prevent plain-text formatting issues.
+1. Clone the repository.
+2. Configure the `.env` file.
+3. Start PostgreSQL.
+4. Initialize the database with `init_db.py`.
+5. Start the FastAPI backend and React/Vite frontend.
+
+For detailed infrastructure setup, see the [Deployment Instructions](/docs/deployment.md).
+
+## 6. Operational Notes
+
+- **Data management:** audio files and users use soft deletion with a 60-second restore window before permanent purge.
+- **Transcription editing:** managers and admins can correct words, insert words, delete words with undo, bulk-edit language/speaker labels, and relabel speakers.
+- **Search and filters:** corpus search supports word, language, speaker, date, status, and audio ID filters.
 
 ## 7. Known Limitations and Risks
-- **Network Restrictions:** As the current deployment relies on internal Innopolis infrastructure, external customer access remains a limitation.
-- **ASR Performance:** While the core functionality is complete, the Automatic Speech Recognition (ASR) model is still undergoing refinements to achieve peak performance
+
+- **Network restrictions:** the current deployment relies on internal Innopolis infrastructure, so external customer access remains a limitation.
+- **ASR performance:** Tatar recognition has the largest improvement margin. The concrete levers for raising accuracy, from customer-side transcript corrections to model fine-tuning, are described in the [ASR Training Guide](/docs/asr_training_guide.md).
 
 ## 8. Remaining Actions and Support
-The codebase is prepared for final handover, but the following actions remain:
-- Final refinement of features, hotfixing of remaining minor bugs, and general UI polish
-- Assisting the customer in establishing their own accessible deployment environment to unblock independent use
+
+- Final refinement of minor bugs and UI polish.
+- Assistance with establishing a customer-owned accessible deployment environment.
 
 ## 9. Documentation Entry Points
-For deeper operational insight, refer to the following maintained documents:
-- [README.md](/README.md) - Access instructions and project overview
-- [Deployment Instructions](/docs/deployment.md) - Detailed guide for infrastructure setup
-- [User Stories](/docs/user-stories.md) - Expected product behavior and feature tracking
-- [Architecture](/docs/architecture/README.md) - System overview and architecture decision records (ADRs)
+
+- [README.md](/README.md) - project overview.
+- [Deployment Instructions](/docs/deployment.md) - infrastructure setup.
+- [User Stories](/docs/user-stories.md) - expected product behavior and feature tracking.
+- [Architecture](/docs/architecture/README.md) - system overview and architecture decision records.
+- [Storage and Search](/docs/storage_and_search.md) - how artifacts, metadata, and searchable words are stored.
+- [ASR Training Guide](/docs/asr_training_guide.md) - how speech recognition works and how to improve its accuracy.

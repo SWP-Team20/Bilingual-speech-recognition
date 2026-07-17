@@ -9,12 +9,8 @@ theme:
     - navigation.sections
     - toc.integrate
 
-# Plugin to ignore files in extra/
 plugins:
   - search
-  - exclude:
-      glob:
-        - extra/*
 
 # Makes Mermaid more readable
 markdown_extensions:
@@ -30,7 +26,6 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Setup & Deployment : deployment.md
-  - Changelog : CHANGELOG.md
   - Development Process: development-process.md
   - Roadmap : roadmap.md
   - Definition of Done: definition-of-done.md
@@ -39,3 +34,16 @@ nav:
   - Quality Requirements : quality-requirements.md
   - Quality Requirements Tests : quality-requirements-tests.md
   - User Acceptance Tests: user-acceptance-tests.md
+  - Customer Handover: customer-handover.md
+  - Storage and Search: storage_and_search.md
+  - RU/TT Pipeline: ru_tt_pipeline.md
+  - Database Schema: db_schema_for_team.md
+  - ASR Training Guide: asr_training_guide.md
+  - Architecture:
+      - Overview: architecture/README.md
+      - Static View: architecture/static-view/static.md
+      - Dynamic View: architecture/dynamic-view/dynamic.md
+      - Deployment View: architecture/deployment-view/deployment.md
+      - ADR-001 Audio Confidentiality: architecture/adr/ADR-001-audio-confidentiality.md
+      - ADR-002 Frontend Build Quality: architecture/adr/ADR-002-frontend-build-quality.md
+      - ADR-003 Pull Request Compliance: architecture/adr/ADR-003-pull-request-compliance.md

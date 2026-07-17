@@ -127,6 +127,3 @@ Local Web App:
 * HTTPS
   * ```https://localhost:5173``` if deployed locally
   * ```https://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
-
-
-
