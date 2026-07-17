@@ -22,7 +22,7 @@ Hosted documentation site can be accessed in [Bilingual Speech Recognition Docs]
 
 To see the current product status and handover scope read [Customer Handover](/docs/customer-handover.md).
 
-### Directory tree
+### Documentation Tree
 
 ```text
 docs/
@@ -31,30 +31,25 @@ docs/
 │   │   ├── ADR-001-audio-confidentiality.md
 │   │   ├── ADR-002-frontend-build-quality.md
 │   │   └── ADR-003-pull-request-compliance.md
-│   │
 │   ├── deployment-view/
 │   │   └── deployment.md
-│   │
 │   ├── dynamic-view/
 │   │   └── dynamic.md
-│   │
 │   ├── static-view/
 │   │   └── static.md
-│   │
 │   └── README.md
-│
-├── extra/
-│   ├── db_schema_for_team.md
-│   ├── ru_tt_pipeline.md
-│   └── storage_and_search.md
-│
+├── asr_training_guide.md
 ├── customer-handover.md
+├── db_schema.md
 ├── definition-of-done.md
 ├── deployment.md
 ├── development-process.md
+├── index.md
 ├── quality-requirements-tests.md
 ├── quality-requirements.md
 ├── roadmap.md
+├── ru_tt_pipeline.md
+├── storage_and_search.md
 ├── testing.md
 ├── user-acceptance-tests.md
 └── user-stories.md
