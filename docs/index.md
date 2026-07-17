@@ -16,7 +16,7 @@ Bilingual Speech Recognition is a web application for uploading bilingual Russia
 - [Architecture](architecture/README.md)
 - [Storage and Search](storage_and_search.md)
 - [RU/TT Pipeline](ru_tt_pipeline.md)
-- [Database Schema](db_schema_for_team.md)
+- [Database Schema](db_schema.md)
 - [ASR Training Guide](asr_training_guide.md)
 - [Testing](testing.md)
 - [Quality Requirements](quality-requirements.md)
