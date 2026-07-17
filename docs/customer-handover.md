@@ -40,7 +40,7 @@ The product is fully containerized. Once the customer prepares an independent en
 
 ## 7. Known Limitations and Risks
 - **Network Restrictions:** As the current deployment relies on internal Innopolis infrastructure, external customer access remains a limitation.
-- **ASR Performance:** While the core functionality is complete, the Automatic Speech Recognition (ASR) model is still undergoing refinements to achieve peak performance
+- **ASR Performance:** While the core functionality is complete, the Automatic Speech Recognition (ASR) model is still undergoing refinements to achieve peak performance. Recognition of Tatar is the part with the most room to improve. The concrete levers for raising accuracy — from actions the customer can take today (correcting transcripts, labelling speakers, growing the Tatar word list, recording cleaner) to a full model re-training — are described in the [ASR Training Guide](/docs/extra/asr_training_guide.md).
 
 ## 8. Remaining Actions and Support
 The codebase is prepared for final handover, but the following actions remain:
@@ -53,3 +53,4 @@ For deeper operational insight, refer to the following maintained documents:
 - [Deployment Instructions](/docs/deployment.md) - Detailed guide for infrastructure setup
 - [User Stories](/docs/user-stories.md) - Expected product behavior and feature tracking
 - [Architecture](/docs/architecture/README.md) - System overview and architecture decision records (ADRs)
+- [ASR Training Guide](/docs/extra/asr_training_guide.md) - How the speech recognition works and how to improve its accuracy by training
