@@ -1,23 +1,26 @@
-
-# Audio Confidentiality
-
-## Stable ID
-ADR-001
+# ADR-001: Audio Confidentiality
 
 ## Status
+
 Accepted
 
 ## Context
-Within the Bilingual Speech Recognition application, user audio files contain confidential information. We must prevent unauthorized external access to these media by enforcing access control. The verification process must be optimized, while remaining verifiable through automated integration tests.
+
+User audio files contain confidential information. Direct public access to media and transcript artifacts must be prevented. The rule must be simple enough to verify through automated integration tests.
 
 ## Decision
-Implement a centralized backend authorization mechanism. Access to protected audio file endpoints will require an authenticated request. The system will intercept incoming HTTP GET requests and validate the client's authorization status. If the request is unauthenticated or unauthorized, the system will immediately reject it with an HTTP 401 Unauthorized status code. This architectural constraint is verified via automated `pytest` integration testing (`test_security.py`) in the CI pipeline.
 
-## Consequences and tradeoffs
-  - Complete isolation and protection of user audio files from direct public access
+All audio, transcript, search, speaker, statistics, and admin routes are exposed through the FastAPI backend and protected by JWT authentication. Unauthenticated requests to protected routes return HTTP 401. Authenticated users with insufficient role return HTTP 403 on privileged routes.
 
-  - Predictable API behavior that is easily testable via automated CI scripts
+The rule is verified by automated quality requirement tests in `scripts/QualityRequirements/test_security.py` and `scripts/QualityRequirements/test_authorization.py`.
 
+## Consequences
 
-## Quality requirements addressed where applicable
-[QR-001: Audio Files Confidentiality](https://github.com/SWP-Team20/Bilingual-speech-recognition/blob/494babd5786051e98e87f6e7b8eb391054b4040a/docs/quality-requirements.md#L3)
+- Audio files are not served directly from public file storage.
+- Authorization behavior is centralized in backend dependencies and role checks.
+- API clients must include a valid bearer token for protected operations.
+
+## Quality Requirements Addressed
+
+- [QR-001: Audio Files Confidentiality](/docs/quality-requirements.md#qr-001-audio-files-confidentiality)
+- [QR-004: Role-Based Endpoint Authorization](/docs/quality-requirements.md#qr-004-role-based-endpoint-authorization)

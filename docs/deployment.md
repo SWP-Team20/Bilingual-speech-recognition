@@ -1,132 +1,130 @@
-# Setup & Deployment Guide
+# Setup and Deployment Guide
 
-This document covers development setup and production deployment workflows.
+This document covers local development setup and the current deployment workflow.
 
 ## System Prerequisites
 
-* **Docker** (v24.0+)
-* **Python** (3.10+) with **PIP** (v22.0+)
-* **Node.js & npm** (v20.19+)
+- **Docker** v24.0+
+- **Python** 3.10+ with **pip** 22.0+
+- **Node.js and npm** compatible with the Vite frontend (`package.json` currently requires Node 20.19+ or 22.12+)
 
-### Verify Prerequisites
+## Verify Prerequisites
+
 ```bash
 docker --version
-python3 --version
-python3 -m pip --version
+python --version
+python -m pip --version
 node --version
+npm --version
 ```
 
-## Deployment
-
-Follow these steps to run the application.
-
-### 1. Clone the Repository
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/SWP-Team20/Bilingual-speech-recognition
 cd Bilingual-speech-recognition
 ```
 
-### 2. Build and Launch Containers
+## 2. Start PostgreSQL
 
-Firstly, delete previous containers if existed:
+Delete any previous local Postgres container with the same name:
+
 ```bash
 docker rm -f pg-container
 ```
 
-Run this command to start and deploy Docker in the background:
+Start PostgreSQL in the background:
+
 ```bash
 docker run -d --name pg-container -v db_storage:/var/lib/postgresql -e POSTGRES_PASSWORD=admin -p 15432:5432 postgres
 ```
 
-### 3. Initialize database (if not existed before)
+The backend expects database settings through the local `.env` file and `backend/src/database.py`.
 
-Run ```init_db.py``` in root directory of the project.
+## 3. Initialize the Database
 
-This will create a user with role **admin** that you can use to create new users.
+Run `init_db.py` from the repository root:
 
-### 4. Run the Backend (FastAPI)
+```bash
+python init_db.py
+```
 
-> If your system is Linux, firstly create and initialize venv:
-> 
-> ```bash
-> python3 -m venv venv
-> source .venv/bin/activate
-> ```
+This creates the initial **admin** user used to create other users.
 
-Install dependencies:
+## 4. Run the Backend
+
+On Linux/macOS, create and activate a virtual environment first:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+On Windows PowerShell:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+Install backend dependencies:
 
 ```bash
 pip install -r backend/requirements.txt
 ```
 
-Then, start the API backend server via uvicorn:
+Start the FastAPI backend:
 
-
-- **HTTP** protocol:
 ```bash
 uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --reload
 ```
 
-- **HTTPS** protocol:
+For HTTPS local testing:
+
 ```bash
-uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --ssl-keyfile=key.pem --ssl-certfile=cert.pem --reload 
+uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --ssl-keyfile=key.pem --ssl-certfile=cert.pem --reload
 ```
 
-Interactive API Docs:
-* HTTP:
-  * ```http://localhost:8000/docs``` if deployed locally
-  * ```http://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
+Interactive API docs:
 
-* HTTPS:
-  * ```https://localhost:8000/docs``` if deployed locally
-  * ```https://<YOUR-IP-ADDRESS>:8000/docs``` if deployed on VM
+- Local HTTP: `http://localhost:8000/docs`
+- VM HTTP: `http://<YOUR-IP-ADDRESS>:8000/docs`
+- Local HTTPS: `https://localhost:8000/docs`
+- VM HTTPS: `https://<YOUR-IP-ADDRESS>:8000/docs`
 
-> **Troubleshooting**:
->
-> 1. If you have an error while trying to start the server, try inserting at the start of the command ```python -m```. For example:
-> ```bash
-> python -m uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --reload
-> ```
-> 
->
-> 2. If the backend has frozen after reload, type ```taskkill /F /IM python.exe``` and run the backend again.
+Troubleshooting:
 
-### 5. Run the Frontend (Node.js)
-Open a new terminal window. Now install package dependencies:
+- If `uvicorn` is not found, run it through Python: `python -m uvicorn backend.src.main:app --port 8000 --host 0.0.0.0 --reload`.
+- On Windows, if the backend freezes after reload, run `taskkill /F /IM python.exe` and start the backend again.
+
+## 5. Run the Frontend
+
+Open a new terminal and install frontend dependencies:
+
 ```bash
 cd frontend
 npm install
 ```
 
-Now start the server:
+Start the frontend dev server:
 
-
-- **HTTP** protocol:
 ```bash
 npm run dev
 ```
 
-- **HTTPS** protocol:
+For HTTPS local testing:
+
 ```bash
 npm run dev:https
 ```
 
-> **Troubleshooting**:
->
-> 1. If you have an error while trying to start the frontend, try adding ```-- --host```. For example:
-> ```bash
-> npm run dev -- --host
-> ```
+Local web app:
 
-Local Web App:
-* HTTP
-  * ```http://localhost:5173``` if deployed locally with
-  * ```http://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
+- HTTP local: `http://localhost:5173`
+- HTTP VM: `http://<YOUR-IP-ADDRESS>:5173`
+- HTTPS local: `https://localhost:5173`
+- HTTPS VM: `https://<YOUR-IP-ADDRESS>:5173`
 
-* HTTPS
-  * ```https://localhost:5173``` if deployed locally
-  * ```https://<YOUR-IP-ADDRESS>:5173``` if deployed on VM
+Troubleshooting:
 
-
-
+- If the frontend is not reachable from another host, run `npm run dev -- --host`.
