@@ -9,6 +9,7 @@ During Week 7, the team continued using Large Language Model (LLM) tools to supp
 The team used the following LLM-based tool during Week 7:
 
 - Cursor
+- Claude
 
 ## Frontend Development
 
@@ -22,6 +23,10 @@ Cursor was also used during backend development to support the implementation of
 
 The team carefully reviewed and validated all AI-generated suggestions before integrating them into the project.
 
+## Documentation
+
+Claude was used to assist with revising ASR training process and updating the documentation.
+
 ## Human Responsibility
 
-Cursor was used solely as a development assistant. Team members remained fully responsible for the design, implementation, testing, and validation of all features. Every AI-generated recommendation was reviewed and verified to ensure the correctness, reliability, and quality of the final software.
+Cursor and Claude were used solely as a development assistants. Team members remained fully responsible for the design, implementation, testing, and validation of all features. Every AI-generated recommendation was reviewed and verified to ensure the correctness, reliability, and quality of the final software.
