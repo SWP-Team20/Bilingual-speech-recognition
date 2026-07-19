@@ -148,7 +148,7 @@
 - **Customer comments or observed issues:** works as planned.
 - **Resulting PBIs or issues:** none.
 
-## UAT-012 [Active]
+## UAT-012 [Retired]
 
 - **User goal:** view detailed speaker statistics and see in which audio each word was spoken.
 - **Preconditions:** the user has manager or admin access. At least one audio file with a transcription is available.
@@ -158,5 +158,5 @@
   3. Click **Detailed Statistics**.
   4. Choose a speaker and click a word.
 - **Expected outcome:** the user is redirected to the audio page with the selected word highlighted.
-- **Customer comments or observed issues:** pending.
-- **Resulting PBIs or issues:** pending.
+- **Customer comments or observed issues:** works as planned.
+- **Resulting PBIs or issues:** none.
