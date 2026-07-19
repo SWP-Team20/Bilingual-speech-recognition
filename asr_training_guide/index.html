@@ -1,0 +1,1986 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://swp-team20.github.io/Bilingual-speech-recognition/asr_training_guide/">
+      
+      
+        <link rel="prev" href="../ru_tt_pipeline/">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>ASR Training Guide - Bilingual Speech Recognition Docs</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#improving-asr-accuracy-customer-guide" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Bilingual Speech Recognition Docs" class="md-header__button md-logo" aria-label="Bilingual Speech Recognition Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Bilingual Speech Recognition Docs
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              ASR Training Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/SWP-Team20/Bilingual-speech-recognition" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../deployment/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Setup & Deployment
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../development-process/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Development Process
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../roadmap/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Roadmap
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../definition-of-done/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Definition of Done
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../user-stories/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  User Stories
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../testing/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Testing
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quality-requirements/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quality Requirements
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../quality-requirements-tests/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quality Requirements Tests
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../user-acceptance-tests/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  User Acceptance Tests
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../customer-handover/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Customer Handover
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../storage_and_search/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Storage and Search
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../ru_tt_pipeline/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  RU/TT Pipeline
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../db_schema_for_team.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Database Schema
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    <li class="md-tabs__item md-tabs__item--active">
+      <a href="./" class="md-tabs__link">
+        
+  
+  
+    
+  
+  ASR Training Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../architecture/" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Bilingual Speech Recognition Docs" class="md-nav__button md-logo" aria-label="Bilingual Speech Recognition Docs" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Bilingual Speech Recognition Docs
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/SWP-Team20/Bilingual-speech-recognition" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup & Deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../development-process/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../definition-of-done/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Definition of Done
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-stories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Stories
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quality-requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quality-requirements-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quality Requirements Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../user-acceptance-tests/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    User Acceptance Tests
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../customer-handover/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Customer Handover
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../storage_and_search/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Storage and Search
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ru_tt_pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    RU/TT Pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../db_schema_for_team.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Schema
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ASR Training Guide
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ASR Training Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#one-sentence-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One-Sentence Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-how-asr-works-today" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. How ASR Works Today
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-two-meanings-of-training" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Two Meanings of Training
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-what-the-customer-can-do-now" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. What the Customer Can Do Now
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. What the Customer Can Do Now">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#correct-transcripts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Correct Transcripts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#label-speakers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Label Speakers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extend-the-tatar-word-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extend the Tatar Word List
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improve-recording-quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improve Recording Quality
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-model-level-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Model-Level Improvements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Model-Level Improvements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#swap-in-a-stronger-existing-tatar-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Swap in a Stronger Existing Tatar Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fine-tune-on-corrected-corpus-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fine-Tune on Corrected Corpus Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improve-russiantatar-routing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improve Russian/Tatar Routing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-fine-tuning-step-by-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Fine-Tuning Step by Step
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Fine-Tuning Step by Step">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-0-what-you-need" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 0. What You Need
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-1-correct-the-transcripts-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1. Correct the Transcripts First
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-export-the-training-pairs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2. Export the Training Pairs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-prepare-the-training-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3. Prepare the Training Environment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-train" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4. Train
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-where-the-model-goes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5. Where the Model Goes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-6-put-the-new-model-into-the-application" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 6. Put the New Model Into the Application
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-7-verify-before-adopting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 7. Verify Before Adopting
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-how-to-measure-improvement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. How to Measure Improvement
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-recommended-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Recommended Path
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. FAQ
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-engineering-documents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Engineering Documents
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/static-view/static/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Static View
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/dynamic-view/dynamic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Dynamic View
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/deployment-view/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deployment View
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/adr/ADR-001-audio-confidentiality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-001 Audio Confidentiality
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/adr/ADR-002-frontend-build-quality/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-002 Frontend Build Quality
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/adr/ADR-003-pull-request-compliance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ADR-003 Pull Request Compliance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="improving-asr-accuracy-customer-guide">Improving ASR Accuracy: Customer Guide<a class="headerlink" href="#improving-asr-accuracy-customer-guide" title="Permanent link">&para;</a></h1>
+<p><strong>Audience:</strong> the person who owns and uses the corpus, without assuming machine-learning background.</p>
+<p>This guide explains how speech recognition works today, what the customer can do immediately to improve results, when model training becomes useful, and how to measure whether accuracy actually improved.</p>
+<h2 id="one-sentence-summary">One-Sentence Summary<a class="headerlink" href="#one-sentence-summary" title="Permanent link">&para;</a></h2>
+<p>Every transcript correction is valuable: it fixes the current recording, improves search/statistics, and creates verified data that can later be used to fine-tune a stronger model.</p>
+<h2 id="1-how-asr-works-today">1. How ASR Works Today<a class="headerlink" href="#1-how-asr-works-today" title="Permanent link">&para;</a></h2>
+<p>The application does not use one single model. Uploaded audio passes through a chain of steps:</p>
+<pre class="mermaid"><code>flowchart TD
+    A[Uploaded recording] --&gt; B[Normalize to 16 kHz mono]
+    B --&gt; C[Voice activity detection]
+    C --&gt; D[Diarization: who is speaking]
+    D --&gt; E[Language ID per chunk: Russian vs Tatar]
+    E --&gt;|Russian| F[Russian ASR: Whisper large-v3]
+    E --&gt;|Tatar| G[Tatar ASR: fine-tuned Whisper]
+    F --&gt; H[Per-word language tag: ru / tt / unknown]
+    G --&gt; H
+    H --&gt; I[Clean up hallucinations and noise]
+    I --&gt; J[Searchable transcript with words, timecodes, speakers]</code></pre>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>What it decides</th>
+<th>Typical mistake</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language ID</td>
+<td>Whether a chunk is Russian or Tatar.</td>
+<td>Sends Tatar speech to the Russian model or vice versa.</td>
+</tr>
+<tr>
+<td>Russian ASR</td>
+<td>Russian words.</td>
+<td>Occasional mistakes on noisy or quiet speech.</td>
+</tr>
+<tr>
+<td>Tatar ASR</td>
+<td>Tatar words.</td>
+<td>More spelling errors because public Tatar ASR is weaker.</td>
+</tr>
+<tr>
+<td>Word language tag</td>
+<td>Labels each word as <code>ru</code>, <code>tt</code>, or <code>unknown</code>.</td>
+<td>Tatar words written with Russian letters can be mislabeled.</td>
+</tr>
+<tr>
+<td>Cleanup</td>
+<td>Removes hallucinated/noisy tokens.</td>
+<td>Can occasionally drop a real quiet word.</td>
+</tr>
+</tbody>
+</table>
+<p>Tatar is the hardest part. The Russian model is strong and trained on a much larger data base. The Tatar branch currently uses <code>yasalma/whisper-finetuned-tt-asr</code>, which is useful but still has more spelling and routing errors.</p>
+<h2 id="2-two-meanings-of-training">2. Two Meanings of Training<a class="headerlink" href="#2-two-meanings-of-training" title="Permanent link">&para;</a></h2>
+<p>People use "train the ASR" for two different activities:</p>
+<ul>
+<li><strong>Teaching the system without ML:</strong> correct transcripts, label speakers, and extend the Tatar word list. This helps immediately and creates training data.</li>
+<li><strong>Training the model:</strong> fine-tune or replace the Tatar model so it makes fewer mistakes before manual correction.</li>
+</ul>
+<p>The practical sequence is to correct and label data first, then use that verified data for model fine-tuning when there is enough of it.</p>
+<h2 id="3-what-the-customer-can-do-now">3. What the Customer Can Do Now<a class="headerlink" href="#3-what-the-customer-can-do-now" title="Permanent link">&para;</a></h2>
+<h3 id="correct-transcripts">Correct Transcripts<a class="headerlink" href="#correct-transcripts" title="Permanent link">&para;</a></h3>
+<p><strong>Where in the interface:</strong> log in, open the <strong>Аудиозаписи</strong> tab on the dashboard, and select a recording. Its transcript appears with each word clickable. Clicking a word opens the <strong>Правка слова</strong> dialog, where you can fix the spelling and set <strong>Язык слова</strong> to <code>Русский</code>, <code>Татарский</code>, or <code>Другой</code>. The same view is used to add a missing word, delete a phantom one, and rename a speaker.</p>
+<p>Managers and admins can correct words, change language tags, insert missing words, delete phantom words, and bulk-edit selected words. These changes update:</p>
+<ol>
+<li>the transcript shown in the UI;</li>
+<li>the searchable word index;</li>
+<li>recording statistics.</li>
+</ol>
+<p>Corrections do not automatically retrain the model today. They do create the verified dataset needed for future fine-tuning.</p>
+<h3 id="label-speakers">Label Speakers<a class="headerlink" href="#label-speakers" title="Permanent link">&para;</a></h3>
+<p>Rename anonymous labels such as <code>Speaker 1</code> to meaningful labels such as mother, father, or child. This makes speaker-filtered search and speaker statistics useful.</p>
+<h3 id="extend-the-tatar-word-list">Extend the Tatar Word List<a class="headerlink" href="#extend-the-tatar-word-list" title="Permanent link">&para;</a></h3>
+<p>Some Tatar words are written only with Russian Cyrillic letters. Add only unambiguous Tatar words to:</p>
+<div class="highlight"><pre><span></span><code>backend/src/data/tatar_wordlist.txt
+</code></pre></div>
+<p>Rules:</p>
+<ul>
+<li>one lower-case word per line;</li>
+<li>lines beginning with <code>#</code> are comments;</li>
+<li>do not add words that are also normal Russian words.</li>
+</ul>
+<p>Words with Tatar-specific letters are already detected automatically and do not need to be added.</p>
+<h3 id="improve-recording-quality">Improve Recording Quality<a class="headerlink" href="#improve-recording-quality" title="Permanent link">&para;</a></h3>
+<p>Better audio usually beats software tuning:</p>
+<ul>
+<li>turn off TV/radio and other background speech;</li>
+<li>place the microphone closer to the child;</li>
+<li>prefer a quiet room;</li>
+<li>avoid dishes, running water, and other sharp background noises near the microphone.</li>
+</ul>
+<h2 id="4-model-level-improvements">4. Model-Level Improvements<a class="headerlink" href="#4-model-level-improvements" title="Permanent link">&para;</a></h2>
+<h3 id="swap-in-a-stronger-existing-tatar-model">Swap in a Stronger Existing Tatar Model<a class="headerlink" href="#swap-in-a-stronger-existing-tatar-model" title="Permanent link">&para;</a></h3>
+<p>The Tatar ASR model is selected through:</p>
+<div class="highlight"><pre><span></span><code>TT_ASR_MODEL
+</code></pre></div>
+<p>The current default is <code>yasalma/whisper-finetuned-tt-asr</code>. If a stronger compatible Tatar Whisper model becomes available, an engineer can point this variable at it and run the evaluation harness.</p>
+<h3 id="fine-tune-on-corrected-corpus-data">Fine-Tune on Corrected Corpus Data<a class="headerlink" href="#fine-tune-on-corrected-corpus-data" title="Permanent link">&para;</a></h3>
+<p>Fine-tuning means taking the current Tatar model and continuing its training on your own corrected recordings, so it makes fewer mistakes on the speech you actually record. Section 5 is the full step-by-step procedure; it assumes no machine-learning background, only the ability to run commands in a terminal.</p>
+<h3 id="improve-russiantatar-routing">Improve Russian/Tatar Routing<a class="headerlink" href="#improve-russiantatar-routing" title="Permanent link">&para;</a></h3>
+<p>If many errors come from Tatar speech being sent to the Russian model, the next improvement is a dedicated Russian/Tatar language classifier or shorter routing windows. This is separate from the ASR model itself.</p>
+<h2 id="5-fine-tuning-step-by-step">5. Fine-Tuning Step by Step<a class="headerlink" href="#5-fine-tuning-step-by-step" title="Permanent link">&para;</a></h2>
+<p>This section is the practical recipe: where the training pairs come from, where they are stored, how to train, and where the finished model goes.</p>
+<p>The cycle as a whole:</p>
+<pre class="mermaid"><code>flowchart LR
+    A[Corrections in the UI] --&gt; B[Export script: cut clips out of storage/]
+    B --&gt; C[Dataset: clips + verified texts]
+    C --&gt; D[Fine-tuning run on a GPU]
+    D --&gt; E[Model folder]
+    E --&gt; F[TT_ASR_MODEL points here, restart backend]</code></pre>
+<p><strong>Note on tooling.</strong> Steps 5 and 6 use what already exists in the application. Steps 2 and 4 — the export and the training run — are <strong>not yet implemented in this repository</strong>; an engineer has to write them once, and this section specifies exactly what they must do. After that first implementation, every later round is just re-running them.</p>
+<h3 id="step-0-what-you-need">Step 0. What You Need<a class="headerlink" href="#step-0-what-you-need" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Requirement</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Corrected recordings</td>
+<td>Tatar speech already corrected in the UI. See "How much data" below.</td>
+</tr>
+<tr>
+<td>A machine with an NVIDIA GPU</td>
+<td>~10 GB VRAM for <code>whisper-small</code>. Rented cloud GPUs and Google Colab also work.</td>
+</tr>
+<tr>
+<td>Python 3.10+</td>
+<td>The same version used for the backend.</td>
+</tr>
+<tr>
+<td>Disk space</td>
+<td>Roughly the size of your Tatar audio, twice over.</td>
+</tr>
+</tbody>
+</table>
+<p>The export (Step 2) needs no GPU and can run on the server itself. Only the training (Step 4) needs the GPU.</p>
+<h3 id="step-1-correct-the-transcripts-first">Step 1. Correct the Transcripts First<a class="headerlink" href="#step-1-correct-the-transcripts-first" title="Permanent link">&para;</a></h3>
+<p>The training pairs are produced from your corrections. A recording is usable for training only when its transcript is actually correct, so correct the Tatar recordings in the web interface first — dashboard → <strong>Аудиозаписи</strong> → open a recording → click a word (see Section 3). Uncorrected recordings would teach the model to repeat its own mistakes — this is the single most important rule in this document.</p>
+<p>Nothing has to be uploaded anywhere manually. The corrections are already on the server: for every recording there is a folder <code>storage/&lt;audio_id&gt;/</code> holding the corrected transcript and the audio it belongs to. Step 2 reads them from there.</p>
+<h3 id="step-2-export-the-training-pairs">Step 2. Export the Training Pairs<a class="headerlink" href="#step-2-export-the-training-pairs" title="Permanent link">&para;</a></h3>
+<p>Fine-tuning needs <code>(audio clip, verified text)</code> pairs: short WAV fragments, each with the exact words spoken in it. The corpus already contains everything needed to build them, but the export tool itself still has to be written. This is what it must do.</p>
+<p><strong>Input.</strong> For each recording folder <code>storage/&lt;audio_id&gt;/</code>:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>transcription.json</code></td>
+<td>The corrected transcript, including your edits from Step 1.</td>
+</tr>
+<tr>
+<td><code>original_16k.wav</code></td>
+<td>The audio the timecodes refer to: mono, 16 kHz — already the format Whisper wants.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What to read.</strong> Inside <code>transcription.json</code>, the <code>sentences</code> array is the convenient unit — one entry per speaker turn, already carrying the text and the timecodes:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;speaker&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Говорящий 2&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;lang&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;tt&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;start&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">5.196</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;end&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">9.62</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;text&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Кит инде, кинен театрда карау күмеллерәк бит!&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><strong>What to produce.</strong> For every sentence whose <code>lang</code> is <code>tt</code> (Tatar) or <code>mixed</code>, cut <code>original_16k.wav</code> from <code>start</code> to <code>end</code> into its own WAV file, and record its <code>text</code> alongside. The result is a folder of clips plus an index file pairing each clip with its transcript — that folder <em>is</em> the dataset. The <code>audiofolder</code> layout used by Hugging Face <code>datasets</code> is a good default:</p>
+<div class="highlight"><pre><span></span><code>tt_dataset/
+  metadata.jsonl        # one line per clip: {&quot;file_name&quot;: &quot;clips/…wav&quot;, &quot;transcription&quot;: &quot;…&quot;}
+  clips/&lt;audio_id&gt;_&lt;n&gt;.wav
+</code></pre></div>
+<p><strong>Rules the export must respect:</strong></p>
+<ul>
+<li><strong>Drop fragments longer than 30 seconds.</strong> Whisper cannot train on them — its input window is 30 s.</li>
+<li><strong>Drop very short fragments</strong> (under ~0.6 s) and single-interjection turns; they add noise, not signal.</li>
+<li><strong>Add a small margin</strong>, roughly 0.15 s on each side, so word beginnings are not clipped off.</li>
+<li><strong>Keep it reviewable.</strong> Because the output is ordinary WAV files plus a text index, you can listen to the clips and delete any pair that looks wrong before training.</li>
+</ul>
+<p>Since the clips are cut from <code>original_16k.wav</code>, they are already mono 16 kHz and can be written with Python's standard <code>wave</code> module — and read back the same way at training time. That avoids <code>soundfile</code>/<code>torchcodec</code>, which recent versions of <code>datasets</code> otherwise require to decode audio.</p>
+<p>It is worth printing the total collected duration, since that number decides whether training is worth starting at all.</p>
+<p><strong>How much data is enough?</strong> Below roughly one hour of Tatar speech, expect little or no improvement — and possibly a worse model. A few hours is a reasonable first attempt; tens of hours is where fine-tuning clearly pays off.</p>
+<h3 id="step-3-prepare-the-training-environment">Step 3. Prepare the Training Environment<a class="headerlink" href="#step-3-prepare-the-training-environment" title="Permanent link">&para;</a></h3>
+<p>Copy the dataset folder from Step 2 onto the GPU machine. You do <strong>not</strong> need PostgreSQL, the backend, or the frontend there — training is completely separate from the running application.</p>
+<p>Create a virtual environment for training. These packages are heavy and are deliberately <strong>not</strong> part of <code>backend/requirements.txt</code>, so do not reuse the backend environment:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv-train
+<span class="nb">source</span><span class="w"> </span>venv-train/bin/activate<span class="w">        </span><span class="c1"># Windows: .\venv-train\Scripts\Activate.ps1</span>
+pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;transformers[torch]&quot;</span><span class="w"> </span>datasets<span class="w"> </span>accelerate
+</code></pre></div>
+<p>The first run also downloads the base model from Hugging Face (about 1 GB for <code>whisper-small</code>), so the machine needs internet access once.</p>
+<h3 id="step-4-train">Step 4. Train<a class="headerlink" href="#step-4-train" title="Permanent link">&para;</a></h3>
+<p>This is a standard Whisper fine-tuning run — <code>WhisperForConditionalGeneration</code> plus <code>Seq2SeqTrainer</code> from <code>transformers</code>, the recipe Hugging Face documents for Whisper. The corpus-specific parts are the starting model and the settings below.</p>
+<p><strong>Start from the model already in use</strong>, <code>yasalma/whisper-finetuned-tt-asr</code>, rather than from plain <code>openai/whisper-small</code>. It is already adapted to Tatar, so you are adding your corpus on top of that work instead of redoing it.</p>
+<p>Settings that matter, with sane starting values:</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Start with</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Learning rate</td>
+<td><code>1e-5</code></td>
+<td>The standard Whisper fine-tuning rate. Change last, if at all.</td>
+</tr>
+<tr>
+<td>Epochs</td>
+<td><code>5</code></td>
+<td>Raise if the error was still falling at the last epoch.</td>
+</tr>
+<tr>
+<td>Batch size</td>
+<td><code>8</code></td>
+<td><strong>Lower this first on "CUDA out of memory"</strong> — try 4, then 2.</td>
+</tr>
+<tr>
+<td>Gradient accumulation</td>
+<td><code>2</code></td>
+<td>Raise when lowering batch size, to keep the effective batch the same.</td>
+</tr>
+<tr>
+<td>Gradient checkpointing</td>
+<td>on</td>
+<td>Trades a little speed for a lot of VRAM.</td>
+</tr>
+<tr>
+<td>Validation split</td>
+<td>10%</td>
+<td>Held out from training, used only to score the result.</td>
+</tr>
+</tbody>
+</table>
+<p>Three things the training run should do, which are easy to leave out and painful to miss:</p>
+<ul>
+<li><strong>Hold out a validation split</strong> and report <strong>word error rate (WER)</strong> after each epoch. WER is the percentage of words the model gets wrong — <strong>lower is better</strong>, and it is the only number that tells you whether the run helped.</li>
+<li><strong>Save a checkpoint each epoch and keep the best-scoring one</strong>, not the last one. Then an overfitting tail costs you time but not the result.</li>
+<li><strong>Mask the padding in the loss</strong> (label padding set to <code>-100</code>), or the model learns to predict padding.</li>
+</ul>
+<p><strong>How long does it take?</strong> Roughly tens of minutes for one hour of audio on a modern GPU, and correspondingly longer for larger corpora. If a small dataset is taking hours, it is almost certainly running on CPU rather than GPU.</p>
+<h3 id="step-5-where-the-model-goes">Step 5. Where the Model Goes<a class="headerlink" href="#step-5-where-the-model-goes" title="Permanent link">&para;</a></h3>
+<p>Training produces a complete, self-contained model folder — model weights plus the processor/tokenizer files, everything needed to load it. Two ways to store it:</p>
+<ul>
+<li><strong>Keep it on disk.</strong> Copy the folder to the server, for example to <code>models/tt-2026-07/</code>. Simplest option, and the audio never leaves your infrastructure. Name folders by date so several generations can coexist and you can always go back.</li>
+<li><strong>Push it to Hugging Face.</strong> Only for models you are willing to publish, and only if no personal data can be reconstructed from them. Recordings of children are sensitive — the default should be keeping the model local.</li>
+</ul>
+<h3 id="step-6-put-the-new-model-into-the-application">Step 6. Put the New Model Into the Application<a class="headerlink" href="#step-6-put-the-new-model-into-the-application" title="Permanent link">&para;</a></h3>
+<p>Point <code>TT_ASR_MODEL</code> at the folder (or at the Hugging Face model name) and restart the backend:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">TT_ASR_MODEL</span><span class="o">=</span>/absolute/path/to/model_folder<span class="w">   </span><span class="c1"># Windows: $env:TT_ASR_MODEL=&quot;C:\path\to\model_folder&quot;</span>
+uvicorn<span class="w"> </span>backend.src.main:app<span class="w"> </span>--port<span class="w"> </span><span class="m">8000</span><span class="w"> </span>--host<span class="w"> </span><span class="m">0</span>.0.0.0
+</code></pre></div>
+<p><code>backend/src/tatar_asr.py</code> reads this variable when it loads the Tatar model, so no code changes are needed.</p>
+<p>Two practical points that are easy to get wrong:</p>
+<ul>
+<li><strong>The project's <code>.env</code> file will not work for this.</strong> That file is read by the frontend build (Vite), not by the backend — the backend reads real environment variables only. Set <code>TT_ASR_MODEL</code> in the same terminal that starts <code>uvicorn</code>, or in the service definition (systemd <code>Environment=</code>, Docker <code>-e</code>) that launches it. Setting it in a different terminal has no effect.</li>
+<li><strong>Use an absolute path.</strong> A relative path is resolved against the backend's working directory, not against where you typed the command.</li>
+</ul>
+<p>To go back to the previous model, unset the variable and restart — nothing else is affected. The old model folder is not deleted or overwritten by any of this, so rollback is always possible.</p>
+<h3 id="step-7-verify-before-adopting">Step 7. Verify Before Adopting<a class="headerlink" href="#step-7-verify-before-adopting" title="Permanent link">&para;</a></h3>
+<p>Do not keep a new model just because training finished. Run the measurement procedure in Section 6 against the previous model, and listen to a few representative recordings. A model with a better WER on the validation split can still be worse on real recordings — for example, if the corrected corpus came from only one or two speakers.</p>
+<p>Repeat the whole cycle as more recordings are corrected. Each round starts again at Step 2, and the newly corrected recordings are picked up automatically.</p>
+<h3 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CUDA out of memory</code></td>
+<td>Lower the batch size to 4 or 2 and raise gradient accumulation to match.</td>
+</tr>
+<tr>
+<td>The export finds no fragments</td>
+<td>No sentences tagged <code>tt</code>/<code>mixed</code> in <code>storage/</code>. Check that Tatar recordings were actually processed and corrected.</td>
+</tr>
+<tr>
+<td>A recording has no <code>original_16k.wav</code></td>
+<td>It never finished processing. Skip it; the rest still export.</td>
+</tr>
+<tr>
+<td>Training is extremely slow</td>
+<td>It is running on CPU rather than GPU.</td>
+</tr>
+<tr>
+<td>WER rises every epoch</td>
+<td>Too little data, or transcripts that were not really corrected. Return to Step 1.</td>
+</tr>
+<tr>
+<td>New model is worse on real audio</td>
+<td>Expected outcome sometimes. Unset <code>TT_ASR_MODEL</code>, keep collecting corrections.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-how-to-measure-improvement">6. How to Measure Improvement<a class="headerlink" href="#6-how-to-measure-improvement" title="Permanent link">&para;</a></h2>
+<p>The ASR quality harness re-runs the real production transcription path over a folder of audio files and writes the result for inspection.</p>
+<p><strong>Before the first run you must point it at your own audio.</strong> The source folder is currently a constant near the top of <code>scripts/QualityRequirements/transcription_quality_test.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">SRC_ROOT</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;D:\swp\test audios + transcriptions&quot;</span>
+</code></pre></div>
+<p>Change it to your folder of test recordings. Two things to know about that folder:</p>
+<ul>
+<li>only <code>*.mp3</code> files are picked up (searched recursively);</li>
+<li>results are written next to them, into <code>&lt;SRC_ROOT&gt;/_results/&lt;name&gt;.json</code> and <code>.txt</code>.</li>
+</ul>
+<p>Then run:</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/QualityRequirements/transcription_quality_test.py<span class="w">           </span><span class="c1"># all files</span>
+python<span class="w"> </span>scripts/QualityRequirements/transcription_quality_test.py<span class="w"> </span>семья<span class="w">     </span><span class="c1"># only names containing &quot;семья&quot;</span>
+</code></pre></div>
+<p>It prints per file: duration, number of segments, word count, and the <code>tt</code>/<code>ru</code> split, then the flat transcript. If it prints <code>[run] 0 файл(ов)</code>, <code>SRC_ROOT</code> is wrong or contains no MP3s.</p>
+<p><strong>The harness does not compute a score by itself.</strong> It produces transcripts; you compare them against your reference transcripts. Keep the <code>_results</code> folder from the run <em>before</em> a change so there is something to compare against — the next run overwrites it.</p>
+<p>Use this discipline:</p>
+<ol>
+<li>Run the harness before a change.</li>
+<li>Make one change.</li>
+<li>Run the harness again.</li>
+<li>Compare language tags, spelling readability, hallucinations, and dropped words.</li>
+<li>Keep the change only if it clearly improves results without introducing regressions.</li>
+</ol>
+<p>To measure a fine-tuned model this way, set <code>TT_ASR_MODEL</code> in the same terminal <em>before</em> starting the harness — it loads the Tatar model through the same <code>backend/src/tatar_asr.py</code> the application uses:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">TT_ASR_MODEL</span><span class="o">=</span>/absolute/path/to/tt_model
+python<span class="w"> </span>scripts/QualityRequirements/transcription_quality_test.py
+</code></pre></div>
+<p>Final judgment should include listening to representative customer recordings.</p>
+<h2 id="7-recommended-path">7. Recommended Path<a class="headerlink" href="#7-recommended-path" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Record cleaner audio and correct the transcripts that matter most.</li>
+<li>Label speakers consistently.</li>
+<li>Add safe Russian-letter Tatar words to the word list.</li>
+<li>Periodically rebuild/reindex statistics if needed.</li>
+<li>Try a stronger Tatar model through <code>TT_ASR_MODEL</code> when available.</li>
+<li>Fine-tune once there is a solid set of corrected Tatar recordings, following Section 5.</li>
+</ol>
+<h2 id="8-faq">8. FAQ<a class="headerlink" href="#8-faq" title="Permanent link">&para;</a></h2>
+<p><strong>Do corrections retrain the model automatically?</strong><br />
+No. They update transcripts, search, and statistics immediately. They also accumulate the dataset for future fine-tuning.</p>
+<p><strong>Is Russian recognition already good enough?</strong><br />
+The Russian branch is strong. Most remaining accuracy gains are expected in Tatar recognition and Russian/Tatar routing.</p>
+<p><strong>I added a word to the Tatar list and Russian words are mislabeled. What happened?</strong><br />
+The added word is probably also a Russian word. Remove it from <code>tatar_wordlist.txt</code> and correct only the specific transcript occurrences.</p>
+<p><strong>How much corrected data is enough to fine-tune?</strong><br />
+There is no hard threshold, but under roughly one hour of corrected Tatar speech, fine-tuning rarely helps and can make things worse. More verified data is better, and every fine-tuned model must be evaluated before adoption.</p>
+<p><strong>Do I need to upload the audio/text pairs somewhere?</strong><br />
+No. They are built on the server from recordings you already corrected — see Section 5, Step 2. Nothing has to be sent to an external service, and for recordings of children that is the recommended default.</p>
+<p><strong>Can I fine-tune without a GPU?</strong><br />
+Technically yes, practically no — CPU training takes days. Rent a cloud GPU or use Google Colab for the training step only. Everything else runs on the server.</p>
+<p><strong>Does fine-tuning change the Russian branch?</strong><br />
+No. <code>TT_ASR_MODEL</code> only affects Tatar recognition. The Russian model, language routing, and diarization are untouched.</p>
+<h2 id="related-engineering-documents">Related Engineering Documents<a class="headerlink" href="#related-engineering-documents" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../ru_tt_pipeline/">RU/TT Pipeline</a></li>
+<li><a href="../storage_and_search/">Storage and Search</a> — the exact contents of <code>transcription.json</code>, used by Step 2</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "toc.integrate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
